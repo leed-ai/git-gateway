@@ -48,36 +48,43 @@ git-gateway narrows what a host must provide to what every git host provides —
 
 ### Packages
 
-A Bun + Turborepo monorepo:
+A Bun + Turborepo monorepo. Every published package is named `@leed-ai/git-gateway-<name>` and lives in `packages/<name>`:
 
-| Package | Contents |
-|---|---|
-| `@git-gateway/contract` | **Built first.** The Zod schemas and the RPC interface (the API contract), plus a reference implementation of that interface in memory: commit-action rules, idempotency, reads, `syncBranch` and `promote` (including conflicts), modelled on plain objects rather than git objects. Consumers develop and test against it before the gateway exists; the real gateway is later tested against it as an oracle (same calls, same results). |
-| `@git-gateway/core` | Platform-free TypeScript. pkt-line codec, receive-pack command parser, git object encoding (blob/tree/commit), pack writer, tree editing, commit-action semantics, file-level three-way merge, idempotency trailers. No Cloudflare imports; runs in Bun, Node and Workers. |
-| `@git-gateway/worker` | The gateway: smart-HTTP proxy, auth and policy pipeline, the RPC `WorkerEntrypoint`, the Workflows, push-event consumer. Configured with backends and hooks; deployments compose it rather than fork it. |
-| `@git-gateway/backend-artifacts` | `StorageBackend` over the Artifacts binding (repo lifecycle, tokens, reads) and its git remotes (push/fetch). |
-| `@git-gateway/backend-gitlab` | `StorageBackend` over a GitLab instance: git over HTTPS plus the repository files/tree/projects APIs for reads and lifecycle. |
-| `@git-gateway/backend-github` | Later. Same contract. |
-| `@git-gateway/auth-jwt` | Reference authenticator: bearer/Basic-password JWT verified against a JWKS (OIDC). |
-| `@git-gateway/testkit` | In-memory backend, repository fixtures, a harness that drives the real `git` binary against a running gateway, and the backend contract suite. |
-| `examples/gateway` | A deployable Worker with `wrangler.jsonc`, showing the composition. |
+| Package                                  | Contents                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@leed-ai/git-gateway-contract`          | **Built first.** The Zod schemas and the RPC interface (the API contract), plus a reference implementation of that interface in memory: commit-action rules, idempotency, reads, `syncBranch` and `promote` (including conflicts), modelled on plain objects rather than git objects. Consumers develop and test against it before the gateway exists; the real gateway is later tested against it as an oracle (same calls, same results). |
+| `@leed-ai/git-gateway-core`              | Platform-free TypeScript. pkt-line codec, receive-pack command parser, git object encoding (blob/tree/commit), pack writer, tree editing, commit-action semantics, file-level three-way merge, idempotency trailers. No Cloudflare imports; runs in Bun, Node and Workers.                                                                                                                                                                  |
+| `@leed-ai/git-gateway-worker`            | The gateway: smart-HTTP proxy, auth and policy pipeline, the RPC `WorkerEntrypoint`, the Workflows, push-event consumer. Configured with backends and hooks; deployments compose it rather than fork it.                                                                                                                                                                                                                                    |
+| `@leed-ai/git-gateway-backend-artifacts` | `StorageBackend` over the Artifacts binding (repo lifecycle, tokens, reads) and its git remotes (push/fetch).                                                                                                                                                                                                                                                                                                                               |
+| `@leed-ai/git-gateway-backend-gitlab`    | `StorageBackend` over a GitLab instance: git over HTTPS plus the repository files/tree/projects APIs for reads and lifecycle.                                                                                                                                                                                                                                                                                                               |
+| `@leed-ai/git-gateway-backend-github`    | Later. Same contract.                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `@leed-ai/git-gateway-auth-jwt`          | Reference authenticator: bearer/Basic-password JWT verified against a JWKS (OIDC).                                                                                                                                                                                                                                                                                                                                                          |
+| `@leed-ai/git-gateway-testkit`           | In-memory backend, repository fixtures, a harness that drives the real `git` binary against a running gateway, and the backend contract suite.                                                                                                                                                                                                                                                                                              |
+| `examples/gateway`                       | A deployable Worker with `wrangler.jsonc`, showing the composition.                                                                                                                                                                                                                                                                                                                                                                         |
+
+Two private workspaces support the packages and are never published: `tooling/schema-docs` (the schema-documentation test harness, below) and `tooling/repo` (the dependency-policy, SPDX and workflow checks, the shared Vite+ presets and the release scripts).
+
+Each module is its own package export (`@leed-ai/git-gateway-worker/health`), with named exports only and no barrel files. Exports carry a `source` condition pointing at the TypeScript source, which type checking uses so it never waits for a build; everything else resolves to `dist/`.
 
 ### Dependencies
 
 Three libraries are the foundation, and each is a **peer dependency** declared by supported major range (`^`), never pinned to an exact version, so the host application controls the version and there is one copy of each in the bundle:
 
-| Peer | Used for | Declared by |
-|---|---|---|
-| `zod` (`^4`) | **Every data structure**: RPC inputs and outputs, commit actions, configuration, push-event payloads, backend responses, policy rules, errors. Types are `z.infer` of the schema; nothing crossing a boundary is trusted until it is parsed. | every package |
-| `hono` (`^4`) | Routing in the Worker: the smart-HTTP endpoints, health, and any HTTP surface; auth and policy run as Hono middleware. | `worker`, `examples/gateway` |
+| Peer                | Used for                                                                                                                                                                                                                                                                                                                                                                | Declared by                    |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `zod` (`^4`)        | **Every data structure**: RPC inputs and outputs, commit actions, configuration, push-event payloads, backend responses, policy rules, errors. Types are `z.infer` of the schema; nothing crossing a boundary is trusted until it is parsed.                                                                                                                            | every package                  |
+| `hono` (`^4`)       | Routing in the Worker: the smart-HTTP endpoints, health, and any HTTP surface; auth and policy run as Hono middleware.                                                                                                                                                                                                                                                  | `worker`, `examples/gateway`   |
 | `cloudflare` (`^5`) | **All Cloudflare REST API calls** (the official SDK): Artifacts control plane outside a binding (namespaces, repos, tokens), Workers Builds, Queues event subscriptions. Where the SDK has no typed resource yet, its generic request methods (`client.get`/`client.post`) are used — never hand-rolled `fetch` to `api.cloudflare.com`. Responses are parsed with Zod. | `backend-artifacts`, `testkit` |
 
 **Every Zod schema is self-documenting.** The schemas are the documentation, so each one is fully described:
 
 - Every schema, every object field, every enum member and every union branch carries a description through Zod 4 metadata — `.meta({ id, title, description, examples })` on named schemas, `.describe()` at minimum on fields. A description says what the value means, its units and format (e.g. "40-character lowercase hex SHA-1"), its constraints and defaults, and when it is absent.
+- Enum members are described with an `enumDescriptions` map in the enum's metadata (`.meta({ description, enumDescriptions: { read: "…", write: "…" } })`), which also appears in the generated JSON Schema; a union of described literals works too.
 - Constraints live in the schema, not in prose alone: lengths, regexes for SHAs and ref names, integer ranges, `.default()` values, discriminated unions for action kinds and error codes.
 - Named schemas are registered in one registry (`z.globalRegistry` or a package registry) with stable ids, and the reference docs and the published JSON Schema for the RPC API and configuration are generated from it with `z.toJSONSchema` — never written by hand.
-- A test walks every exported schema (including nested fields) and fails the build if any node lacks a description or a named schema lacks an id and an example; the generated JSON Schema is snapshot-tested, so a change to a contract shows up in review.
+- A test walks every exported schema (including nested fields) and fails the build if any node lacks a description or a named schema lacks an id and an example; the generated JSON Schema is snapshot-tested, so a change to a contract shows up in review. The walker is `tooling/schema-docs`; every package runs it from `test/schema-docs.test.ts` over its own `src/` modules. Exported schemas must be named, ids must be unique, and every example must parse against its schema.
+
+The policy is enforced in CI: `tooling/repo/src/peer-policy.ts` holds the three ranges, and `bun run policy` fails if any package lists a peer under `dependencies`, declares a peer by anything but its policy range, imports a peer from shipped source without declaring it, or pins any dependency to an exact version. The library build (tsdown via `vp pack`) keeps the peers, `cloudflare:*` and `node:*` imports external.
 
 `peerDependenciesMeta` marks a peer optional where only part of a package needs it. Each package's dev dependencies install the latest peers so CI tests against current versions, and a nightly CI leg tests against the lowest version in each declared range.
 
@@ -95,13 +102,13 @@ interface StorageBackend {
   // reads (no clone)
   resolveRef(repo: string, ref: string): Promise<Sha | null>;
   readCommit(repo: string, sha: Sha): Promise<Commit | null>;
-  readTree(repo: string, sha: Sha): Promise<TreeEntry[] | null>;   // one level
+  readTree(repo: string, sha: Sha): Promise<TreeEntry[] | null>; // one level
   readBlob(repo: string, sha: Sha): Promise<Uint8Array | null>;
   readFile(repo: string, ref: string, path: string): Promise<Uint8Array | null>;
   log(repo: string, ref: string, opts: { limit: number; offset?: number }): Promise<Commit[]>;
 
   // transport
-  gitRemote(repo: string, access: "read" | "write"): Promise<{ url: string; headers: Headers }>;
+  gitRemote(repo: string, access: 'read' | 'write'): Promise<{ url: string; headers: Headers }>;
 }
 ```
 
@@ -121,14 +128,14 @@ Writes go through the git transport (`git-receive-pack`) using `gitRemote(..., "
 
 Action semantics match the GitLab Commits API that most existing integrations already speak, so callers can migrate without behavioural surprises:
 
-| Action | Behaviour |
-|---|---|
-| `create` | Fails if the path exists. |
-| `update` | Fails if the path does not exist. |
-| `upsert` | Creates or replaces (convenience; not in GitLab). |
-| `delete` | Fails if the path does not exist. |
-| `move` | `previousPath` must exist and `path` must not; optional new content. |
-| `chmod` | Sets or clears the executable bit (`executeFilemode`). |
+| Action   | Behaviour                                                            |
+| -------- | -------------------------------------------------------------------- |
+| `create` | Fails if the path exists.                                            |
+| `update` | Fails if the path does not exist.                                    |
+| `upsert` | Creates or replaces (convenience; not in GitLab).                    |
+| `delete` | Fails if the path does not exist.                                    |
+| `move`   | `previousPath` must exist and `path` must not; optional new content. |
+| `chmod`  | Sets or clears the executable bit (`executeFilemode`).               |
 
 Content is UTF-8 text or base64. A commit with no effective change is reported as `noop` and pushes nothing. Author, committer and message are the caller's; the gateway appends a `Gateway-Idempotency-Key:` trailer.
 
@@ -156,13 +163,13 @@ Routed with Hono; authentication, authorization and branch policy are Hono middl
 
 ```ts
 interface Authenticator {
-  authenticate(req: Request): Promise<Principal | null>;   // null → 401 with WWW-Authenticate: Basic
+  authenticate(req: Request): Promise<Principal | null>; // null → 401 with WWW-Authenticate: Basic
 }
 interface Authorizer {
-  authorize(p: Principal, repo: string, op: "read" | "write"): Promise<boolean>;
+  authorize(p: Principal, repo: string, op: 'read' | 'write'): Promise<boolean>;
 }
 interface BranchPolicy {
-  check(p: Principal, repo: string, updates: RefUpdate[]): PolicyResult;  // per-ref allow/deny + reason
+  check(p: Principal, repo: string, updates: RefUpdate[]): PolicyResult; // per-ref allow/deny + reason
 }
 ```
 
@@ -180,6 +187,7 @@ The suite is the product's main safety argument; it runs on every PR.
 **Property tests** (fast-check) — three-way merge: commutativity of non-conflicting changes, conflicts exactly when both sides change a path differently, merge result never loses a one-sided change; tree edits preserve untouched entries byte-for-byte.
 
 **Conformance with real git** (`testkit` harness, `git` binary, several git versions in CI) — modelled on git's own HTTP transport tests (`t5551-http-fetch-smart`, `t5541-http-push-smart`, `t5516-fetch-push`, `t5537-fetch-shallow`):
+
 - clone, fetch, shallow clone and deepen, protocol v0/v1/v2 negotiation
 - push new branch, delete branch, fast-forward, rejected non-fast-forward, force push allowed/denied by policy, push to a protected ref denied with a readable message
 - concurrent pushes to the same ref: exactly one wins, the other is refused
@@ -188,7 +196,7 @@ The suite is the product's main safety argument; it runs on every PR.
 
 **Backend contract suite** — one suite, run unchanged against the in-memory backend, the Artifacts local binding (Workers Vitest), and a disposable GitLab project; covers lifecycle, every read, transport, and the documented edge cases (stale-head push refused, force-push behaviour, ref deletion).
 
-**Worker tests** (`@cloudflare/vitest-pool-workers`) — auth pipeline, policy, RPC, Workflows (inline retry → workflow hand-off, idempotent replay), push-event hooks.
+**Worker tests** (`@cloudflare/vitest-plugin`, in workerd) — auth pipeline, policy, RPC, Workflows (inline retry → workflow hand-off, idempotent replay), push-event hooks.
 
 **Reference review.** The gitbeaker client's unit tests were reviewed; they assert request shapes only, so behaviour is specified from GitLab's Commits API documentation and from the operations integrations actually perform, and pinned by the contract suite.
 
@@ -197,26 +205,32 @@ Coverage gate: 90 % lines on `core`, 80 % elsewhere; mutation testing (Stryker) 
 ## Tooling
 
 - **Bun** for install, scripts and the test harness.
-- **Turborepo** for the task graph and caching.
-- **Vite+** (`vp check`): Oxfmt formatting, Oxlint linting with type-aware rules, and type checking through tsgolint on the TypeScript 7 native compiler — one pass.
-- **Vitest** (via Vite+) with the Workers pool for Worker packages.
-- **tsdown** (Rolldown) for library builds, with `zod`, `hono` and `cloudflare` kept external (peers); Wrangler for the Worker.
+- **Turborepo** for the task graph and caching: `build`, `check`, `test`, `test:conformance` and `test:contract` per package; tests depend on upstream builds.
+- **Vite+** (`vp check`): Oxfmt formatting, Oxlint linting with type-aware rules, and type checking through tsrs (the Rust port of the TypeScript 7 compiler, via `tsrs-lint`) — one pass over the whole repository. Lint and format settings live in the root `vite.config.ts`.
+- **Vitest 5** (via `vp test`). Worker packages (`worker`, `backend-artifacts`, `examples/gateway`) run their tests inside workerd through `@cloudflare/vitest-plugin`, the renamed successor of `@cloudflare/vitest-pool-workers` (which stopped at Vitest 4).
+- **tsdown** (Rolldown, via `vp pack`) for library builds: one ESM entry per module with declaration files, `zod`, `hono` and `cloudflare` kept external (peers); Wrangler builds the example Worker (`wrangler deploy --dry-run`).
+- **fast-check** for property tests.
 
 ## CI and releases (GitHub Actions)
 
-- `check` — `vp check` on the affected graph.
-- `test` — Turbo affected packages, Vitest sharded across a matrix that grows with the suite (`--shard i/n`), Turbo cache restored from the Actions cache.
-- `conformance` — real-git harness across a git-version matrix.
-- `contract` — backend contract suite; the GitLab and live-Artifacts legs run on `main` and nightly with repository secrets, never on forks.
-- `release` — Changesets: version PR, then npm publish with provenance; the example Worker is built, not deployed.
-- `snapshot` — every merge to `main` publishes all packages to npm under the `next` dist-tag (`0.x.y-next.<timestamp>`, with provenance), so consumers' CI can run against the latest gateway before a release. Consumers move to a real release version before they ship.
-- CodeQL, dependency updates, and `SECURITY.md` for private vulnerability reports.
+Third-party actions are pinned to commit SHAs, every workflow declares its permissions, and no job that holds a secret can run for a pull request; `tooling/repo/src/workflow-policy.ts` checks all three in CI.
+
+- `check` — one `vp check` pass over the repository (seconds), the dependency-policy, SPDX and workflow checks, actionlint, and `turbo run build` (affected packages only on a PR). The example Worker is built, never deployed.
+- `test` — Turbo runs the affected packages' tests on a PR (everything on `main`), each package's Vitest files split across a shard matrix (`--shard=<i>/<n>`, where `n` is the matrix size, so changing the shard count is one line), Turbo cache restored from the Actions cache. A `tests passed` job gives branch protection one check that does not change with the shard count.
+- `conformance` — the real-git harness (`*.conformance.test.ts`) across a git-version matrix: 2.34, 2.39, 2.43, 2.51, 2.56 built from source (cached) and the runner's own git.
+- `contract` — backend contract suite. The in-memory leg runs on every PR; the GitLab and live-Artifacts legs run on `main`, nightly and on dispatch in `leed-ai/git-gateway` with secrets from the `contract` environment, never on pull requests or forks, and skip with a notice while their secrets are unset.
+- `release` — Changesets: version PR, then npm publish with provenance. Packages are packed with `bun pm pack` (which resolves `workspace:` ranges) and published with `npm publish --provenance`. Without an `NPM_TOKEN` secret only the version PR is maintained.
+- `snapshot` — every merge to `main` publishes all packages to npm under the `next` dist-tag (`0.x.y-next.<datetime>`, with provenance), so consumers' CI can run against the latest gateway before a release. Consumers move to a real release version before they ship. Without `NPM_TOKEN` it builds the versions and publishes nothing.
+- `nightly` — the whole suite against the lowest version in each peer range (`zod` 4.0.0, `hono` 4.0.0, `cloudflare` 5.0.0) and against the latest, without the Turbo cache.
+- CodeQL (JavaScript/TypeScript and Actions), Dependabot (Bun and Actions, weekly), and `SECURITY.md` for private vulnerability reports.
+
+Branch protection on `main` requires `check`, `build`, `tests passed`, `conformance passed`, `contract (in-memory)` and CodeQL.
 
 ## Developing consumers in parallel
 
 The contract is frozen before the gateway logic is written, so a consumer can be built alongside it:
 
-- Code against the RPC types from `@git-gateway/contract`; test against its in-memory reference implementation.
+- Code against the RPC types from `@leed-ai/git-gateway-contract`; test against its in-memory reference implementation.
 - Locally, `bun link` the packages (or install a `bun pm pack` tarball). Because `zod`, `hono` and `cloudflare` are peers, the linked packages use the consumer's own copies — one Zod instance, no duplicate-schema surprises.
 - In Workers tests, run the gateway Worker as an auxiliary worker behind a service binding, over the in-memory backend, so the consumer's suite exercises real gateway code rather than a mock.
 - In CI, depend on the `next` snapshots; never commit a link or `file:` dependency.

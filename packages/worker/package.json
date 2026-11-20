@@ -1,0 +1,65 @@
+{
+  "name": "@leed-ai/git-gateway-worker",
+  "version": "0.0.0",
+  "description": "The git-gateway Cloudflare Worker: smart-HTTP proxy, auth and branch-policy pipeline, RPC entrypoint and Workflows.",
+  "keywords": [
+    "cloudflare-workers",
+    "git",
+    "git-gateway",
+    "hono",
+    "smart-http"
+  ],
+  "homepage": "https://github.com/leed-ai/git-gateway/tree/main/packages/worker#readme",
+  "bugs": {
+    "url": "https://github.com/leed-ai/git-gateway/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leed-ai/git-gateway.git",
+    "directory": "packages/worker"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./health": {
+      "source": "./src/health.ts",
+      "types": "./dist/health.d.ts",
+      "default": "./dist/health.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "vp pack",
+    "check": "vp check",
+    "test": "vp test"
+  },
+  "dependencies": {
+    "@leed-ai/git-gateway-contract": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.8.5",
+    "@cloudflare/workers-types": "^5.20261120.1",
+    "@leed-ai/git-gateway-repo-tools": "workspace:*",
+    "@leed-ai/git-gateway-schema-docs": "workspace:*",
+    "hono": "^4.13.19",
+    "typescript": "^7.0.2",
+    "vite-plus": "^1.7.0",
+    "zod": "^4.6.7"
+  },
+  "peerDependencies": {
+    "hono": "^4",
+    "zod": "^4"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}

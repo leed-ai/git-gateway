@@ -1,0 +1,40 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`buildJsonSchemaDocument > puts every named schema, nested ones included, under sorted $defs 1`] = `
+{
+  "$defs": {
+    "json.Inner": {
+      "additionalProperties": false,
+      "description": "json.Inner schema.",
+      "examples": [],
+      "properties": {
+        "n": {
+          "description": "A number.",
+          "type": "number",
+        },
+      },
+      "required": [
+        "n",
+      ],
+      "title": "json.Inner",
+      "type": "object",
+    },
+    "json.Outer": {
+      "additionalProperties": false,
+      "description": "json.Outer schema.",
+      "examples": [],
+      "properties": {
+        "inner": {
+          "$ref": "#/$defs/json.Inner",
+        },
+      },
+      "required": [
+        "inner",
+      ],
+      "title": "json.Outer",
+      "type": "object",
+    },
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+}
+`;

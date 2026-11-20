@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: Apache-2.0
+# The real-git conformance harness across a git-version matrix. Runs on every PR, forks included; uses no secrets.
+name: conformance
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: conformance-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  git:
+    name: git ${{ matrix.git }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # Oldest supported (Ubuntu 22.04 era), Debian 12, Ubuntu 24.04, a recent release, the newest release, and the runner's own git.
+        git: ['2.34.8', '2.39.5', '2.43.7', '2.51.3', '2.56.1', system]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-git
+        with:
+          version: ${{ matrix.git }}
+
+      - uses: ./.github/actions/setup-toolchain
+        with:
+          cache-key: conformance-${{ matrix.git }}
+
+      - name: Conformance against git ${{ matrix.git }}
+        run: bunx turbo run test:conformance
+
+  conformance-passed:
+    name: conformance passed
+    if: always()
+    needs: [git]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Every git version passed
+        env:
+          RESULT: ${{ needs.git.result }}
+        run: |
+          echo "git matrix: $RESULT"
+          [[ "$RESULT" == success ]]

@@ -1,0 +1,67 @@
+{
+  "name": "@leed-ai/git-gateway-testkit",
+  "version": "0.0.0",
+  "description": "Test kit for git-gateway: in-memory backend, repository fixtures, a real-git conformance harness and the backend contract suite.",
+  "keywords": [
+    "cloudflare-workers",
+    "conformance",
+    "git",
+    "git-gateway",
+    "testing"
+  ],
+  "homepage": "https://github.com/leed-ai/git-gateway/tree/main/packages/testkit#readme",
+  "bugs": {
+    "url": "https://github.com/leed-ai/git-gateway/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leed-ai/git-gateway.git",
+    "directory": "packages/testkit"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./git-binary": {
+      "source": "./src/git-binary.ts",
+      "types": "./dist/git-binary.d.ts",
+      "default": "./dist/git-binary.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "vp pack",
+    "check": "vp check",
+    "test": "vp test --exclude 'test/**/*.conformance.test.ts'",
+    "test:conformance": "vp test conformance"
+  },
+  "devDependencies": {
+    "@leed-ai/git-gateway-repo-tools": "workspace:*",
+    "@leed-ai/git-gateway-schema-docs": "workspace:*",
+    "@types/node": "^24.19.2",
+    "cloudflare": "^5.2.0",
+    "typescript": "^7.0.2",
+    "vite-plus": "^1.7.0",
+    "zod": "^4.6.7"
+  },
+  "peerDependencies": {
+    "cloudflare": "^5",
+    "zod": "^4"
+  },
+  "peerDependenciesMeta": {
+    "cloudflare": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}

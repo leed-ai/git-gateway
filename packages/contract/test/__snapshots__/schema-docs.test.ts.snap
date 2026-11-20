@@ -1,0 +1,75 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`schema documentation > generates the JSON Schema for what the schemas accept 1`] = `
+{
+  "$defs": {
+    "HealthResponse": {
+      "additionalProperties": false,
+      "description": "Body of GET /health. Returned with status 200 whenever the Worker is serving; it does not probe storage backends.",
+      "examples": [
+        {
+          "service": "git-gateway",
+          "status": "ok",
+        },
+      ],
+      "properties": {
+        "service": {
+          "description": "Name of the deployment answering, 1–64 characters; "git-gateway" unless the deployment names itself.",
+          "maxLength": 64,
+          "minLength": 1,
+          "type": "string",
+        },
+        "status": {
+          "const": "ok",
+          "description": "Always "ok": the gateway Worker is up and routing requests.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "service",
+      ],
+      "title": "Health response",
+      "type": "object",
+    },
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+}
+`;
+
+exports[`schema documentation > generates the JSON Schema for what the schemas produce 1`] = `
+{
+  "$defs": {
+    "HealthResponse": {
+      "additionalProperties": false,
+      "description": "Body of GET /health. Returned with status 200 whenever the Worker is serving; it does not probe storage backends.",
+      "examples": [
+        {
+          "service": "git-gateway",
+          "status": "ok",
+        },
+      ],
+      "properties": {
+        "service": {
+          "description": "Name of the deployment answering, 1–64 characters; "git-gateway" unless the deployment names itself.",
+          "maxLength": 64,
+          "minLength": 1,
+          "type": "string",
+        },
+        "status": {
+          "const": "ok",
+          "description": "Always "ok": the gateway Worker is up and routing requests.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "service",
+      ],
+      "title": "Health response",
+      "type": "object",
+    },
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+}
+`;

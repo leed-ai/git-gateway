@@ -1,0 +1,60 @@
+{
+  "name": "@leed-ai/git-gateway-core",
+  "version": "0.0.0",
+  "description": "Platform-free git primitives for git-gateway: pkt-line, receive-pack parsing, object encoding, packs, tree editing, file-level merge.",
+  "keywords": [
+    "cloudflare-workers",
+    "git",
+    "git-gateway",
+    "merge",
+    "packfile",
+    "pkt-line"
+  ],
+  "homepage": "https://github.com/leed-ai/git-gateway/tree/main/packages/core#readme",
+  "bugs": {
+    "url": "https://github.com/leed-ai/git-gateway/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leed-ai/git-gateway.git",
+    "directory": "packages/core"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./package-name": {
+      "source": "./src/package-name.ts",
+      "types": "./dist/package-name.d.ts",
+      "default": "./dist/package-name.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "vp pack",
+    "check": "vp check",
+    "test": "vp test"
+  },
+  "devDependencies": {
+    "@leed-ai/git-gateway-repo-tools": "workspace:*",
+    "@leed-ai/git-gateway-schema-docs": "workspace:*",
+    "@types/node": "^24.19.2",
+    "typescript": "^7.0.2",
+    "vite-plus": "^1.7.0",
+    "zod": "^4.6.7"
+  },
+  "peerDependencies": {
+    "zod": "^4"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}

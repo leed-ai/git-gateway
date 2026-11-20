@@ -1,0 +1,93 @@
+# SPDX-License-Identifier: Apache-2.0
+# The backend contract suite. The in-memory leg runs everywhere, forks included, with no secrets.
+# The GitLab and live-Artifacts legs need repository secrets: they run only on main pushes, the
+# nightly schedule and manual dispatch in leed-ai/git-gateway, never on pull requests or forks.
+name: contract
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+  schedule:
+    - cron: '41 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contract-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  in-memory:
+    name: contract (in-memory)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-toolchain
+        with:
+          cache-key: contract-memory
+
+      - name: Contract suite against the in-memory backend
+        env:
+          CONTRACT_BACKEND: memory
+        run: bun run test:contract
+
+  live:
+    name: contract (${{ matrix.backend }})
+    if: >-
+      github.repository == 'leed-ai/git-gateway' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: contract
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        backend: [gitlab, artifacts]
+    env:
+      CONTRACT_BACKEND: ${{ matrix.backend }}
+      GITLAB_CONTRACT_URL: ${{ matrix.backend == 'gitlab' && secrets.GITLAB_CONTRACT_URL || '' }}
+      GITLAB_CONTRACT_TOKEN: ${{ matrix.backend == 'gitlab' && secrets.GITLAB_CONTRACT_TOKEN || '' }}
+      GITLAB_CONTRACT_NAMESPACE: ${{ matrix.backend == 'gitlab' && secrets.GITLAB_CONTRACT_NAMESPACE || '' }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ matrix.backend == 'artifacts' && secrets.CLOUDFLARE_ACCOUNT_ID || '' }}
+      CLOUDFLARE_API_TOKEN: ${{ matrix.backend == 'artifacts' && secrets.CLOUDFLARE_API_TOKEN || '' }}
+      ARTIFACTS_CONTRACT_NAMESPACE: ${{ matrix.backend == 'artifacts' && secrets.ARTIFACTS_CONTRACT_NAMESPACE || '' }}
+    steps:
+      - name: Check the leg's secrets are configured
+        id: secrets
+        run: |
+          case "$CONTRACT_BACKEND" in
+            gitlab) required=(GITLAB_CONTRACT_URL GITLAB_CONTRACT_TOKEN GITLAB_CONTRACT_NAMESPACE) ;;
+            artifacts) required=(CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_API_TOKEN ARTIFACTS_CONTRACT_NAMESPACE) ;;
+          esac
+          for name in "${required[@]}"; do
+            if [[ -z "${!name}" ]]; then
+              echo "::notice::$name is not configured; skipping the $CONTRACT_BACKEND contract leg."
+              echo "ready=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-toolchain
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          cache-key: contract-${{ matrix.backend }}
+
+      - name: Contract suite against ${{ matrix.backend }}
+        if: steps.secrets.outputs.ready == 'true'
+        run: bun run test:contract

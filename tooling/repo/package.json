@@ -1,0 +1,34 @@
+{
+  "name": "@leed-ai/git-gateway-repo-tools",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Repository checks and release scripts: dependency policy, SPDX headers, lowest-peer testing, snapshot publishing.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    "./vite-presets": "./src/vite-presets.ts"
+  },
+  "scripts": {
+    "check": "vp check",
+    "test": "vp test"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.8.5",
+    "@leed-ai/git-gateway-schema-docs": "workspace:*",
+    "@types/node": "^24.19.2",
+    "fast-check": "^4.10.3",
+    "vite-plus": "^1.7.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  },
+  "peerDependencies": {
+    "@cloudflare/vitest-plugin": "^1",
+    "vite-plus": "^1",
+    "zod": "^4"
+  },
+  "peerDependenciesMeta": {
+    "@cloudflare/vitest-plugin": {
+      "optional": true
+    }
+  }
+}

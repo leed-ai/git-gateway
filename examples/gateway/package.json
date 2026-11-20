@@ -1,0 +1,33 @@
+{
+  "name": "@leed-ai/git-gateway-example",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A deployable git-gateway Worker showing how a deployment composes the packages. Built in CI, never deployed from this repository.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "build": "wrangler deploy --dry-run --outdir dist",
+    "check": "vp check",
+    "dev": "wrangler dev",
+    "test": "vp test"
+  },
+  "dependencies": {
+    "@leed-ai/git-gateway-worker": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.8.5",
+    "@cloudflare/workers-types": "^5.20261120.1",
+    "@leed-ai/git-gateway-contract": "workspace:*",
+    "@leed-ai/git-gateway-repo-tools": "workspace:*",
+    "@leed-ai/git-gateway-schema-docs": "workspace:*",
+    "hono": "^4.13.19",
+    "typescript": "^7.0.2",
+    "vite-plus": "^1.7.0",
+    "wrangler": "^4.165.0",
+    "zod": "^4.6.7"
+  },
+  "peerDependencies": {
+    "hono": "^4",
+    "zod": "^4"
+  }
+}
