@@ -27,6 +27,66 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
+    "./behaviour/assertions": {
+      "source": "./src/behaviour/assertions.ts",
+      "types": "./dist/behaviour/assertions.d.ts",
+      "default": "./dist/behaviour/assertions.js"
+    },
+    "./behaviour/behaviour-case": {
+      "source": "./src/behaviour/behaviour-case.ts",
+      "types": "./dist/behaviour/behaviour-case.d.ts",
+      "default": "./dist/behaviour/behaviour-case.js"
+    },
+    "./behaviour/behaviour-suite": {
+      "source": "./src/behaviour/behaviour-suite.ts",
+      "types": "./dist/behaviour/behaviour-suite.d.ts",
+      "default": "./dist/behaviour/behaviour-suite.js"
+    },
+    "./behaviour/commit-action-cases": {
+      "source": "./src/behaviour/commit-action-cases.ts",
+      "types": "./dist/behaviour/commit-action-cases.d.ts",
+      "default": "./dist/behaviour/commit-action-cases.js"
+    },
+    "./behaviour/commit-write-cases": {
+      "source": "./src/behaviour/commit-write-cases.ts",
+      "types": "./dist/behaviour/commit-write-cases.d.ts",
+      "default": "./dist/behaviour/commit-write-cases.js"
+    },
+    "./behaviour/fixtures": {
+      "source": "./src/behaviour/fixtures.ts",
+      "types": "./dist/behaviour/fixtures.d.ts",
+      "default": "./dist/behaviour/fixtures.js"
+    },
+    "./behaviour/lifecycle-cases": {
+      "source": "./src/behaviour/lifecycle-cases.ts",
+      "types": "./dist/behaviour/lifecycle-cases.d.ts",
+      "default": "./dist/behaviour/lifecycle-cases.js"
+    },
+    "./behaviour/promote-cases": {
+      "source": "./src/behaviour/promote-cases.ts",
+      "types": "./dist/behaviour/promote-cases.d.ts",
+      "default": "./dist/behaviour/promote-cases.js"
+    },
+    "./behaviour/read-cases": {
+      "source": "./src/behaviour/read-cases.ts",
+      "types": "./dist/behaviour/read-cases.d.ts",
+      "default": "./dist/behaviour/read-cases.js"
+    },
+    "./behaviour/sync-cases": {
+      "source": "./src/behaviour/sync-cases.ts",
+      "types": "./dist/behaviour/sync-cases.d.ts",
+      "default": "./dist/behaviour/sync-cases.js"
+    },
+    "./gateway-error": {
+      "source": "./src/gateway-error.ts",
+      "types": "./dist/gateway-error.d.ts",
+      "default": "./dist/gateway-error.js"
+    },
+    "./git-gateway": {
+      "source": "./src/git-gateway.ts",
+      "types": "./dist/git-gateway.d.ts",
+      "default": "./dist/git-gateway.js"
+    },
     "./health": {
       "source": "./src/health.ts",
       "types": "./dist/health.d.ts",
@@ -37,6 +97,196 @@
       "types": "./dist/package-name.d.ts",
       "default": "./dist/package-name.js"
     },
+    "./reference/apply-actions": {
+      "source": "./src/reference/apply-actions.ts",
+      "types": "./dist/reference/apply-actions.d.ts",
+      "default": "./dist/reference/apply-actions.js"
+    },
+    "./reference/branch-methods": {
+      "source": "./src/reference/branch-methods.ts",
+      "types": "./dist/reference/branch-methods.d.ts",
+      "default": "./dist/reference/branch-methods.js"
+    },
+    "./reference/bytes": {
+      "source": "./src/reference/bytes.ts",
+      "types": "./dist/reference/bytes.d.ts",
+      "default": "./dist/reference/bytes.js"
+    },
+    "./reference/clock": {
+      "source": "./src/reference/clock.ts",
+      "types": "./dist/reference/clock.d.ts",
+      "default": "./dist/reference/clock.js"
+    },
+    "./reference/commit-method": {
+      "source": "./src/reference/commit-method.ts",
+      "types": "./dist/reference/commit-method.d.ts",
+      "default": "./dist/reference/commit-method.js"
+    },
+    "./reference/file-map": {
+      "source": "./src/reference/file-map.ts",
+      "types": "./dist/reference/file-map.d.ts",
+      "default": "./dist/reference/file-map.js"
+    },
+    "./reference/hash": {
+      "source": "./src/reference/hash.ts",
+      "types": "./dist/reference/hash.d.ts",
+      "default": "./dist/reference/hash.js"
+    },
+    "./reference/history": {
+      "source": "./src/reference/history.ts",
+      "types": "./dist/reference/history.d.ts",
+      "default": "./dist/reference/history.js"
+    },
+    "./reference/lifecycle-methods": {
+      "source": "./src/reference/lifecycle-methods.ts",
+      "types": "./dist/reference/lifecycle-methods.d.ts",
+      "default": "./dist/reference/lifecycle-methods.js"
+    },
+    "./reference/read-methods": {
+      "source": "./src/reference/read-methods.ts",
+      "types": "./dist/reference/read-methods.d.ts",
+      "default": "./dist/reference/read-methods.js"
+    },
+    "./reference/reference-gateway": {
+      "source": "./src/reference/reference-gateway.ts",
+      "types": "./dist/reference/reference-gateway.d.ts",
+      "default": "./dist/reference/reference-gateway.js"
+    },
+    "./reference/repo-state": {
+      "source": "./src/reference/repo-state.ts",
+      "types": "./dist/reference/repo-state.d.ts",
+      "default": "./dist/reference/repo-state.js"
+    },
+    "./reference/run-method": {
+      "source": "./src/reference/run-method.ts",
+      "types": "./dist/reference/run-method.d.ts",
+      "default": "./dist/reference/run-method.js"
+    },
+    "./reference/three-way-merge": {
+      "source": "./src/reference/three-way-merge.ts",
+      "types": "./dist/reference/three-way-merge.d.ts",
+      "default": "./dist/reference/three-way-merge.js"
+    },
+    "./reference/trailer": {
+      "source": "./src/reference/trailer.ts",
+      "types": "./dist/reference/trailer.d.ts",
+      "default": "./dist/reference/trailer.js"
+    },
+    "./reference/tree-index": {
+      "source": "./src/reference/tree-index.ts",
+      "types": "./dist/reference/tree-index.d.ts",
+      "default": "./dist/reference/tree-index.js"
+    },
+    "./reference/write-commit": {
+      "source": "./src/reference/write-commit.ts",
+      "types": "./dist/reference/write-commit.d.ts",
+      "default": "./dist/reference/write-commit.js"
+    },
+    "./rpc/commit": {
+      "source": "./src/rpc/commit.ts",
+      "types": "./dist/rpc/commit.d.ts",
+      "default": "./dist/rpc/commit.js"
+    },
+    "./rpc/commit-exists": {
+      "source": "./src/rpc/commit-exists.ts",
+      "types": "./dist/rpc/commit-exists.d.ts",
+      "default": "./dist/rpc/commit-exists.js"
+    },
+    "./rpc/list-tree": {
+      "source": "./src/rpc/list-tree.ts",
+      "types": "./dist/rpc/list-tree.d.ts",
+      "default": "./dist/rpc/list-tree.js"
+    },
+    "./rpc/log": {
+      "source": "./src/rpc/log.ts",
+      "types": "./dist/rpc/log.d.ts",
+      "default": "./dist/rpc/log.js"
+    },
+    "./rpc/mint-read-token": {
+      "source": "./src/rpc/mint-read-token.ts",
+      "types": "./dist/rpc/mint-read-token.d.ts",
+      "default": "./dist/rpc/mint-read-token.js"
+    },
+    "./rpc/promote": {
+      "source": "./src/rpc/promote.ts",
+      "types": "./dist/rpc/promote.d.ts",
+      "default": "./dist/rpc/promote.js"
+    },
+    "./rpc/read-file": {
+      "source": "./src/rpc/read-file.ts",
+      "types": "./dist/rpc/read-file.d.ts",
+      "default": "./dist/rpc/read-file.js"
+    },
+    "./rpc/repo-lifecycle": {
+      "source": "./src/rpc/repo-lifecycle.ts",
+      "types": "./dist/rpc/repo-lifecycle.d.ts",
+      "default": "./dist/rpc/repo-lifecycle.js"
+    },
+    "./rpc/resolve-ref": {
+      "source": "./src/rpc/resolve-ref.ts",
+      "types": "./dist/rpc/resolve-ref.d.ts",
+      "default": "./dist/rpc/resolve-ref.js"
+    },
+    "./rpc/sync-branch": {
+      "source": "./src/rpc/sync-branch.ts",
+      "types": "./dist/rpc/sync-branch.d.ts",
+      "default": "./dist/rpc/sync-branch.js"
+    },
+    "./schemas/commit": {
+      "source": "./src/schemas/commit.ts",
+      "types": "./dist/schemas/commit.d.ts",
+      "default": "./dist/schemas/commit.js"
+    },
+    "./schemas/commit-action": {
+      "source": "./src/schemas/commit-action.ts",
+      "types": "./dist/schemas/commit-action.d.ts",
+      "default": "./dist/schemas/commit-action.js"
+    },
+    "./schemas/content-encoding": {
+      "source": "./src/schemas/content-encoding.ts",
+      "types": "./dist/schemas/content-encoding.d.ts",
+      "default": "./dist/schemas/content-encoding.js"
+    },
+    "./schemas/examples": {
+      "source": "./src/schemas/examples.ts",
+      "types": "./dist/schemas/examples.d.ts",
+      "default": "./dist/schemas/examples.js"
+    },
+    "./schemas/gateway-config": {
+      "source": "./src/schemas/gateway-config.ts",
+      "types": "./dist/schemas/gateway-config.d.ts",
+      "default": "./dist/schemas/gateway-config.js"
+    },
+    "./schemas/gateway-error-body": {
+      "source": "./src/schemas/gateway-error-body.ts",
+      "types": "./dist/schemas/gateway-error-body.d.ts",
+      "default": "./dist/schemas/gateway-error-body.js"
+    },
+    "./schemas/identity": {
+      "source": "./src/schemas/identity.ts",
+      "types": "./dist/schemas/identity.d.ts",
+      "default": "./dist/schemas/identity.js"
+    },
+    "./schemas/names": {
+      "source": "./src/schemas/names.ts",
+      "types": "./dist/schemas/names.d.ts",
+      "default": "./dist/schemas/names.js"
+    },
+    "./schemas/ref-update": {
+      "source": "./src/schemas/ref-update.ts",
+      "types": "./dist/schemas/ref-update.d.ts",
+      "default": "./dist/schemas/ref-update.js"
+    },
+    "./schemas/sha": {
+      "source": "./src/schemas/sha.ts",
+      "types": "./dist/schemas/sha.d.ts",
+      "default": "./dist/schemas/sha.js"
+    },
+    "./schemas/tree-entry": {
+      "source": "./src/schemas/tree-entry.ts",
+      "types": "./dist/schemas/tree-entry.d.ts",
+      "default": "./dist/schemas/tree-entry.js"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -46,13 +296,15 @@
   "scripts": {
     "build": "vp pack",
     "check": "vp check",
-    "test": "vp test",
-    "test:contract": "vp test test/contract/"
+    "test": "vp test --exclude 'test/**/*.conformance.test.ts'",
+    "test:contract": "vp test test/contract/",
+    "test:conformance": "vp test conformance"
   },
   "devDependencies": {
     "@leed-ai/git-gateway-repo-tools": "workspace:*",
     "@leed-ai/git-gateway-schema-docs": "workspace:*",
     "@types/node": "^24.19.2",
+    "fast-check": "^4.10.3",
     "typescript": "^7.0.2",
     "vite-plus": "^1.7.0",
     "zod": "^4.6.7"
