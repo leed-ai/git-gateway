@@ -52,6 +52,7 @@ A Bun + Turborepo monorepo:
 
 | Package | Contents |
 |---|---|
+| `@git-gateway/contract` | **Built first.** The Zod schemas and the RPC interface (the API contract), plus a reference implementation of that interface in memory: commit-action rules, idempotency, reads, `syncBranch` and `promote` (including conflicts), modelled on plain objects rather than git objects. Consumers develop and test against it before the gateway exists; the real gateway is later tested against it as an oracle (same calls, same results). |
 | `@git-gateway/core` | Platform-free TypeScript. pkt-line codec, receive-pack command parser, git object encoding (blob/tree/commit), pack writer, tree editing, commit-action semantics, file-level three-way merge, idempotency trailers. No Cloudflare imports; runs in Bun, Node and Workers. |
 | `@git-gateway/worker` | The gateway: smart-HTTP proxy, auth and policy pipeline, the RPC `WorkerEntrypoint`, the Workflows, push-event consumer. Configured with backends and hooks; deployments compose it rather than fork it. |
 | `@git-gateway/backend-artifacts` | `StorageBackend` over the Artifacts binding (repo lifecycle, tokens, reads) and its git remotes (push/fetch). |
@@ -208,7 +209,19 @@ Coverage gate: 90 % lines on `core`, 80 % elsewhere; mutation testing (Stryker) 
 - `conformance` — real-git harness across a git-version matrix.
 - `contract` — backend contract suite; the GitLab and live-Artifacts legs run on `main` and nightly with repository secrets, never on forks.
 - `release` — Changesets: version PR, then npm publish with provenance; the example Worker is built, not deployed.
+- `snapshot` — every merge to `main` publishes all packages to npm under the `next` dist-tag (`0.x.y-next.<timestamp>`, with provenance), so consumers' CI can run against the latest gateway before a release. Consumers move to a real release version before they ship.
 - CodeQL, dependency updates, and `SECURITY.md` for private vulnerability reports.
+
+## Developing consumers in parallel
+
+The contract is frozen before the gateway logic is written, so a consumer can be built alongside it:
+
+- Code against the RPC types from `@git-gateway/contract`; test against its in-memory reference implementation.
+- Locally, `bun link` the packages (or install a `bun pm pack` tarball). Because `zod`, `hono` and `cloudflare` are peers, the linked packages use the consumer's own copies — one Zod instance, no duplicate-schema surprises.
+- In Workers tests, run the gateway Worker as an auxiliary worker behind a service binding, over the in-memory backend, so the consumer's suite exercises real gateway code rather than a mock.
+- In CI, depend on the `next` snapshots; never commit a link or `file:` dependency.
+
+Changing a published contract schema after consumers depend on it is a breaking change and goes through a Changeset.
 
 ## Open questions
 
