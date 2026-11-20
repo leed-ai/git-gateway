@@ -61,6 +61,20 @@ A Bun + Turborepo monorepo:
 | `@git-gateway/testkit` | In-memory backend, repository fixtures, a harness that drives the real `git` binary against a running gateway, and the backend contract suite. |
 | `examples/gateway` | A deployable Worker with `wrangler.jsonc`, showing the composition. |
 
+### Dependencies
+
+Three libraries are the foundation, and each is a **peer dependency** declared by supported major range (`^`), never pinned to an exact version, so the host application controls the version and there is one copy of each in the bundle:
+
+| Peer | Used for | Declared by |
+|---|---|---|
+| `zod` (`^4`) | **Every data structure**: RPC inputs and outputs, commit actions, configuration, push-event payloads, backend responses, policy rules, errors. Types are `z.infer` of the schema; nothing crossing a boundary is trusted until it is parsed. | every package |
+| `hono` (`^4`) | Routing in the Worker: the smart-HTTP endpoints, health, and any HTTP surface; auth and policy run as Hono middleware. | `worker`, `examples/gateway` |
+| `cloudflare` (`^5`) | **All Cloudflare REST API calls** (the official SDK): Artifacts control plane outside a binding (namespaces, repos, tokens), Workers Builds, Queues event subscriptions. Where the SDK has no typed resource yet, its generic request methods (`client.get`/`client.post`) are used — never hand-rolled `fetch` to `api.cloudflare.com`. Responses are parsed with Zod. | `backend-artifacts`, `testkit` |
+
+`peerDependenciesMeta` marks a peer optional where only part of a package needs it. Each package's dev dependencies install the latest peers so CI tests against current versions, and a nightly CI leg tests against the lowest version in each declared range.
+
+Inside a Worker, bindings (`env.ARTIFACTS`, Workflows, Queues) are preferred over REST; the SDK covers what bindings do not.
+
 ### Storage backend contract
 
 ```ts
@@ -82,6 +96,8 @@ interface StorageBackend {
   gitRemote(repo: string, access: "read" | "write"): Promise<{ url: string; headers: Headers }>;
 }
 ```
+
+The types above are sketches; each (`RepoInfo`, `Commit`, `TreeEntry`, `Sha`, …) is defined as a Zod schema and exported alongside its inferred type, and every backend parses what its host returns before handing it back.
 
 Writes go through the git transport (`git-receive-pack`) using `gitRemote(..., "write")`; a backend never needs a commits API. Backends with richer read APIs may implement reads natively; others can fall back to a fetch.
 
@@ -121,7 +137,7 @@ Content is UTF-8 text or base64. A commit with no effective change is reported a
 
 ### Smart-HTTP proxy
 
-Endpoints: `GET /<repo>.git/info/refs?service=git-upload-pack|git-receive-pack`, `POST /<repo>.git/git-upload-pack`, `POST /<repo>.git/git-receive-pack`.
+Routed with Hono; authentication, authorization and branch policy are Hono middleware. Endpoints: `GET /<repo>.git/info/refs?service=git-upload-pack|git-receive-pack`, `POST /<repo>.git/git-upload-pack`, `POST /<repo>.git/git-receive-pack`.
 
 - Request and response bodies are **streamed**, never buffered. For pushes, only the leading pkt-line update commands are parsed (old sha, new sha, ref) before the stream is forwarded.
 - Policy failures are reported in-protocol (`ERR` / `ng <ref> <reason>`) so `git` prints a readable message.
@@ -176,7 +192,7 @@ Coverage gate: 90 % lines on `core`, 80 % elsewhere; mutation testing (Stryker) 
 - **Turborepo** for the task graph and caching.
 - **Vite+** (`vp check`): Oxfmt formatting, Oxlint linting with type-aware rules, and type checking through tsgolint on the TypeScript 7 native compiler — one pass.
 - **Vitest** (via Vite+) with the Workers pool for Worker packages.
-- **tsdown** (Rolldown) for library builds; Wrangler for the Worker.
+- **tsdown** (Rolldown) for library builds, with `zod`, `hono` and `cloudflare` kept external (peers); Wrangler for the Worker.
 
 ## CI and releases (GitHub Actions)
 
