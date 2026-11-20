@@ -2,14 +2,4616 @@
 
 exports[`schema documentation > generates the JSON Schema for what the schemas accept 1`] = `
 {
-  "$defs": {},
+  "$defs": {
+    "ActionsChanged": {
+      "additionalProperties": false,
+      "description": "The actions produced a new tree; \`objects\` is what must be pushed along with the commit.",
+      "examples": [
+        {
+          "objects": [],
+          "status": "changed",
+          "tree": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        },
+      ],
+      "properties": {
+        "objects": {
+          "description": "Every object the new tree needs that the base did not have: new blobs the final tree references, then new trees deepest first.",
+          "items": {
+            "$ref": "#/$defs/GitObject",
+          },
+          "type": "array",
+        },
+        "status": {
+          "const": "changed",
+          "description": "The actions produced a different tree.",
+          "type": "string",
+        },
+        "tree": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the new root tree.",
+        },
+      },
+      "required": [
+        "status",
+        "tree",
+        "objects",
+      ],
+      "title": "Actions: changed",
+      "type": "object",
+    },
+    "ActionsNoop": {
+      "additionalProperties": false,
+      "description": "The actions were valid but the resulting tree equals the base (e.g. an update writing the same content), so there is nothing to commit.",
+      "examples": [
+        {
+          "status": "noop",
+          "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+        },
+      ],
+      "properties": {
+        "status": {
+          "const": "noop",
+          "description": "The resulting tree equals the base tree.",
+          "type": "string",
+        },
+        "tree": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the unchanged root tree (the empty tree when the base was null).",
+        },
+      },
+      "required": [
+        "status",
+        "tree",
+      ],
+      "title": "Actions: no-op",
+      "type": "object",
+    },
+    "ActionsResult": {
+      "description": "The outcome of applyCommitActions, discriminated by \`status\`.",
+      "examples": [
+        {
+          "status": "noop",
+          "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ActionsChanged",
+        },
+        {
+          "$ref": "#/$defs/ActionsNoop",
+        },
+      ],
+      "title": "Actions result",
+    },
+    "ApplyActionsInput": {
+      "additionalProperties": false,
+      "description": "A root tree and the commit actions to apply to it with GitLab Commits API semantics.",
+      "examples": [
+        {
+          "actions": [
+            {
+              "action": "create",
+              "content": "# About
+",
+              "encoding": "text",
+              "path": "content/about.md",
+            },
+          ],
+          "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+        },
+      ],
+      "properties": {
+        "actions": {
+          "description": "Commit actions to apply in order, each to the result of the one before; 1–1000.",
+          "items": {
+            "$ref": "#/$defs/CommitAction",
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "type": "array",
+        },
+        "tree": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "Id of the root tree the actions apply to (the head commit's tree); null for a branch with no commits yet, which starts from an empty tree.",
+        },
+      },
+      "required": [
+        "tree",
+        "actions",
+      ],
+      "title": "applyCommitActions input",
+      "type": "object",
+    },
+    "BaseCommit": {
+      "additionalProperties": false,
+      "description": "The commit a new commit builds on: its id (the parent) and its root tree (what the actions edit).",
+      "examples": [
+        {
+          "sha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+        },
+      ],
+      "properties": {
+        "sha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the commit, which becomes the new commit's parent.",
+        },
+        "tree": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of its root tree, which the actions apply to.",
+        },
+      },
+      "required": [
+        "sha",
+        "tree",
+      ],
+      "title": "Base commit",
+      "type": "object",
+    },
+    "BranchName": {
+      "description": "A short branch name, 1–255 characters, valid under git check-ref-format (no "..", "@{", "//", spaces, control characters or ~ ^ : ? * [ or backslash; no component starting with "." or ending with ".lock"; not starting with "-" or "refs/"; not "HEAD"; not 40 lowercase hex characters, which a Revision always reads as a commit id). The gateway stores it as refs/heads/<name>.",
+      "examples": [
+        "main",
+        "staging",
+        "feature/new-page",
+      ],
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^(?!refs\\/)(?!HEAD$)(?![0-9a-f]{40}$)(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+      "title": "Branch name",
+      "type": "string",
+    },
+    "BuildCommitInput": {
+      "additionalProperties": false,
+      "description": "Everything needed to build a commit without a clone: the base commit, the actions, the message and identities, the idempotency key and the date.",
+      "examples": [
+        {
+          "actions": [
+            {
+              "action": "create",
+              "content": "# About
+",
+              "encoding": "text",
+              "path": "content/about.md",
+            },
+          ],
+          "author": {
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+          "base": {
+            "sha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+          },
+          "branch": "staging",
+          "date": "2026-11-20T09:30:00.000Z",
+          "idempotencyKey": "cms:publish:2f9c1e",
+          "message": "Update about page",
+        },
+      ],
+      "properties": {
+        "actions": {
+          "description": "Commit actions to apply in order; 1–1000.",
+          "items": {
+            "$ref": "#/$defs/CommitAction",
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "type": "array",
+        },
+        "author": {
+          "$ref": "#/$defs/Identity",
+          "description": "Who wrote the change.",
+        },
+        "base": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BaseCommit",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "The commit to build on, normally the branch head; null for a root commit on an empty repository.",
+        },
+        "branch": {
+          "$ref": "#/$defs/BranchName",
+          "description": "Branch the commit is for; named in the returned ref update.",
+        },
+        "committer": {
+          "$ref": "#/$defs/Identity",
+          "description": "Who records the commit. Absent: the author.",
+        },
+        "date": {
+          "$ref": "#/$defs/CommitTimestamp",
+          "description": "Author and committer date, 1970 or later; stored in whole seconds at +0000.",
+        },
+        "idempotencyKey": {
+          "$ref": "#/$defs/IdempotencyKey",
+          "description": "Recorded as the "Gateway-Idempotency-Key:" trailer of the message.",
+        },
+        "message": {
+          "description": "The caller's commit message, 1–65536 characters, not blank; the idempotency trailer is appended.",
+          "maxLength": 65536,
+          "minLength": 1,
+          "type": "string",
+        },
+        "oldSha": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "What the branch names now, for the ref update; null when the branch does not exist yet (a new branch started from another's head). Absent: the base commit, or null without one.",
+        },
+      },
+      "required": [
+        "branch",
+        "base",
+        "actions",
+        "message",
+        "author",
+        "idempotencyKey",
+        "date",
+      ],
+      "title": "buildCommit input",
+      "type": "object",
+    },
+    "BuiltCommit": {
+      "description": "The outcome of buildCommit, discriminated by \`status\`.",
+      "examples": [
+        {
+          "head": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "status": "noop",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CommitReady",
+        },
+        {
+          "$ref": "#/$defs/CommitUnchanged",
+        },
+      ],
+      "title": "Built commit",
+    },
+    "Bytes": {
+      "description": "Raw bytes as a Uint8Array (a Node or Bun Buffer is accepted, being a Uint8Array).",
+      "examples": [
+        {
+          "0": 80,
+          "1": 65,
+          "2": 67,
+          "3": 75,
+        },
+      ],
+      "title": "Bytes",
+    },
+    "Capability": {
+      "description": "One protocol capability token as the client sent it, e.g. "report-status", "side-band-64k", "push-options" or "agent=git/2.43.0": 1–1000 characters without whitespace or NUL.",
+      "examples": [
+        "report-status",
+        "agent=git/2.43.0",
+      ],
+      "maxLength": 1000,
+      "minLength": 1,
+      "pattern": "^[^\\s\\0]+$",
+      "title": "Capability",
+      "type": "string",
+    },
+    "ChmodAction": {
+      "additionalProperties": false,
+      "description": "Sets (true) or clears (false) the executable bit of an existing file. Fails with path_not_found if the path is not a file. Setting the bit it already has changes nothing.",
+      "examples": [
+        {
+          "action": "chmod",
+          "executeFilemode": true,
+          "path": "scripts/build.sh",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "chmod",
+          "description": "Set or clear the executable bit of an existing file.",
+          "type": "string",
+        },
+        "executeFilemode": {
+          "description": "true: mode 100755 (executable); false: mode 100644 (not executable).",
+          "type": "boolean",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the existing file.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "executeFilemode",
+      ],
+      "title": "Chmod action",
+      "type": "object",
+    },
+    "Commit": {
+      "additionalProperties": false,
+      "description": "A commit as stored in a repository, with its message trailer parsed out.",
+      "examples": [
+        {
+          "author": {
+            "date": "2026-11-20T09:30:00.000Z",
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+          "committer": {
+            "date": "2026-11-20T09:30:00.000Z",
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+          "idempotencyKey": "cms:publish:2f9c1e",
+          "message": "Update about page
+
+Gateway-Idempotency-Key: cms:publish:2f9c1e
+",
+          "parents": [
+            "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          ],
+          "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+        },
+      ],
+      "properties": {
+        "author": {
+          "$ref": "#/$defs/Signature",
+          "description": "Who wrote the change, and when.",
+        },
+        "committer": {
+          "$ref": "#/$defs/Signature",
+          "description": "Who recorded the commit, and when; equals the author unless one was given.",
+        },
+        "idempotencyKey": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IdempotencyKey",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "The key from the message's "Gateway-Idempotency-Key:" trailer, or null when the commit has none.",
+        },
+        "message": {
+          "description": "Full commit message as stored, including any "Gateway-Idempotency-Key:" trailer the gateway appended.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "parents": {
+          "description": "Parent commit ids in order: empty for a root commit, one for an ordinary commit, two for a merge (the branch merged into first).",
+          "items": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id of a parent commit.",
+          },
+          "maxItems": 2,
+          "type": "array",
+        },
+        "sha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of this commit.",
+        },
+        "tree": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the root tree this commit records.",
+        },
+      },
+      "required": [
+        "sha",
+        "tree",
+        "parents",
+        "author",
+        "committer",
+        "message",
+        "idempotencyKey",
+      ],
+      "title": "Commit",
+      "type": "object",
+    },
+    "CommitAction": {
+      "description": "One change in a commit, discriminated by \`action\`. Actions apply in order, each to the result of the one before, with the GitLab Commits API semantics (plus upsert).",
+      "examples": [
+        {
+          "action": "create",
+          "content": "# About
+",
+          "encoding": "text",
+          "path": "content/about.md",
+        },
+        {
+          "action": "delete",
+          "path": "content/old.md",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CreateAction",
+        },
+        {
+          "$ref": "#/$defs/UpdateAction",
+        },
+        {
+          "$ref": "#/$defs/UpsertAction",
+        },
+        {
+          "$ref": "#/$defs/DeleteAction",
+        },
+        {
+          "$ref": "#/$defs/MoveAction",
+        },
+        {
+          "$ref": "#/$defs/ChmodAction",
+        },
+      ],
+      "title": "Commit action",
+    },
+    "CommitFields": {
+      "additionalProperties": false,
+      "description": "What a new commit object records: tree, parents, author, committer and message. Encoded in git's commit format with "<seconds> +0000" dates.",
+      "examples": [
+        {
+          "author": {
+            "date": "2026-11-20T09:30:00.000Z",
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+          "committer": {
+            "date": "2026-11-20T09:30:00.000Z",
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+          "message": "Initial commit
+",
+          "parents": [],
+          "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+        },
+      ],
+      "properties": {
+        "author": {
+          "$ref": "#/$defs/CommitSignature",
+          "description": "Who wrote the change and when, dated 1970 or later. The date is stored in whole seconds at +0000; fractional seconds are dropped.",
+        },
+        "committer": {
+          "$ref": "#/$defs/CommitSignature",
+          "description": "Who recorded the commit and when, dated 1970 or later; stored like the author.",
+        },
+        "message": {
+          "description": "The full commit message, stored exactly as given (trailers included).",
+          "minLength": 1,
+          "type": "string",
+        },
+        "parents": {
+          "description": "Parent ids in order: none for a root commit, one for an ordinary commit, two for a merge.",
+          "items": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id of a parent commit.",
+          },
+          "maxItems": 2,
+          "type": "array",
+        },
+        "tree": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the root tree the commit records.",
+        },
+      },
+      "required": [
+        "tree",
+        "parents",
+        "author",
+        "committer",
+        "message",
+      ],
+      "title": "Commit fields",
+      "type": "object",
+    },
+    "CommitReady": {
+      "additionalProperties": false,
+      "description": "A commit built from actions, with the objects to pack and the ref update to send. Nothing has been written to storage yet.",
+      "examples": [
+        {
+          "commit": {
+            "author": {
+              "date": "2026-11-20T09:30:00.000Z",
+              "email": "ada@example.com",
+              "name": "Ada Lovelace",
+            },
+            "committer": {
+              "date": "2026-11-20T09:30:00.000Z",
+              "email": "ada@example.com",
+              "name": "Ada Lovelace",
+            },
+            "idempotencyKey": "cms:publish:2f9c1e",
+            "message": "Update about page
+
+Gateway-Idempotency-Key: cms:publish:2f9c1e
+",
+            "parents": [
+              "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            ],
+            "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+          },
+          "objects": [
+            {
+              "data": {},
+              "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+              "type": "blob",
+            },
+          ],
+          "refUpdate": {
+            "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            "ref": "refs/heads/staging",
+          },
+          "status": "ready",
+        },
+      ],
+      "properties": {
+        "commit": {
+          "$ref": "#/$defs/Commit",
+          "description": "The new commit.",
+        },
+        "objects": {
+          "description": "Every object to push: new blobs, new trees and the commit itself (last).",
+          "items": {
+            "$ref": "#/$defs/GitObject",
+          },
+          "minItems": 1,
+          "type": "array",
+        },
+        "refUpdate": {
+          "$ref": "#/$defs/RefUpdate",
+          "description": "The receive-pack command that moves the branch to the new commit.",
+        },
+        "status": {
+          "const": "ready",
+          "description": "A new commit was built; push \`objects\` with \`refUpdate\`.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "commit",
+        "refUpdate",
+        "objects",
+      ],
+      "title": "Commit ready",
+      "type": "object",
+    },
+    "CommitSignature": {
+      "additionalProperties": false,
+      "description": "A name, email and date as a commit object stores them: a contract Signature whose date is 1970-01-01T00:00:00Z or later.",
+      "examples": [
+        {
+          "date": "2026-11-20T09:30:00.000Z",
+          "email": "ada@example.com",
+          "name": "Ada Lovelace",
+        },
+      ],
+      "properties": {
+        "date": {
+          "$ref": "#/$defs/CommitTimestamp",
+          "description": "When this person authored or committed the change: an ISO 8601 UTC timestamp, 1970 or later.",
+        },
+        "email": {
+          "description": "Email address, at most 255 characters.",
+          "format": "email",
+          "maxLength": 255,
+          "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+          "type": "string",
+        },
+        "name": {
+          "description": "Display name, 1–255 characters, without "<", ">", newlines or NUL (git cannot store them).",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^<>\\n\\0]+$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+        "email",
+        "date",
+      ],
+      "title": "Commit signature",
+      "type": "object",
+    },
+    "CommitTimestamp": {
+      "$ref": "#/$defs/Timestamp",
+      "description": "An ISO 8601 UTC timestamp at or after 1970-01-01T00:00:00Z. git writes commit dates as unsigned seconds since the epoch, and git fsck rejects a commit with a negative one.",
+      "examples": [
+        "2026-11-20T09:30:00.000Z",
+      ],
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+      "title": "Commit timestamp",
+      "type": "string",
+    },
+    "CommitUnchanged": {
+      "additionalProperties": false,
+      "description": "The actions were valid but produced the base tree again, so no commit was built.",
+      "examples": [
+        {
+          "head": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "status": "noop",
+        },
+      ],
+      "properties": {
+        "head": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "The base commit id, unchanged; null when there was none.",
+        },
+        "status": {
+          "const": "noop",
+          "description": "The actions left the tree unchanged; there is nothing to push.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "head",
+      ],
+      "title": "Commit unchanged",
+      "type": "object",
+    },
+    "ContentEncoding": {
+      "description": "How file content is carried in a JSON string.",
+      "enum": [
+        "text",
+        "base64",
+      ],
+      "enumDescriptions": {
+        "base64": "The string is standard base64 (RFC 4648, with padding) of the raw file bytes; use for binary files.",
+        "text": "The string is the file content itself, stored as UTF-8 bytes.",
+      },
+      "examples": [
+        "text",
+        "base64",
+      ],
+      "title": "Content encoding",
+      "type": "string",
+    },
+    "CoreError.invalid_object": {
+      "additionalProperties": false,
+      "description": "An object read from the repository (or handed to an encoder) is not valid: unparsable bytes, an unknown tree mode, duplicate tree entry names, or a commit the Commit schema cannot represent.",
+      "examples": [
+        {
+          "code": "invalid_object",
+          "details": {
+            "reason": "unknown mode 100664",
+            "sha": null,
+            "type": "tree",
+          },
+          "message": "Invalid tree object",
+        },
+      ],
+      "properties": {
+        "code": {
+          "const": "invalid_object",
+          "description": "An object read from the repository (or handed to an encoder) is not valid: unparsable bytes, an unknown tree mode, duplicate tree entry names, or a commit the Commit schema cannot represent.",
+          "type": "string",
+        },
+        "details": {
+          "additionalProperties": false,
+          "description": "Machine-readable facts about the invalid_object error.",
+          "properties": {
+            "reason": {
+              "description": "What exactly is wrong.",
+              "minLength": 1,
+              "type": "string",
+            },
+            "sha": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Sha",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+              "description": "Id of the invalid object; null when it has no id yet.",
+            },
+            "type": {
+              "description": "The kind of git object involved.",
+              "enum": [
+                "blob",
+                "tree",
+                "commit",
+              ],
+              "enumDescriptions": {
+                "blob": "A file.",
+                "commit": "A commit.",
+                "tree": "A directory.",
+              },
+              "type": "string",
+            },
+          },
+          "required": [
+            "sha",
+            "type",
+            "reason",
+          ],
+          "type": "object",
+        },
+        "message": {
+          "description": "Human-readable explanation of the failure.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+        "details",
+      ],
+      "title": "invalid_object core error",
+      "type": "object",
+    },
+    "CoreError.malformed_pkt_line": {
+      "additionalProperties": false,
+      "description": "The bytes are not valid pkt-line framing: a bad length header, a length below 4 that is not a special packet, a packet over 65520 bytes, or input that ends inside a packet.",
+      "examples": [
+        {
+          "code": "malformed_pkt_line",
+          "details": {
+            "offset": 0,
+            "reason": "length header "zzzz" is not hex",
+          },
+          "message": "Bad pkt-line length",
+        },
+      ],
+      "properties": {
+        "code": {
+          "const": "malformed_pkt_line",
+          "description": "The bytes are not valid pkt-line framing: a bad length header, a length below 4 that is not a special packet, a packet over 65520 bytes, or input that ends inside a packet.",
+          "type": "string",
+        },
+        "details": {
+          "additionalProperties": false,
+          "description": "Machine-readable facts about the malformed_pkt_line error.",
+          "properties": {
+            "offset": {
+              "description": "Byte offset from the start of the input at which the problem was found.",
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "reason": {
+              "description": "What exactly is wrong.",
+              "minLength": 1,
+              "type": "string",
+            },
+          },
+          "required": [
+            "offset",
+            "reason",
+          ],
+          "type": "object",
+        },
+        "message": {
+          "description": "Human-readable explanation of the failure.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+        "details",
+      ],
+      "title": "malformed_pkt_line core error",
+      "type": "object",
+    },
+    "CoreError.malformed_request": {
+      "additionalProperties": false,
+      "description": "The pkt-lines are well framed but are not a valid git protocol message: a bad receive-pack command, a missing flush, or a bad report-status line.",
+      "examples": [
+        {
+          "code": "malformed_request",
+          "details": {
+            "reason": "old id is not 40 hex characters",
+          },
+          "message": "Malformed receive-pack command",
+        },
+      ],
+      "properties": {
+        "code": {
+          "const": "malformed_request",
+          "description": "The pkt-lines are well framed but are not a valid git protocol message: a bad receive-pack command, a missing flush, or a bad report-status line.",
+          "type": "string",
+        },
+        "details": {
+          "additionalProperties": false,
+          "description": "Machine-readable facts about the malformed_request error.",
+          "properties": {
+            "reason": {
+              "description": "What exactly is wrong.",
+              "minLength": 1,
+              "type": "string",
+            },
+          },
+          "required": [
+            "reason",
+          ],
+          "type": "object",
+        },
+        "message": {
+          "description": "Human-readable explanation of the failure.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+        "details",
+      ],
+      "title": "malformed_request core error",
+      "type": "object",
+    },
+    "CoreError.missing_object": {
+      "additionalProperties": false,
+      "description": "An object the operation needed was not found: the read callback returned null for an id that a tree or commit references.",
+      "examples": [
+        {
+          "code": "missing_object",
+          "details": {
+            "sha": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+            "type": "tree",
+          },
+          "message": "Tree not found",
+        },
+      ],
+      "properties": {
+        "code": {
+          "const": "missing_object",
+          "description": "An object the operation needed was not found: the read callback returned null for an id that a tree or commit references.",
+          "type": "string",
+        },
+        "details": {
+          "additionalProperties": false,
+          "description": "Machine-readable facts about the missing_object error.",
+          "properties": {
+            "sha": {
+              "$ref": "#/$defs/Sha",
+              "description": "Id of the missing object.",
+            },
+            "type": {
+              "description": "The kind of git object involved.",
+              "enum": [
+                "blob",
+                "tree",
+                "commit",
+              ],
+              "enumDescriptions": {
+                "blob": "A file.",
+                "commit": "A commit.",
+                "tree": "A directory.",
+              },
+              "type": "string",
+            },
+          },
+          "required": [
+            "sha",
+            "type",
+          ],
+          "type": "object",
+        },
+        "message": {
+          "description": "Human-readable explanation of the failure.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+        "details",
+      ],
+      "title": "missing_object core error",
+      "type": "object",
+    },
+    "CoreError.remote_error": {
+      "additionalProperties": false,
+      "description": "The remote git server reported a fatal error in-protocol: an "ERR" packet or a message on side-band channel 3.",
+      "examples": [
+        {
+          "code": "remote_error",
+          "details": {
+            "remoteMessage": "access denied",
+          },
+          "message": "Remote error: access denied",
+        },
+      ],
+      "properties": {
+        "code": {
+          "const": "remote_error",
+          "description": "The remote git server reported a fatal error in-protocol: an "ERR" packet or a message on side-band channel 3.",
+          "type": "string",
+        },
+        "details": {
+          "additionalProperties": false,
+          "description": "Machine-readable facts about the remote_error error.",
+          "properties": {
+            "remoteMessage": {
+              "description": "The message the remote sent, without the trailing newline.",
+              "type": "string",
+            },
+          },
+          "required": [
+            "remoteMessage",
+          ],
+          "type": "object",
+        },
+        "message": {
+          "description": "Human-readable explanation of the failure.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+        "details",
+      ],
+      "title": "remote_error core error",
+      "type": "object",
+    },
+    "CoreError.unsupported_request": {
+      "additionalProperties": false,
+      "description": "The request uses a git protocol feature the gateway does not support, such as signed pushes or SHA-256 repositories.",
+      "examples": [
+        {
+          "code": "unsupported_request",
+          "details": {
+            "feature": "push-cert",
+          },
+          "message": "Signed pushes are not supported",
+        },
+      ],
+      "properties": {
+        "code": {
+          "const": "unsupported_request",
+          "description": "The request uses a git protocol feature the gateway does not support, such as signed pushes or SHA-256 repositories.",
+          "type": "string",
+        },
+        "details": {
+          "additionalProperties": false,
+          "description": "Machine-readable facts about the unsupported_request error.",
+          "properties": {
+            "feature": {
+              "description": "The unsupported feature, as git names it (e.g. "push-cert", "object-format=sha256").",
+              "minLength": 1,
+              "type": "string",
+            },
+          },
+          "required": [
+            "feature",
+          ],
+          "type": "object",
+        },
+        "message": {
+          "description": "Human-readable explanation of the failure.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+        "details",
+      ],
+      "title": "unsupported_request core error",
+      "type": "object",
+    },
+    "CoreErrorBody": {
+      "description": "Every error the core library reports for protocol and object problems, discriminated by \`code\`. Commit-action rule failures are reported as the contract GatewayError instead (path_exists, path_not_found, path_conflict).",
+      "examples": [
+        {
+          "code": "unsupported_request",
+          "details": {
+            "feature": "push-cert",
+          },
+          "message": "Signed pushes are not supported",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CoreError.malformed_pkt_line",
+        },
+        {
+          "$ref": "#/$defs/CoreError.malformed_request",
+        },
+        {
+          "$ref": "#/$defs/CoreError.unsupported_request",
+        },
+        {
+          "$ref": "#/$defs/CoreError.remote_error",
+        },
+        {
+          "$ref": "#/$defs/CoreError.missing_object",
+        },
+        {
+          "$ref": "#/$defs/CoreError.invalid_object",
+        },
+      ],
+      "title": "Core error",
+    },
+    "CreateAction": {
+      "additionalProperties": false,
+      "description": "Creates a file that does not exist yet. Fails with path_exists if the path is a file or a directory, and with path_conflict if a parent is a file. The new file is not executable.",
+      "examples": [
+        {
+          "action": "create",
+          "content": "# About
+",
+          "encoding": "text",
+          "path": "content/about.md",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "create",
+          "description": "Create a new file. Fails with path_exists if the path exists.",
+          "type": "string",
+        },
+        "content": {
+          "$ref": "#/$defs/FileContent",
+          "description": "Content of the new file, encoded as \`encoding\` says.",
+        },
+        "encoding": {
+          "$ref": "#/$defs/ContentEncoding",
+          "default": "text",
+          "description": "How \`content\` is encoded; defaults to "text".",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the file to create; it and every parent must not already be a file.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "content",
+      ],
+      "title": "Create action",
+      "type": "object",
+    },
+    "DataPacket": {
+      "additionalProperties": false,
+      "description": "A pkt-line carrying a payload, framed as a 4-hex-digit total length followed by the payload.",
+      "examples": [
+        {
+          "payload": {
+            "0": 111,
+            "1": 107,
+            "2": 10,
+          },
+          "type": "data",
+        },
+      ],
+      "properties": {
+        "payload": {
+          "$ref": "#/$defs/Bytes",
+          "description": "The payload, 0–65516 bytes, including any trailing newline the sender wrote. An empty payload is the "0004" packet.",
+          "examples": [
+            {
+              "0": 80,
+              "1": 65,
+              "2": 67,
+              "3": 75,
+            },
+          ],
+          "title": "Bytes",
+        },
+        "type": {
+          "const": "data",
+          "description": "A pkt-line with a payload: a 4-hex-digit length header, then the payload.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "type",
+        "payload",
+      ],
+      "title": "Data pkt-line",
+      "type": "object",
+    },
+    "DeleteAction": {
+      "additionalProperties": false,
+      "description": "Deletes an existing file. Fails with path_not_found if the path is not a file (a directory cannot be deleted in one action).",
+      "examples": [
+        {
+          "action": "delete",
+          "path": "content/old.md",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "delete",
+          "description": "Delete an existing file. Fails with path_not_found if it is absent.",
+          "type": "string",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the file to delete. Directories left empty disappear with it.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+      ],
+      "title": "Delete action",
+      "type": "object",
+    },
+    "EditTreeInput": {
+      "additionalProperties": false,
+      "description": "A root tree and the path edits to apply to it.",
+      "examples": [
+        {
+          "changes": [
+            {
+              "mode": "100644",
+              "op": "set",
+              "path": "a.txt",
+              "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+            },
+          ],
+          "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+        },
+      ],
+      "properties": {
+        "changes": {
+          "description": "Edits to apply in order; at most 10000.",
+          "items": {
+            "$ref": "#/$defs/TreeChange",
+          },
+          "maxItems": 10000,
+          "type": "array",
+        },
+        "tree": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "Id of the root tree to edit; null starts from an empty tree.",
+        },
+      },
+      "required": [
+        "tree",
+        "changes",
+      ],
+      "title": "editTree input",
+      "type": "object",
+    },
+    "EditedTree": {
+      "additionalProperties": false,
+      "description": "The result of editing a tree: the new root id and the new tree objects. Untouched subtrees keep their ids and are not rewritten.",
+      "examples": [
+        {
+          "objects": [],
+          "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+        },
+      ],
+      "properties": {
+        "objects": {
+          "description": "Tree objects that did not exist before, one per changed directory, deepest first. Blobs are never included.",
+          "items": {
+            "$ref": "#/$defs/GitObject",
+          },
+          "type": "array",
+        },
+        "tree": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the resulting root tree; equal to the input tree when nothing changed.",
+        },
+      },
+      "required": [
+        "tree",
+        "objects",
+      ],
+      "title": "Edited tree",
+      "type": "object",
+    },
+    "EntryMode": {
+      "description": "The mode of a non-directory tree entry; directories are created and removed implicitly by paths.",
+      "enum": [
+        "100644",
+        "100755",
+        "120000",
+        "160000",
+      ],
+      "enumDescriptions": {
+        "100644": "A regular file, not executable.",
+        "100755": "A regular file with the executable bit set.",
+        "120000": "A symbolic link; the blob holds the link target.",
+        "160000": "A submodule; the id names a commit in another repository.",
+      },
+      "examples": [
+        "100644",
+        "100755",
+      ],
+      "title": "Entry mode",
+      "type": "string",
+    },
+    "FileContent": {
+      "description": "File content as a string, interpreted according to the accompanying encoding: UTF-8 text, or base64 of the raw bytes. At most 48 MiB of characters (32 MiB of bytes as base64). An empty string is an empty file.",
+      "examples": [
+        "# Hello
+",
+        "iVBORw0KGgo=",
+      ],
+      "maxLength": 50331648,
+      "title": "File content",
+      "type": "string",
+    },
+    "FileMode": {
+      "description": "The git mode of a tree entry, as the six-digit octal string git records.",
+      "enum": [
+        "100644",
+        "100755",
+        "120000",
+        "160000",
+        "040000",
+      ],
+      "enumDescriptions": {
+        "040000": "A directory (a subtree).",
+        "100644": "A regular file, not executable.",
+        "100755": "A regular file with the executable bit set.",
+        "120000": "A symbolic link; the blob holds the link target.",
+        "160000": "A submodule; the id names a commit in another repository.",
+      },
+      "examples": [
+        "100644",
+        "040000",
+      ],
+      "title": "File mode",
+      "type": "string",
+    },
+    "FilePath": {
+      "description": "A path inside the repository relative to its root, 1–4096 characters, "/"-separated into segments of 1–255 characters: no leading or trailing "/", no empty, "." or ".." segment, no ".git" segment (any case), no backslash and no control character (U+0000–U+001F, U+007F). Case-sensitive; unicode allowed.",
+      "examples": [
+        "content/index.md",
+        "templates/layouts/page.hbs",
+      ],
+      "maxLength": 4096,
+      "minLength": 1,
+      "pattern": "^(?!\\/)(?!.*\\/\\/)(?!.*\\/$)(?!(?:.*\\/)?[^/]{256})(?!(?:.*\\/)?\\.\\.?(?:\\/|$))(?!(?:.*\\/)?\\.[gG][iI][tT](?:\\/|$))[^\\x00-\\x1f\\x7f\\\\]+$",
+      "title": "File path",
+      "type": "string",
+    },
+    "FullRefName": {
+      "description": "A fully qualified ref, "refs/heads/<branch>" or "refs/tags/<tag>", where the name after the prefix follows the same rules as a branch name.",
+      "examples": [
+        "refs/heads/main",
+        "refs/tags/v1.0.0",
+      ],
+      "maxLength": 266,
+      "minLength": 11,
+      "pattern": "^refs\\/(?:heads|tags)\\/(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+      "title": "Full ref name",
+      "type": "string",
+    },
+    "GitObject": {
+      "additionalProperties": false,
+      "description": "A git object ready to be packed: type, id and uncompressed content. Produced by the encoders and tree operations, consumed by writePack.",
+      "examples": [
+        {
+          "data": {},
+          "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+          "type": "blob",
+        },
+      ],
+      "properties": {
+        "data": {
+          "$ref": "#/$defs/Bytes",
+          "description": "The object content without the "<type> <size>\\0" header, uncompressed.",
+        },
+        "sha": {
+          "$ref": "#/$defs/Sha",
+          "description": "The object id: SHA-1 of "<type> <size>\\0" followed by \`data\`.",
+        },
+        "type": {
+          "$ref": "#/$defs/GitObjectType",
+        },
+      },
+      "required": [
+        "type",
+        "sha",
+        "data",
+      ],
+      "title": "Git object",
+      "type": "object",
+    },
+    "GitObjectType": {
+      "description": "The kind of a git object, as named in its "<type> <size>\\0" header and its pack entry.",
+      "enum": [
+        "blob",
+        "tree",
+        "commit",
+      ],
+      "enumDescriptions": {
+        "blob": "File content (pack type 3).",
+        "commit": "A commit (pack type 1).",
+        "tree": "A directory listing (pack type 2).",
+      },
+      "examples": [
+        "blob",
+        "tree",
+        "commit",
+      ],
+      "title": "Git object type",
+      "type": "string",
+    },
+    "GitRefName": {
+      "description": "A fully qualified ref of any namespace, as a receive-pack command names it: "refs/" followed by components valid under git check-ref-format (no "..", "@{", "//", control characters, space, DEL or ~ ^ : ? * [ \\; no component starting with "." or ending with ".lock"; no trailing "/" or "."). Branch policy decides which namespaces may be pushed.",
+      "examples": [
+        "refs/heads/main",
+        "refs/tags/v1.0.0",
+        "refs/notes/commits",
+      ],
+      "maxLength": 4096,
+      "minLength": 6,
+      "pattern": "^refs\\/(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\]+$",
+      "title": "Git ref name",
+      "type": "string",
+    },
+    "GitTreeEntry": {
+      "additionalProperties": false,
+      "description": "One entry of a git tree object as stored: the name within its directory, the mode, and the id of the blob, tree or submodule commit. A contract TreeEntry without its derived path and type, so a TreeEntry list from a backend can be passed where these are read.",
+      "examples": [
+        {
+          "mode": "100644",
+          "name": "about.md",
+          "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+        },
+      ],
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/FileMode",
+        },
+        "name": {
+          "description": "Last segment of the path: 1–255 characters without "/" or NUL.",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^/\\0]+$",
+          "type": "string",
+        },
+        "sha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the blob, tree or submodule commit the entry names.",
+        },
+      },
+      "required": [
+        "name",
+        "mode",
+        "sha",
+      ],
+      "title": "Git tree entry",
+      "type": "object",
+    },
+    "IdempotencyConfig": {
+      "additionalProperties": false,
+      "description": "How far back commit() looks through the target branch for a commit carrying the same idempotency key. Both bounds apply; the lookup stops at whichever is reached first.",
+      "examples": [
+        {
+          "maxAgeSeconds": 604800,
+          "maxCommits": 200,
+        },
+      ],
+      "properties": {
+        "maxAgeSeconds": {
+          "default": 604800,
+          "description": "Commits committed longer ago than this many seconds are not examined; 60 s–30 days, default 7 days (604800).",
+          "maximum": 2592000,
+          "minimum": 60,
+          "type": "integer",
+        },
+        "maxCommits": {
+          "default": 200,
+          "description": "Most commits of the branch history examined, newest first; 1–10000, default 200.",
+          "maximum": 10000,
+          "minimum": 1,
+          "type": "integer",
+        },
+      },
+      "title": "Idempotency window",
+      "type": "object",
+    },
+    "IdempotencyKey": {
+      "description": "Caller-chosen key that makes a commit idempotent: 1–128 characters of letters, digits, ".", "_", ":" and "-", starting with a letter or digit. Recorded as a "Gateway-Idempotency-Key:" trailer; a retried commit carrying a key already in the branch's recent history returns that commit instead of writing another.",
+      "examples": [
+        "cms:publish:2f9c1e",
+        "6f1d2c3b-9a8e-4f7d-b6c5-a4e3d2c1b0a9",
+      ],
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Idempotency key",
+      "type": "string",
+    },
+    "IdempotencyLookupInput": {
+      "additionalProperties": false,
+      "description": "Where and how far back to search a branch for a commit carrying a "Gateway-Idempotency-Key:" trailer with a given key.",
+      "examples": [
+        {
+          "head": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "key": "cms:publish:2f9c1e",
+          "now": "2026-11-20T09:30:00.000Z",
+          "window": {
+            "maxAgeSeconds": 604800,
+            "maxCommits": 200,
+          },
+        },
+      ],
+      "properties": {
+        "head": {
+          "$ref": "#/$defs/Sha",
+          "description": "Head commit of the branch to search, newest end of the window.",
+        },
+        "key": {
+          "$ref": "#/$defs/IdempotencyKey",
+          "description": "The idempotency key of the write being attempted.",
+        },
+        "now": {
+          "$ref": "#/$defs/Timestamp",
+          "description": "The current time, which the age bound is measured from.",
+        },
+        "window": {
+          "$ref": "#/$defs/IdempotencyConfig",
+          "description": "How far back to look: at most \`maxCommits\` commits, none committed more than \`maxAgeSeconds\` before \`now\`.",
+        },
+      },
+      "required": [
+        "head",
+        "key",
+        "window",
+        "now",
+      ],
+      "title": "Idempotency lookup",
+      "type": "object",
+    },
+    "Identity": {
+      "additionalProperties": false,
+      "description": "The name and email a commit is attributed to, as an author or a committer.",
+      "examples": [
+        {
+          "email": "ada@example.com",
+          "name": "Ada Lovelace",
+        },
+      ],
+      "properties": {
+        "email": {
+          "description": "Email address, at most 255 characters.",
+          "format": "email",
+          "maxLength": 255,
+          "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+          "type": "string",
+        },
+        "name": {
+          "description": "Display name, 1–255 characters, without "<", ">", newlines or NUL (git cannot store them).",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^<>\\n\\0]+$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+        "email",
+      ],
+      "title": "Identity",
+      "type": "object",
+    },
+    "MergeTreesInput": {
+      "additionalProperties": false,
+      "description": "The three root trees of a file-level three-way merge: merge base, ours and theirs.",
+      "examples": [
+        {
+          "base": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+          "ours": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "theirs": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        },
+      ],
+      "properties": {
+        "base": {
+          "$ref": "#/$defs/Sha",
+          "description": "Root tree of the merge base commit.",
+        },
+        "ours": {
+          "$ref": "#/$defs/Sha",
+          "description": "Root tree of the branch being brought up to date (\`into\`).",
+        },
+        "theirs": {
+          "$ref": "#/$defs/Sha",
+          "description": "Root tree of the branch being merged in (\`from\`).",
+        },
+      },
+      "required": [
+        "base",
+        "ours",
+        "theirs",
+      ],
+      "title": "mergeTrees input",
+      "type": "object",
+    },
+    "MoveAction": {
+      "additionalProperties": false,
+      "description": "Moves a file, keeping its executable bit and, unless \`content\` is given, its content. Fails with path_not_found if \`previousPath\` is not a file, path_exists if \`path\` exists, and path_conflict if a parent of \`path\` is a file.",
+      "examples": [
+        {
+          "action": "move",
+          "encoding": "text",
+          "path": "content/new.md",
+          "previousPath": "content/old.md",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "move",
+          "description": "Move a file from \`previousPath\` to \`path\`.",
+          "type": "string",
+        },
+        "content": {
+          "$ref": "#/$defs/FileContent",
+          "description": "New content for the moved file, encoded as \`encoding\` says. Absent: the content is kept.",
+        },
+        "encoding": {
+          "$ref": "#/$defs/ContentEncoding",
+          "default": "text",
+          "description": "How \`content\` is encoded; defaults to "text".",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Destination path; it must not exist and no parent of it may be a file.",
+        },
+        "previousPath": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the existing file to move.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "previousPath",
+      ],
+      "title": "Move action",
+      "type": "object",
+    },
+    "Packet": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DataPacket",
+        },
+        {
+          "$ref": "#/$defs/SpecialPacket",
+        },
+      ],
+      "description": "One unit of git pkt-line framing: a data packet, or a flush, delim or response-end packet.",
+      "examples": [
+        {
+          "type": "flush",
+        },
+        {
+          "payload": {
+            "0": 111,
+            "1": 107,
+            "2": 10,
+          },
+          "type": "data",
+        },
+      ],
+      "title": "pkt-line",
+    },
+    "PushOption": {
+      "description": "One "git push -o <option>" value: a single line of at most 65515 characters without newline or NUL. May be empty.",
+      "examples": [
+        "ci.skip",
+        "merge_request.create",
+      ],
+      "maxLength": 65515,
+      "pattern": "^[^\\n\\0]*$",
+      "title": "Push option",
+      "type": "string",
+    },
+    "ReceivePackCommand": {
+      "additionalProperties": false,
+      "description": "One "<old> <new> <ref>" update command from the start of a git-receive-pack request. The server refuses it when the ref no longer names \`oldSha\`.",
+      "examples": [
+        {
+          "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "ref": "refs/heads/main",
+        },
+      ],
+      "properties": {
+        "newSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the ref should name after the push; all zeros when the push deletes the ref.",
+        },
+        "oldSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the client believes the ref names now; all zeros when the push creates the ref.",
+        },
+        "ref": {
+          "$ref": "#/$defs/GitRefName",
+          "description": "The ref to update, fully qualified.",
+        },
+      },
+      "required": [
+        "oldSha",
+        "newSha",
+        "ref",
+      ],
+      "title": "receive-pack command",
+      "type": "object",
+    },
+    "ReceivePackCommands": {
+      "description": "The update commands of a git-receive-pack request in the order sent: 1–10000 commands, each ref named by at most one of them.",
+      "examples": [
+        [
+          {
+            "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            "ref": "refs/heads/main",
+          },
+        ],
+      ],
+      "items": {
+        "$ref": "#/$defs/ReceivePackCommand",
+      },
+      "maxItems": 10000,
+      "minItems": 1,
+      "title": "receive-pack commands",
+      "type": "array",
+    },
+    "ReceivePackPush": {
+      "additionalProperties": false,
+      "description": "A git-receive-pack request the gateway sends to a storage backend: update commands, capabilities, push options and the pack.",
+      "examples": [
+        {
+          "capabilities": [
+            "report-status",
+          ],
+          "commands": [
+            {
+              "newSha": "0000000000000000000000000000000000000000",
+              "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+              "ref": "refs/heads/old",
+            },
+          ],
+          "pushOptions": [],
+        },
+      ],
+      "properties": {
+        "capabilities": {
+          "default": [
+            "report-status",
+          ],
+          "description": "Capabilities to request on the first command; default ["report-status"]. "push-options" is added automatically when push options are given.",
+          "items": {
+            "$ref": "#/$defs/Capability",
+          },
+          "maxItems": 100,
+          "type": "array",
+        },
+        "commands": {
+          "$ref": "#/$defs/ReceivePackCommands",
+          "description": "The update commands to send, in order; 1–10000, each ref at most once.",
+        },
+        "pack": {
+          "$ref": "#/$defs/Bytes",
+          "description": "The pack holding the objects the commands need, as written by writePack. Absent: no pack is sent, which is right only when every command deletes a ref.",
+        },
+        "pushOptions": {
+          "default": [],
+          "description": "Push options to send after the commands; default none.",
+          "items": {
+            "$ref": "#/$defs/PushOption",
+          },
+          "maxItems": 100,
+          "type": "array",
+        },
+      },
+      "required": [
+        "commands",
+      ],
+      "title": "receive-pack push",
+      "type": "object",
+    },
+    "ReceivePackRequest": {
+      "additionalProperties": false,
+      "description": "The leading part of a protocol v0/v1 git-receive-pack request body, before the pack: shallow lines, update commands with the capabilities on the first, and push options.",
+      "examples": [
+        {
+          "capabilities": [
+            "report-status",
+            "side-band-64k",
+            "agent=git/2.43.0",
+          ],
+          "commands": [
+            {
+              "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+              "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+              "ref": "refs/heads/main",
+            },
+          ],
+          "pushOptions": [],
+          "shallow": [],
+        },
+      ],
+      "properties": {
+        "capabilities": {
+          "description": "Capabilities the client requested on the first command, in the order sent; may be empty.",
+          "items": {
+            "$ref": "#/$defs/Capability",
+          },
+          "maxItems": 100,
+          "type": "array",
+        },
+        "commands": {
+          "$ref": "#/$defs/ReceivePackCommands",
+          "description": "The update commands in the order sent; 1–10000, each ref at most once.",
+        },
+        "pushOptions": {
+          "description": "Push options sent after the commands, in order; empty when the "push-options" capability was not requested.",
+          "items": {
+            "$ref": "#/$defs/PushOption",
+          },
+          "maxItems": 100,
+          "type": "array",
+        },
+        "shallow": {
+          "description": ""shallow <id>" lines sent before the commands by a client pushing from a shallow clone; usually empty.",
+          "items": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id of a shallow boundary commit the client holds.",
+          },
+          "maxItems": 10000,
+          "type": "array",
+        },
+      },
+      "required": [
+        "commands",
+        "capabilities",
+        "pushOptions",
+        "shallow",
+      ],
+      "title": "receive-pack request head",
+      "type": "object",
+    },
+    "RefStatus": {
+      "description": "The outcome of one update command in a report-status response, discriminated by \`status\`.",
+      "examples": [
+        {
+          "ref": "refs/heads/main",
+          "status": "ok",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/RefStatusOk",
+        },
+        {
+          "$ref": "#/$defs/RefStatusRejected",
+        },
+      ],
+      "title": "Ref status",
+    },
+    "RefStatusOk": {
+      "additionalProperties": false,
+      "description": "The server applied the update command for this ref.",
+      "examples": [
+        {
+          "ref": "refs/heads/main",
+          "status": "ok",
+        },
+      ],
+      "properties": {
+        "ref": {
+          "$ref": "#/$defs/GitRefName",
+          "description": "The ref the command named.",
+        },
+        "status": {
+          "const": "ok",
+          "description": "The ref was updated ("ok <ref>").",
+          "type": "string",
+        },
+      },
+      "required": [
+        "ref",
+        "status",
+      ],
+      "title": "ref status: ok",
+      "type": "object",
+    },
+    "RefStatusRejected": {
+      "additionalProperties": false,
+      "description": "The server refused the update command for this ref and said why.",
+      "examples": [
+        {
+          "reason": "fetch first",
+          "ref": "refs/heads/main",
+          "status": "ng",
+        },
+      ],
+      "properties": {
+        "reason": {
+          "description": "Why the server refused, as it said it: e.g. "fetch first" or "failed to lock" for a stale old id, "non-fast-forward", or a policy message. One line, 1–1000 characters.",
+          "maxLength": 1000,
+          "minLength": 1,
+          "pattern": "^[^\\n\\0]+$",
+          "type": "string",
+        },
+        "ref": {
+          "$ref": "#/$defs/GitRefName",
+          "description": "The ref the command named.",
+        },
+        "status": {
+          "const": "ng",
+          "description": "The ref was not updated ("ng <ref> <reason>").",
+          "type": "string",
+        },
+      },
+      "required": [
+        "ref",
+        "status",
+        "reason",
+      ],
+      "title": "ref status: rejected",
+      "type": "object",
+    },
+    "RefUpdate": {
+      "additionalProperties": false,
+      "description": "One ref moved by a write, in receive-pack command form: the ref, the id it named before and the id it names after. Creation and deletion use the all-zero id on the missing side.",
+      "examples": [
+        {
+          "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "ref": "refs/heads/main",
+        },
+      ],
+      "properties": {
+        "newSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the ref points at after the update; the all-zero id when the update deleted the ref.",
+        },
+        "oldSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the ref pointed at before the update; the all-zero id when the update created the ref.",
+        },
+        "ref": {
+          "$ref": "#/$defs/FullRefName",
+          "description": "The ref that moved, fully qualified (refs/heads/<branch>).",
+        },
+      },
+      "required": [
+        "ref",
+        "oldSha",
+        "newSha",
+      ],
+      "title": "Ref update",
+      "type": "object",
+    },
+    "RemoveEntryChange": {
+      "additionalProperties": false,
+      "description": "Removes a non-directory entry; directories it leaves empty are removed too.",
+      "examples": [
+        {
+          "op": "remove",
+          "path": "content/old.md",
+        },
+      ],
+      "properties": {
+        "op": {
+          "const": "remove",
+          "description": "Remove the entry at \`path\`.",
+          "type": "string",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of a non-directory entry. Fails with path_not_found if it is absent or a directory. Directories left empty disappear.",
+        },
+      },
+      "required": [
+        "op",
+        "path",
+      ],
+      "title": "Remove entry",
+      "type": "object",
+    },
+    "ReportStatus": {
+      "additionalProperties": false,
+      "description": "The report-status response of git-receive-pack: whether the pack unpacked, and whether each ref was updated. A push succeeded only when \`unpack\` is "ok" and every ref is "ok".",
+      "examples": [
+        {
+          "refs": [
+            {
+              "ref": "refs/heads/main",
+              "status": "ok",
+            },
+          ],
+          "unpack": "ok",
+        },
+      ],
+      "properties": {
+        "refs": {
+          "description": "One status per update command, in the order the server reported them.",
+          "items": {
+            "$ref": "#/$defs/RefStatus",
+          },
+          "maxItems": 10000,
+          "type": "array",
+        },
+        "unpack": {
+          "description": "The unpack result: "ok" when the pack was received and stored, otherwise the error the server gave.",
+          "maxLength": 1000,
+          "minLength": 1,
+          "pattern": "^[^\\n\\0]+$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "unpack",
+        "refs",
+      ],
+      "title": "Report status",
+      "type": "object",
+    },
+    "SetEntryChange": {
+      "additionalProperties": false,
+      "description": "Creates or replaces a non-directory entry at a path, creating parent directories as needed.",
+      "examples": [
+        {
+          "mode": "100644",
+          "op": "set",
+          "path": "content/about.md",
+          "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+        },
+      ],
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/EntryMode",
+        },
+        "op": {
+          "const": "set",
+          "description": "Create or replace the entry at \`path\`.",
+          "type": "string",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the entry. Missing parent directories are created; fails with path_exists if the path is a directory and path_conflict if a parent is not a directory.",
+        },
+        "sha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the blob (or submodule commit) the entry names. It must exist or be pushed with the tree.",
+        },
+      },
+      "required": [
+        "op",
+        "path",
+        "mode",
+        "sha",
+      ],
+      "title": "Set entry",
+      "type": "object",
+    },
+    "Sha": {
+      "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
+      "examples": [
+        "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+      ],
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Object id",
+      "type": "string",
+    },
+    "Signature": {
+      "additionalProperties": false,
+      "description": "An identity together with the time it authored or committed a commit, as stored in the commit.",
+      "examples": [
+        {
+          "date": "2026-11-20T09:30:00.000Z",
+          "email": "ada@example.com",
+          "name": "Ada Lovelace",
+        },
+      ],
+      "properties": {
+        "date": {
+          "$ref": "#/$defs/Timestamp",
+          "description": "When this person authored or committed the change, as an ISO 8601 UTC timestamp.",
+        },
+        "email": {
+          "description": "Email address, at most 255 characters.",
+          "format": "email",
+          "maxLength": 255,
+          "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+          "type": "string",
+        },
+        "name": {
+          "description": "Display name, 1–255 characters, without "<", ">", newlines or NUL (git cannot store them).",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^<>\\n\\0]+$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+        "email",
+        "date",
+      ],
+      "title": "Signature",
+      "type": "object",
+    },
+    "SpecialPacket": {
+      "additionalProperties": false,
+      "description": "A length-only pkt-line with no payload: flush ("0000"), delim ("0001") or response-end ("0002").",
+      "examples": [
+        {
+          "type": "flush",
+        },
+      ],
+      "properties": {
+        "type": {
+          "description": "Which special packet this is.",
+          "enum": [
+            "flush",
+            "delim",
+            "response-end",
+          ],
+          "enumDescriptions": {
+            "delim": ""0001": separates sections of a protocol v2 message.",
+            "flush": ""0000": ends a list of pkt-lines (a section or a message).",
+            "response-end": ""0002": ends a stateless protocol v2 response.",
+          },
+          "type": "string",
+        },
+      },
+      "required": [
+        "type",
+      ],
+      "title": "Special pkt-line",
+      "type": "object",
+    },
+    "Timestamp": {
+      "description": "A point in time as an ISO 8601 UTC timestamp ending in "Z", with optional fractional seconds (e.g. 2026-11-20T09:30:00.000Z).",
+      "examples": [
+        "2026-11-20T09:30:00.000Z",
+      ],
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+      "title": "Timestamp",
+      "type": "string",
+    },
+    "TreeChange": {
+      "description": "One low-level edit of a tree by path, discriminated by \`op\`. Changes apply in order.",
+      "examples": [
+        {
+          "op": "remove",
+          "path": "content/old.md",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SetEntryChange",
+        },
+        {
+          "$ref": "#/$defs/RemoveEntryChange",
+        },
+      ],
+      "title": "Tree change",
+    },
+    "TreeMergeResult": {
+      "description": "The outcome of mergeTrees, discriminated by \`status\`.",
+      "examples": [
+        {
+          "paths": [
+            "content/about.md",
+          ],
+          "status": "conflict",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/TreesMerged",
+        },
+        {
+          "$ref": "#/$defs/TreesConflict",
+        },
+      ],
+      "title": "Tree merge result",
+    },
+    "TreesConflict": {
+      "additionalProperties": false,
+      "description": "The merge failed: the listed paths changed differently on both sides. Nothing is written.",
+      "examples": [
+        {
+          "paths": [
+            "content/about.md",
+          ],
+          "status": "conflict",
+        },
+      ],
+      "properties": {
+        "paths": {
+          "description": "Every conflicting path, sorted in byte order: changed differently on both sides, or a file where the merged result has a directory (the file and every merged path beneath it).",
+          "items": {
+            "$ref": "#/$defs/FilePath",
+            "description": "A conflicting path.",
+          },
+          "minItems": 1,
+          "type": "array",
+        },
+        "status": {
+          "const": "conflict",
+          "description": "Some paths cannot be merged at file level.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "paths",
+      ],
+      "title": "Trees conflict",
+      "type": "object",
+    },
+    "TreesMerged": {
+      "additionalProperties": false,
+      "description": "The merge succeeded: each path changed on one side took that side, and paths changed identically on both took either.",
+      "examples": [
+        {
+          "objects": [],
+          "status": "merged",
+          "tree": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        },
+      ],
+      "properties": {
+        "objects": {
+          "description": "Tree objects the merged tree needs that none of the three inputs had, deepest first.",
+          "items": {
+            "$ref": "#/$defs/GitObject",
+          },
+          "type": "array",
+        },
+        "status": {
+          "const": "merged",
+          "description": "Every path merged without conflict.",
+          "type": "string",
+        },
+        "tree": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the merged root tree.",
+        },
+      },
+      "required": [
+        "status",
+        "tree",
+        "objects",
+      ],
+      "title": "Trees merged",
+      "type": "object",
+    },
+    "UpdateAction": {
+      "additionalProperties": false,
+      "description": "Replaces the content of an existing file, keeping its executable bit. Fails with path_not_found if the path is not a file.",
+      "examples": [
+        {
+          "action": "update",
+          "content": "# About us
+",
+          "encoding": "text",
+          "path": "content/about.md",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "update",
+          "description": "Replace an existing file. Fails with path_not_found if it is absent.",
+          "type": "string",
+        },
+        "content": {
+          "$ref": "#/$defs/FileContent",
+          "description": "New content of the file, encoded as \`encoding\` says.",
+        },
+        "encoding": {
+          "$ref": "#/$defs/ContentEncoding",
+          "default": "text",
+          "description": "How \`content\` is encoded; defaults to "text".",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the existing file to replace.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "content",
+      ],
+      "title": "Update action",
+      "type": "object",
+    },
+    "UpsertAction": {
+      "additionalProperties": false,
+      "description": "Creates the file, or replaces it (keeping its executable bit) if it exists. Fails with path_exists if the path is a directory and path_conflict if a parent is a file. Not part of the GitLab Commits API.",
+      "examples": [
+        {
+          "action": "upsert",
+          "content": "iVBORw0KGgo=",
+          "encoding": "base64",
+          "path": "assets/logo.png",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "upsert",
+          "description": "Create the file, or replace it if it exists.",
+          "type": "string",
+        },
+        "content": {
+          "$ref": "#/$defs/FileContent",
+          "description": "Content of the file, encoded as \`encoding\` says.",
+        },
+        "encoding": {
+          "$ref": "#/$defs/ContentEncoding",
+          "default": "text",
+          "description": "How \`content\` is encoded; defaults to "text".",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the file to create or replace.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "content",
+      ],
+      "title": "Upsert action",
+      "type": "object",
+    },
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 }
 `;
 
 exports[`schema documentation > generates the JSON Schema for what the schemas produce 1`] = `
 {
-  "$defs": {},
+  "$defs": {
+    "ActionsChanged": {
+      "additionalProperties": false,
+      "description": "The actions produced a new tree; \`objects\` is what must be pushed along with the commit.",
+      "examples": [
+        {
+          "objects": [],
+          "status": "changed",
+          "tree": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        },
+      ],
+      "properties": {
+        "objects": {
+          "description": "Every object the new tree needs that the base did not have: new blobs the final tree references, then new trees deepest first.",
+          "items": {
+            "$ref": "#/$defs/GitObject",
+          },
+          "type": "array",
+        },
+        "status": {
+          "const": "changed",
+          "description": "The actions produced a different tree.",
+          "type": "string",
+        },
+        "tree": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the new root tree.",
+        },
+      },
+      "required": [
+        "status",
+        "tree",
+        "objects",
+      ],
+      "title": "Actions: changed",
+      "type": "object",
+    },
+    "ActionsNoop": {
+      "additionalProperties": false,
+      "description": "The actions were valid but the resulting tree equals the base (e.g. an update writing the same content), so there is nothing to commit.",
+      "examples": [
+        {
+          "status": "noop",
+          "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+        },
+      ],
+      "properties": {
+        "status": {
+          "const": "noop",
+          "description": "The resulting tree equals the base tree.",
+          "type": "string",
+        },
+        "tree": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the unchanged root tree (the empty tree when the base was null).",
+        },
+      },
+      "required": [
+        "status",
+        "tree",
+      ],
+      "title": "Actions: no-op",
+      "type": "object",
+    },
+    "ActionsResult": {
+      "description": "The outcome of applyCommitActions, discriminated by \`status\`.",
+      "examples": [
+        {
+          "status": "noop",
+          "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ActionsChanged",
+        },
+        {
+          "$ref": "#/$defs/ActionsNoop",
+        },
+      ],
+      "title": "Actions result",
+    },
+    "ApplyActionsInput": {
+      "additionalProperties": false,
+      "description": "A root tree and the commit actions to apply to it with GitLab Commits API semantics.",
+      "examples": [
+        {
+          "actions": [
+            {
+              "action": "create",
+              "content": "# About
+",
+              "encoding": "text",
+              "path": "content/about.md",
+            },
+          ],
+          "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+        },
+      ],
+      "properties": {
+        "actions": {
+          "description": "Commit actions to apply in order, each to the result of the one before; 1–1000.",
+          "items": {
+            "$ref": "#/$defs/CommitAction",
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "type": "array",
+        },
+        "tree": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "Id of the root tree the actions apply to (the head commit's tree); null for a branch with no commits yet, which starts from an empty tree.",
+        },
+      },
+      "required": [
+        "tree",
+        "actions",
+      ],
+      "title": "applyCommitActions input",
+      "type": "object",
+    },
+    "BaseCommit": {
+      "additionalProperties": false,
+      "description": "The commit a new commit builds on: its id (the parent) and its root tree (what the actions edit).",
+      "examples": [
+        {
+          "sha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+        },
+      ],
+      "properties": {
+        "sha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the commit, which becomes the new commit's parent.",
+        },
+        "tree": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of its root tree, which the actions apply to.",
+        },
+      },
+      "required": [
+        "sha",
+        "tree",
+      ],
+      "title": "Base commit",
+      "type": "object",
+    },
+    "BranchName": {
+      "description": "A short branch name, 1–255 characters, valid under git check-ref-format (no "..", "@{", "//", spaces, control characters or ~ ^ : ? * [ or backslash; no component starting with "." or ending with ".lock"; not starting with "-" or "refs/"; not "HEAD"; not 40 lowercase hex characters, which a Revision always reads as a commit id). The gateway stores it as refs/heads/<name>.",
+      "examples": [
+        "main",
+        "staging",
+        "feature/new-page",
+      ],
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^(?!refs\\/)(?!HEAD$)(?![0-9a-f]{40}$)(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+      "title": "Branch name",
+      "type": "string",
+    },
+    "BuildCommitInput": {
+      "additionalProperties": false,
+      "description": "Everything needed to build a commit without a clone: the base commit, the actions, the message and identities, the idempotency key and the date.",
+      "examples": [
+        {
+          "actions": [
+            {
+              "action": "create",
+              "content": "# About
+",
+              "encoding": "text",
+              "path": "content/about.md",
+            },
+          ],
+          "author": {
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+          "base": {
+            "sha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+          },
+          "branch": "staging",
+          "date": "2026-11-20T09:30:00.000Z",
+          "idempotencyKey": "cms:publish:2f9c1e",
+          "message": "Update about page",
+        },
+      ],
+      "properties": {
+        "actions": {
+          "description": "Commit actions to apply in order; 1–1000.",
+          "items": {
+            "$ref": "#/$defs/CommitAction",
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "type": "array",
+        },
+        "author": {
+          "$ref": "#/$defs/Identity",
+          "description": "Who wrote the change.",
+        },
+        "base": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BaseCommit",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "The commit to build on, normally the branch head; null for a root commit on an empty repository.",
+        },
+        "branch": {
+          "$ref": "#/$defs/BranchName",
+          "description": "Branch the commit is for; named in the returned ref update.",
+        },
+        "committer": {
+          "$ref": "#/$defs/Identity",
+          "description": "Who records the commit. Absent: the author.",
+        },
+        "date": {
+          "$ref": "#/$defs/CommitTimestamp",
+          "description": "Author and committer date, 1970 or later; stored in whole seconds at +0000.",
+        },
+        "idempotencyKey": {
+          "$ref": "#/$defs/IdempotencyKey",
+          "description": "Recorded as the "Gateway-Idempotency-Key:" trailer of the message.",
+        },
+        "message": {
+          "description": "The caller's commit message, 1–65536 characters, not blank; the idempotency trailer is appended.",
+          "maxLength": 65536,
+          "minLength": 1,
+          "type": "string",
+        },
+        "oldSha": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "What the branch names now, for the ref update; null when the branch does not exist yet (a new branch started from another's head). Absent: the base commit, or null without one.",
+        },
+      },
+      "required": [
+        "branch",
+        "base",
+        "actions",
+        "message",
+        "author",
+        "idempotencyKey",
+        "date",
+      ],
+      "title": "buildCommit input",
+      "type": "object",
+    },
+    "BuiltCommit": {
+      "description": "The outcome of buildCommit, discriminated by \`status\`.",
+      "examples": [
+        {
+          "head": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "status": "noop",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CommitReady",
+        },
+        {
+          "$ref": "#/$defs/CommitUnchanged",
+        },
+      ],
+      "title": "Built commit",
+    },
+    "Bytes": {
+      "description": "Raw bytes as a Uint8Array (a Node or Bun Buffer is accepted, being a Uint8Array).",
+      "examples": [
+        {
+          "0": 80,
+          "1": 65,
+          "2": 67,
+          "3": 75,
+        },
+      ],
+      "title": "Bytes",
+    },
+    "Capability": {
+      "description": "One protocol capability token as the client sent it, e.g. "report-status", "side-band-64k", "push-options" or "agent=git/2.43.0": 1–1000 characters without whitespace or NUL.",
+      "examples": [
+        "report-status",
+        "agent=git/2.43.0",
+      ],
+      "maxLength": 1000,
+      "minLength": 1,
+      "pattern": "^[^\\s\\0]+$",
+      "title": "Capability",
+      "type": "string",
+    },
+    "ChmodAction": {
+      "additionalProperties": false,
+      "description": "Sets (true) or clears (false) the executable bit of an existing file. Fails with path_not_found if the path is not a file. Setting the bit it already has changes nothing.",
+      "examples": [
+        {
+          "action": "chmod",
+          "executeFilemode": true,
+          "path": "scripts/build.sh",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "chmod",
+          "description": "Set or clear the executable bit of an existing file.",
+          "type": "string",
+        },
+        "executeFilemode": {
+          "description": "true: mode 100755 (executable); false: mode 100644 (not executable).",
+          "type": "boolean",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the existing file.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "executeFilemode",
+      ],
+      "title": "Chmod action",
+      "type": "object",
+    },
+    "Commit": {
+      "additionalProperties": false,
+      "description": "A commit as stored in a repository, with its message trailer parsed out.",
+      "examples": [
+        {
+          "author": {
+            "date": "2026-11-20T09:30:00.000Z",
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+          "committer": {
+            "date": "2026-11-20T09:30:00.000Z",
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+          "idempotencyKey": "cms:publish:2f9c1e",
+          "message": "Update about page
+
+Gateway-Idempotency-Key: cms:publish:2f9c1e
+",
+          "parents": [
+            "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          ],
+          "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+        },
+      ],
+      "properties": {
+        "author": {
+          "$ref": "#/$defs/Signature",
+          "description": "Who wrote the change, and when.",
+        },
+        "committer": {
+          "$ref": "#/$defs/Signature",
+          "description": "Who recorded the commit, and when; equals the author unless one was given.",
+        },
+        "idempotencyKey": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IdempotencyKey",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "The key from the message's "Gateway-Idempotency-Key:" trailer, or null when the commit has none.",
+        },
+        "message": {
+          "description": "Full commit message as stored, including any "Gateway-Idempotency-Key:" trailer the gateway appended.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "parents": {
+          "description": "Parent commit ids in order: empty for a root commit, one for an ordinary commit, two for a merge (the branch merged into first).",
+          "items": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id of a parent commit.",
+          },
+          "maxItems": 2,
+          "type": "array",
+        },
+        "sha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of this commit.",
+        },
+        "tree": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the root tree this commit records.",
+        },
+      },
+      "required": [
+        "sha",
+        "tree",
+        "parents",
+        "author",
+        "committer",
+        "message",
+        "idempotencyKey",
+      ],
+      "title": "Commit",
+      "type": "object",
+    },
+    "CommitAction": {
+      "description": "One change in a commit, discriminated by \`action\`. Actions apply in order, each to the result of the one before, with the GitLab Commits API semantics (plus upsert).",
+      "examples": [
+        {
+          "action": "create",
+          "content": "# About
+",
+          "encoding": "text",
+          "path": "content/about.md",
+        },
+        {
+          "action": "delete",
+          "path": "content/old.md",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CreateAction",
+        },
+        {
+          "$ref": "#/$defs/UpdateAction",
+        },
+        {
+          "$ref": "#/$defs/UpsertAction",
+        },
+        {
+          "$ref": "#/$defs/DeleteAction",
+        },
+        {
+          "$ref": "#/$defs/MoveAction",
+        },
+        {
+          "$ref": "#/$defs/ChmodAction",
+        },
+      ],
+      "title": "Commit action",
+    },
+    "CommitFields": {
+      "additionalProperties": false,
+      "description": "What a new commit object records: tree, parents, author, committer and message. Encoded in git's commit format with "<seconds> +0000" dates.",
+      "examples": [
+        {
+          "author": {
+            "date": "2026-11-20T09:30:00.000Z",
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+          "committer": {
+            "date": "2026-11-20T09:30:00.000Z",
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+          "message": "Initial commit
+",
+          "parents": [],
+          "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+        },
+      ],
+      "properties": {
+        "author": {
+          "$ref": "#/$defs/CommitSignature",
+          "description": "Who wrote the change and when, dated 1970 or later. The date is stored in whole seconds at +0000; fractional seconds are dropped.",
+        },
+        "committer": {
+          "$ref": "#/$defs/CommitSignature",
+          "description": "Who recorded the commit and when, dated 1970 or later; stored like the author.",
+        },
+        "message": {
+          "description": "The full commit message, stored exactly as given (trailers included).",
+          "minLength": 1,
+          "type": "string",
+        },
+        "parents": {
+          "description": "Parent ids in order: none for a root commit, one for an ordinary commit, two for a merge.",
+          "items": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id of a parent commit.",
+          },
+          "maxItems": 2,
+          "type": "array",
+        },
+        "tree": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the root tree the commit records.",
+        },
+      },
+      "required": [
+        "tree",
+        "parents",
+        "author",
+        "committer",
+        "message",
+      ],
+      "title": "Commit fields",
+      "type": "object",
+    },
+    "CommitReady": {
+      "additionalProperties": false,
+      "description": "A commit built from actions, with the objects to pack and the ref update to send. Nothing has been written to storage yet.",
+      "examples": [
+        {
+          "commit": {
+            "author": {
+              "date": "2026-11-20T09:30:00.000Z",
+              "email": "ada@example.com",
+              "name": "Ada Lovelace",
+            },
+            "committer": {
+              "date": "2026-11-20T09:30:00.000Z",
+              "email": "ada@example.com",
+              "name": "Ada Lovelace",
+            },
+            "idempotencyKey": "cms:publish:2f9c1e",
+            "message": "Update about page
+
+Gateway-Idempotency-Key: cms:publish:2f9c1e
+",
+            "parents": [
+              "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            ],
+            "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+          },
+          "objects": [
+            {
+              "data": {},
+              "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+              "type": "blob",
+            },
+          ],
+          "refUpdate": {
+            "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            "ref": "refs/heads/staging",
+          },
+          "status": "ready",
+        },
+      ],
+      "properties": {
+        "commit": {
+          "$ref": "#/$defs/Commit",
+          "description": "The new commit.",
+        },
+        "objects": {
+          "description": "Every object to push: new blobs, new trees and the commit itself (last).",
+          "items": {
+            "$ref": "#/$defs/GitObject",
+          },
+          "minItems": 1,
+          "type": "array",
+        },
+        "refUpdate": {
+          "$ref": "#/$defs/RefUpdate",
+          "description": "The receive-pack command that moves the branch to the new commit.",
+        },
+        "status": {
+          "const": "ready",
+          "description": "A new commit was built; push \`objects\` with \`refUpdate\`.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "commit",
+        "refUpdate",
+        "objects",
+      ],
+      "title": "Commit ready",
+      "type": "object",
+    },
+    "CommitSignature": {
+      "additionalProperties": false,
+      "description": "A name, email and date as a commit object stores them: a contract Signature whose date is 1970-01-01T00:00:00Z or later.",
+      "examples": [
+        {
+          "date": "2026-11-20T09:30:00.000Z",
+          "email": "ada@example.com",
+          "name": "Ada Lovelace",
+        },
+      ],
+      "properties": {
+        "date": {
+          "$ref": "#/$defs/CommitTimestamp",
+          "description": "When this person authored or committed the change: an ISO 8601 UTC timestamp, 1970 or later.",
+        },
+        "email": {
+          "description": "Email address, at most 255 characters.",
+          "format": "email",
+          "maxLength": 255,
+          "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+          "type": "string",
+        },
+        "name": {
+          "description": "Display name, 1–255 characters, without "<", ">", newlines or NUL (git cannot store them).",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^<>\\n\\0]+$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+        "email",
+        "date",
+      ],
+      "title": "Commit signature",
+      "type": "object",
+    },
+    "CommitTimestamp": {
+      "$ref": "#/$defs/Timestamp",
+      "description": "An ISO 8601 UTC timestamp at or after 1970-01-01T00:00:00Z. git writes commit dates as unsigned seconds since the epoch, and git fsck rejects a commit with a negative one.",
+      "examples": [
+        "2026-11-20T09:30:00.000Z",
+      ],
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+      "title": "Commit timestamp",
+      "type": "string",
+    },
+    "CommitUnchanged": {
+      "additionalProperties": false,
+      "description": "The actions were valid but produced the base tree again, so no commit was built.",
+      "examples": [
+        {
+          "head": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "status": "noop",
+        },
+      ],
+      "properties": {
+        "head": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "The base commit id, unchanged; null when there was none.",
+        },
+        "status": {
+          "const": "noop",
+          "description": "The actions left the tree unchanged; there is nothing to push.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "head",
+      ],
+      "title": "Commit unchanged",
+      "type": "object",
+    },
+    "ContentEncoding": {
+      "description": "How file content is carried in a JSON string.",
+      "enum": [
+        "text",
+        "base64",
+      ],
+      "enumDescriptions": {
+        "base64": "The string is standard base64 (RFC 4648, with padding) of the raw file bytes; use for binary files.",
+        "text": "The string is the file content itself, stored as UTF-8 bytes.",
+      },
+      "examples": [
+        "text",
+        "base64",
+      ],
+      "title": "Content encoding",
+      "type": "string",
+    },
+    "CoreError.invalid_object": {
+      "additionalProperties": false,
+      "description": "An object read from the repository (or handed to an encoder) is not valid: unparsable bytes, an unknown tree mode, duplicate tree entry names, or a commit the Commit schema cannot represent.",
+      "examples": [
+        {
+          "code": "invalid_object",
+          "details": {
+            "reason": "unknown mode 100664",
+            "sha": null,
+            "type": "tree",
+          },
+          "message": "Invalid tree object",
+        },
+      ],
+      "properties": {
+        "code": {
+          "const": "invalid_object",
+          "description": "An object read from the repository (or handed to an encoder) is not valid: unparsable bytes, an unknown tree mode, duplicate tree entry names, or a commit the Commit schema cannot represent.",
+          "type": "string",
+        },
+        "details": {
+          "additionalProperties": false,
+          "description": "Machine-readable facts about the invalid_object error.",
+          "properties": {
+            "reason": {
+              "description": "What exactly is wrong.",
+              "minLength": 1,
+              "type": "string",
+            },
+            "sha": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Sha",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+              "description": "Id of the invalid object; null when it has no id yet.",
+            },
+            "type": {
+              "description": "The kind of git object involved.",
+              "enum": [
+                "blob",
+                "tree",
+                "commit",
+              ],
+              "enumDescriptions": {
+                "blob": "A file.",
+                "commit": "A commit.",
+                "tree": "A directory.",
+              },
+              "type": "string",
+            },
+          },
+          "required": [
+            "sha",
+            "type",
+            "reason",
+          ],
+          "type": "object",
+        },
+        "message": {
+          "description": "Human-readable explanation of the failure.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+        "details",
+      ],
+      "title": "invalid_object core error",
+      "type": "object",
+    },
+    "CoreError.malformed_pkt_line": {
+      "additionalProperties": false,
+      "description": "The bytes are not valid pkt-line framing: a bad length header, a length below 4 that is not a special packet, a packet over 65520 bytes, or input that ends inside a packet.",
+      "examples": [
+        {
+          "code": "malformed_pkt_line",
+          "details": {
+            "offset": 0,
+            "reason": "length header "zzzz" is not hex",
+          },
+          "message": "Bad pkt-line length",
+        },
+      ],
+      "properties": {
+        "code": {
+          "const": "malformed_pkt_line",
+          "description": "The bytes are not valid pkt-line framing: a bad length header, a length below 4 that is not a special packet, a packet over 65520 bytes, or input that ends inside a packet.",
+          "type": "string",
+        },
+        "details": {
+          "additionalProperties": false,
+          "description": "Machine-readable facts about the malformed_pkt_line error.",
+          "properties": {
+            "offset": {
+              "description": "Byte offset from the start of the input at which the problem was found.",
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "reason": {
+              "description": "What exactly is wrong.",
+              "minLength": 1,
+              "type": "string",
+            },
+          },
+          "required": [
+            "offset",
+            "reason",
+          ],
+          "type": "object",
+        },
+        "message": {
+          "description": "Human-readable explanation of the failure.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+        "details",
+      ],
+      "title": "malformed_pkt_line core error",
+      "type": "object",
+    },
+    "CoreError.malformed_request": {
+      "additionalProperties": false,
+      "description": "The pkt-lines are well framed but are not a valid git protocol message: a bad receive-pack command, a missing flush, or a bad report-status line.",
+      "examples": [
+        {
+          "code": "malformed_request",
+          "details": {
+            "reason": "old id is not 40 hex characters",
+          },
+          "message": "Malformed receive-pack command",
+        },
+      ],
+      "properties": {
+        "code": {
+          "const": "malformed_request",
+          "description": "The pkt-lines are well framed but are not a valid git protocol message: a bad receive-pack command, a missing flush, or a bad report-status line.",
+          "type": "string",
+        },
+        "details": {
+          "additionalProperties": false,
+          "description": "Machine-readable facts about the malformed_request error.",
+          "properties": {
+            "reason": {
+              "description": "What exactly is wrong.",
+              "minLength": 1,
+              "type": "string",
+            },
+          },
+          "required": [
+            "reason",
+          ],
+          "type": "object",
+        },
+        "message": {
+          "description": "Human-readable explanation of the failure.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+        "details",
+      ],
+      "title": "malformed_request core error",
+      "type": "object",
+    },
+    "CoreError.missing_object": {
+      "additionalProperties": false,
+      "description": "An object the operation needed was not found: the read callback returned null for an id that a tree or commit references.",
+      "examples": [
+        {
+          "code": "missing_object",
+          "details": {
+            "sha": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+            "type": "tree",
+          },
+          "message": "Tree not found",
+        },
+      ],
+      "properties": {
+        "code": {
+          "const": "missing_object",
+          "description": "An object the operation needed was not found: the read callback returned null for an id that a tree or commit references.",
+          "type": "string",
+        },
+        "details": {
+          "additionalProperties": false,
+          "description": "Machine-readable facts about the missing_object error.",
+          "properties": {
+            "sha": {
+              "$ref": "#/$defs/Sha",
+              "description": "Id of the missing object.",
+            },
+            "type": {
+              "description": "The kind of git object involved.",
+              "enum": [
+                "blob",
+                "tree",
+                "commit",
+              ],
+              "enumDescriptions": {
+                "blob": "A file.",
+                "commit": "A commit.",
+                "tree": "A directory.",
+              },
+              "type": "string",
+            },
+          },
+          "required": [
+            "sha",
+            "type",
+          ],
+          "type": "object",
+        },
+        "message": {
+          "description": "Human-readable explanation of the failure.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+        "details",
+      ],
+      "title": "missing_object core error",
+      "type": "object",
+    },
+    "CoreError.remote_error": {
+      "additionalProperties": false,
+      "description": "The remote git server reported a fatal error in-protocol: an "ERR" packet or a message on side-band channel 3.",
+      "examples": [
+        {
+          "code": "remote_error",
+          "details": {
+            "remoteMessage": "access denied",
+          },
+          "message": "Remote error: access denied",
+        },
+      ],
+      "properties": {
+        "code": {
+          "const": "remote_error",
+          "description": "The remote git server reported a fatal error in-protocol: an "ERR" packet or a message on side-band channel 3.",
+          "type": "string",
+        },
+        "details": {
+          "additionalProperties": false,
+          "description": "Machine-readable facts about the remote_error error.",
+          "properties": {
+            "remoteMessage": {
+              "description": "The message the remote sent, without the trailing newline.",
+              "type": "string",
+            },
+          },
+          "required": [
+            "remoteMessage",
+          ],
+          "type": "object",
+        },
+        "message": {
+          "description": "Human-readable explanation of the failure.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+        "details",
+      ],
+      "title": "remote_error core error",
+      "type": "object",
+    },
+    "CoreError.unsupported_request": {
+      "additionalProperties": false,
+      "description": "The request uses a git protocol feature the gateway does not support, such as signed pushes or SHA-256 repositories.",
+      "examples": [
+        {
+          "code": "unsupported_request",
+          "details": {
+            "feature": "push-cert",
+          },
+          "message": "Signed pushes are not supported",
+        },
+      ],
+      "properties": {
+        "code": {
+          "const": "unsupported_request",
+          "description": "The request uses a git protocol feature the gateway does not support, such as signed pushes or SHA-256 repositories.",
+          "type": "string",
+        },
+        "details": {
+          "additionalProperties": false,
+          "description": "Machine-readable facts about the unsupported_request error.",
+          "properties": {
+            "feature": {
+              "description": "The unsupported feature, as git names it (e.g. "push-cert", "object-format=sha256").",
+              "minLength": 1,
+              "type": "string",
+            },
+          },
+          "required": [
+            "feature",
+          ],
+          "type": "object",
+        },
+        "message": {
+          "description": "Human-readable explanation of the failure.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+        "details",
+      ],
+      "title": "unsupported_request core error",
+      "type": "object",
+    },
+    "CoreErrorBody": {
+      "description": "Every error the core library reports for protocol and object problems, discriminated by \`code\`. Commit-action rule failures are reported as the contract GatewayError instead (path_exists, path_not_found, path_conflict).",
+      "examples": [
+        {
+          "code": "unsupported_request",
+          "details": {
+            "feature": "push-cert",
+          },
+          "message": "Signed pushes are not supported",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CoreError.malformed_pkt_line",
+        },
+        {
+          "$ref": "#/$defs/CoreError.malformed_request",
+        },
+        {
+          "$ref": "#/$defs/CoreError.unsupported_request",
+        },
+        {
+          "$ref": "#/$defs/CoreError.remote_error",
+        },
+        {
+          "$ref": "#/$defs/CoreError.missing_object",
+        },
+        {
+          "$ref": "#/$defs/CoreError.invalid_object",
+        },
+      ],
+      "title": "Core error",
+    },
+    "CreateAction": {
+      "additionalProperties": false,
+      "description": "Creates a file that does not exist yet. Fails with path_exists if the path is a file or a directory, and with path_conflict if a parent is a file. The new file is not executable.",
+      "examples": [
+        {
+          "action": "create",
+          "content": "# About
+",
+          "encoding": "text",
+          "path": "content/about.md",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "create",
+          "description": "Create a new file. Fails with path_exists if the path exists.",
+          "type": "string",
+        },
+        "content": {
+          "$ref": "#/$defs/FileContent",
+          "description": "Content of the new file, encoded as \`encoding\` says.",
+        },
+        "encoding": {
+          "$ref": "#/$defs/ContentEncoding",
+          "default": "text",
+          "description": "How \`content\` is encoded; defaults to "text".",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the file to create; it and every parent must not already be a file.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "content",
+        "encoding",
+      ],
+      "title": "Create action",
+      "type": "object",
+    },
+    "DataPacket": {
+      "additionalProperties": false,
+      "description": "A pkt-line carrying a payload, framed as a 4-hex-digit total length followed by the payload.",
+      "examples": [
+        {
+          "payload": {
+            "0": 111,
+            "1": 107,
+            "2": 10,
+          },
+          "type": "data",
+        },
+      ],
+      "properties": {
+        "payload": {
+          "$ref": "#/$defs/Bytes",
+          "description": "The payload, 0–65516 bytes, including any trailing newline the sender wrote. An empty payload is the "0004" packet.",
+          "examples": [
+            {
+              "0": 80,
+              "1": 65,
+              "2": 67,
+              "3": 75,
+            },
+          ],
+          "title": "Bytes",
+        },
+        "type": {
+          "const": "data",
+          "description": "A pkt-line with a payload: a 4-hex-digit length header, then the payload.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "type",
+        "payload",
+      ],
+      "title": "Data pkt-line",
+      "type": "object",
+    },
+    "DeleteAction": {
+      "additionalProperties": false,
+      "description": "Deletes an existing file. Fails with path_not_found if the path is not a file (a directory cannot be deleted in one action).",
+      "examples": [
+        {
+          "action": "delete",
+          "path": "content/old.md",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "delete",
+          "description": "Delete an existing file. Fails with path_not_found if it is absent.",
+          "type": "string",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the file to delete. Directories left empty disappear with it.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+      ],
+      "title": "Delete action",
+      "type": "object",
+    },
+    "EditTreeInput": {
+      "additionalProperties": false,
+      "description": "A root tree and the path edits to apply to it.",
+      "examples": [
+        {
+          "changes": [
+            {
+              "mode": "100644",
+              "op": "set",
+              "path": "a.txt",
+              "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+            },
+          ],
+          "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+        },
+      ],
+      "properties": {
+        "changes": {
+          "description": "Edits to apply in order; at most 10000.",
+          "items": {
+            "$ref": "#/$defs/TreeChange",
+          },
+          "maxItems": 10000,
+          "type": "array",
+        },
+        "tree": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "Id of the root tree to edit; null starts from an empty tree.",
+        },
+      },
+      "required": [
+        "tree",
+        "changes",
+      ],
+      "title": "editTree input",
+      "type": "object",
+    },
+    "EditedTree": {
+      "additionalProperties": false,
+      "description": "The result of editing a tree: the new root id and the new tree objects. Untouched subtrees keep their ids and are not rewritten.",
+      "examples": [
+        {
+          "objects": [],
+          "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+        },
+      ],
+      "properties": {
+        "objects": {
+          "description": "Tree objects that did not exist before, one per changed directory, deepest first. Blobs are never included.",
+          "items": {
+            "$ref": "#/$defs/GitObject",
+          },
+          "type": "array",
+        },
+        "tree": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the resulting root tree; equal to the input tree when nothing changed.",
+        },
+      },
+      "required": [
+        "tree",
+        "objects",
+      ],
+      "title": "Edited tree",
+      "type": "object",
+    },
+    "EntryMode": {
+      "description": "The mode of a non-directory tree entry; directories are created and removed implicitly by paths.",
+      "enum": [
+        "100644",
+        "100755",
+        "120000",
+        "160000",
+      ],
+      "enumDescriptions": {
+        "100644": "A regular file, not executable.",
+        "100755": "A regular file with the executable bit set.",
+        "120000": "A symbolic link; the blob holds the link target.",
+        "160000": "A submodule; the id names a commit in another repository.",
+      },
+      "examples": [
+        "100644",
+        "100755",
+      ],
+      "title": "Entry mode",
+      "type": "string",
+    },
+    "FileContent": {
+      "description": "File content as a string, interpreted according to the accompanying encoding: UTF-8 text, or base64 of the raw bytes. At most 48 MiB of characters (32 MiB of bytes as base64). An empty string is an empty file.",
+      "examples": [
+        "# Hello
+",
+        "iVBORw0KGgo=",
+      ],
+      "maxLength": 50331648,
+      "title": "File content",
+      "type": "string",
+    },
+    "FileMode": {
+      "description": "The git mode of a tree entry, as the six-digit octal string git records.",
+      "enum": [
+        "100644",
+        "100755",
+        "120000",
+        "160000",
+        "040000",
+      ],
+      "enumDescriptions": {
+        "040000": "A directory (a subtree).",
+        "100644": "A regular file, not executable.",
+        "100755": "A regular file with the executable bit set.",
+        "120000": "A symbolic link; the blob holds the link target.",
+        "160000": "A submodule; the id names a commit in another repository.",
+      },
+      "examples": [
+        "100644",
+        "040000",
+      ],
+      "title": "File mode",
+      "type": "string",
+    },
+    "FilePath": {
+      "description": "A path inside the repository relative to its root, 1–4096 characters, "/"-separated into segments of 1–255 characters: no leading or trailing "/", no empty, "." or ".." segment, no ".git" segment (any case), no backslash and no control character (U+0000–U+001F, U+007F). Case-sensitive; unicode allowed.",
+      "examples": [
+        "content/index.md",
+        "templates/layouts/page.hbs",
+      ],
+      "maxLength": 4096,
+      "minLength": 1,
+      "pattern": "^(?!\\/)(?!.*\\/\\/)(?!.*\\/$)(?!(?:.*\\/)?[^/]{256})(?!(?:.*\\/)?\\.\\.?(?:\\/|$))(?!(?:.*\\/)?\\.[gG][iI][tT](?:\\/|$))[^\\x00-\\x1f\\x7f\\\\]+$",
+      "title": "File path",
+      "type": "string",
+    },
+    "FullRefName": {
+      "description": "A fully qualified ref, "refs/heads/<branch>" or "refs/tags/<tag>", where the name after the prefix follows the same rules as a branch name.",
+      "examples": [
+        "refs/heads/main",
+        "refs/tags/v1.0.0",
+      ],
+      "maxLength": 266,
+      "minLength": 11,
+      "pattern": "^refs\\/(?:heads|tags)\\/(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+      "title": "Full ref name",
+      "type": "string",
+    },
+    "GitObject": {
+      "additionalProperties": false,
+      "description": "A git object ready to be packed: type, id and uncompressed content. Produced by the encoders and tree operations, consumed by writePack.",
+      "examples": [
+        {
+          "data": {},
+          "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+          "type": "blob",
+        },
+      ],
+      "properties": {
+        "data": {
+          "$ref": "#/$defs/Bytes",
+          "description": "The object content without the "<type> <size>\\0" header, uncompressed.",
+        },
+        "sha": {
+          "$ref": "#/$defs/Sha",
+          "description": "The object id: SHA-1 of "<type> <size>\\0" followed by \`data\`.",
+        },
+        "type": {
+          "$ref": "#/$defs/GitObjectType",
+        },
+      },
+      "required": [
+        "type",
+        "sha",
+        "data",
+      ],
+      "title": "Git object",
+      "type": "object",
+    },
+    "GitObjectType": {
+      "description": "The kind of a git object, as named in its "<type> <size>\\0" header and its pack entry.",
+      "enum": [
+        "blob",
+        "tree",
+        "commit",
+      ],
+      "enumDescriptions": {
+        "blob": "File content (pack type 3).",
+        "commit": "A commit (pack type 1).",
+        "tree": "A directory listing (pack type 2).",
+      },
+      "examples": [
+        "blob",
+        "tree",
+        "commit",
+      ],
+      "title": "Git object type",
+      "type": "string",
+    },
+    "GitRefName": {
+      "description": "A fully qualified ref of any namespace, as a receive-pack command names it: "refs/" followed by components valid under git check-ref-format (no "..", "@{", "//", control characters, space, DEL or ~ ^ : ? * [ \\; no component starting with "." or ending with ".lock"; no trailing "/" or "."). Branch policy decides which namespaces may be pushed.",
+      "examples": [
+        "refs/heads/main",
+        "refs/tags/v1.0.0",
+        "refs/notes/commits",
+      ],
+      "maxLength": 4096,
+      "minLength": 6,
+      "pattern": "^refs\\/(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\]+$",
+      "title": "Git ref name",
+      "type": "string",
+    },
+    "GitTreeEntry": {
+      "additionalProperties": false,
+      "description": "One entry of a git tree object as stored: the name within its directory, the mode, and the id of the blob, tree or submodule commit. A contract TreeEntry without its derived path and type, so a TreeEntry list from a backend can be passed where these are read.",
+      "examples": [
+        {
+          "mode": "100644",
+          "name": "about.md",
+          "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+        },
+      ],
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/FileMode",
+        },
+        "name": {
+          "description": "Last segment of the path: 1–255 characters without "/" or NUL.",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^/\\0]+$",
+          "type": "string",
+        },
+        "sha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the blob, tree or submodule commit the entry names.",
+        },
+      },
+      "required": [
+        "name",
+        "mode",
+        "sha",
+      ],
+      "title": "Git tree entry",
+      "type": "object",
+    },
+    "IdempotencyConfig": {
+      "additionalProperties": false,
+      "description": "How far back commit() looks through the target branch for a commit carrying the same idempotency key. Both bounds apply; the lookup stops at whichever is reached first.",
+      "examples": [
+        {
+          "maxAgeSeconds": 604800,
+          "maxCommits": 200,
+        },
+      ],
+      "properties": {
+        "maxAgeSeconds": {
+          "default": 604800,
+          "description": "Commits committed longer ago than this many seconds are not examined; 60 s–30 days, default 7 days (604800).",
+          "maximum": 2592000,
+          "minimum": 60,
+          "type": "integer",
+        },
+        "maxCommits": {
+          "default": 200,
+          "description": "Most commits of the branch history examined, newest first; 1–10000, default 200.",
+          "maximum": 10000,
+          "minimum": 1,
+          "type": "integer",
+        },
+      },
+      "required": [
+        "maxCommits",
+        "maxAgeSeconds",
+      ],
+      "title": "Idempotency window",
+      "type": "object",
+    },
+    "IdempotencyKey": {
+      "description": "Caller-chosen key that makes a commit idempotent: 1–128 characters of letters, digits, ".", "_", ":" and "-", starting with a letter or digit. Recorded as a "Gateway-Idempotency-Key:" trailer; a retried commit carrying a key already in the branch's recent history returns that commit instead of writing another.",
+      "examples": [
+        "cms:publish:2f9c1e",
+        "6f1d2c3b-9a8e-4f7d-b6c5-a4e3d2c1b0a9",
+      ],
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Idempotency key",
+      "type": "string",
+    },
+    "IdempotencyLookupInput": {
+      "additionalProperties": false,
+      "description": "Where and how far back to search a branch for a commit carrying a "Gateway-Idempotency-Key:" trailer with a given key.",
+      "examples": [
+        {
+          "head": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "key": "cms:publish:2f9c1e",
+          "now": "2026-11-20T09:30:00.000Z",
+          "window": {
+            "maxAgeSeconds": 604800,
+            "maxCommits": 200,
+          },
+        },
+      ],
+      "properties": {
+        "head": {
+          "$ref": "#/$defs/Sha",
+          "description": "Head commit of the branch to search, newest end of the window.",
+        },
+        "key": {
+          "$ref": "#/$defs/IdempotencyKey",
+          "description": "The idempotency key of the write being attempted.",
+        },
+        "now": {
+          "$ref": "#/$defs/Timestamp",
+          "description": "The current time, which the age bound is measured from.",
+        },
+        "window": {
+          "$ref": "#/$defs/IdempotencyConfig",
+          "description": "How far back to look: at most \`maxCommits\` commits, none committed more than \`maxAgeSeconds\` before \`now\`.",
+        },
+      },
+      "required": [
+        "head",
+        "key",
+        "window",
+        "now",
+      ],
+      "title": "Idempotency lookup",
+      "type": "object",
+    },
+    "Identity": {
+      "additionalProperties": false,
+      "description": "The name and email a commit is attributed to, as an author or a committer.",
+      "examples": [
+        {
+          "email": "ada@example.com",
+          "name": "Ada Lovelace",
+        },
+      ],
+      "properties": {
+        "email": {
+          "description": "Email address, at most 255 characters.",
+          "format": "email",
+          "maxLength": 255,
+          "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+          "type": "string",
+        },
+        "name": {
+          "description": "Display name, 1–255 characters, without "<", ">", newlines or NUL (git cannot store them).",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^<>\\n\\0]+$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+        "email",
+      ],
+      "title": "Identity",
+      "type": "object",
+    },
+    "MergeTreesInput": {
+      "additionalProperties": false,
+      "description": "The three root trees of a file-level three-way merge: merge base, ours and theirs.",
+      "examples": [
+        {
+          "base": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+          "ours": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "theirs": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        },
+      ],
+      "properties": {
+        "base": {
+          "$ref": "#/$defs/Sha",
+          "description": "Root tree of the merge base commit.",
+        },
+        "ours": {
+          "$ref": "#/$defs/Sha",
+          "description": "Root tree of the branch being brought up to date (\`into\`).",
+        },
+        "theirs": {
+          "$ref": "#/$defs/Sha",
+          "description": "Root tree of the branch being merged in (\`from\`).",
+        },
+      },
+      "required": [
+        "base",
+        "ours",
+        "theirs",
+      ],
+      "title": "mergeTrees input",
+      "type": "object",
+    },
+    "MoveAction": {
+      "additionalProperties": false,
+      "description": "Moves a file, keeping its executable bit and, unless \`content\` is given, its content. Fails with path_not_found if \`previousPath\` is not a file, path_exists if \`path\` exists, and path_conflict if a parent of \`path\` is a file.",
+      "examples": [
+        {
+          "action": "move",
+          "encoding": "text",
+          "path": "content/new.md",
+          "previousPath": "content/old.md",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "move",
+          "description": "Move a file from \`previousPath\` to \`path\`.",
+          "type": "string",
+        },
+        "content": {
+          "$ref": "#/$defs/FileContent",
+          "description": "New content for the moved file, encoded as \`encoding\` says. Absent: the content is kept.",
+        },
+        "encoding": {
+          "$ref": "#/$defs/ContentEncoding",
+          "default": "text",
+          "description": "How \`content\` is encoded; defaults to "text".",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Destination path; it must not exist and no parent of it may be a file.",
+        },
+        "previousPath": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the existing file to move.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "previousPath",
+        "encoding",
+      ],
+      "title": "Move action",
+      "type": "object",
+    },
+    "Packet": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DataPacket",
+        },
+        {
+          "$ref": "#/$defs/SpecialPacket",
+        },
+      ],
+      "description": "One unit of git pkt-line framing: a data packet, or a flush, delim or response-end packet.",
+      "examples": [
+        {
+          "type": "flush",
+        },
+        {
+          "payload": {
+            "0": 111,
+            "1": 107,
+            "2": 10,
+          },
+          "type": "data",
+        },
+      ],
+      "title": "pkt-line",
+    },
+    "PushOption": {
+      "description": "One "git push -o <option>" value: a single line of at most 65515 characters without newline or NUL. May be empty.",
+      "examples": [
+        "ci.skip",
+        "merge_request.create",
+      ],
+      "maxLength": 65515,
+      "pattern": "^[^\\n\\0]*$",
+      "title": "Push option",
+      "type": "string",
+    },
+    "ReceivePackCommand": {
+      "additionalProperties": false,
+      "description": "One "<old> <new> <ref>" update command from the start of a git-receive-pack request. The server refuses it when the ref no longer names \`oldSha\`.",
+      "examples": [
+        {
+          "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "ref": "refs/heads/main",
+        },
+      ],
+      "properties": {
+        "newSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the ref should name after the push; all zeros when the push deletes the ref.",
+        },
+        "oldSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the client believes the ref names now; all zeros when the push creates the ref.",
+        },
+        "ref": {
+          "$ref": "#/$defs/GitRefName",
+          "description": "The ref to update, fully qualified.",
+        },
+      },
+      "required": [
+        "oldSha",
+        "newSha",
+        "ref",
+      ],
+      "title": "receive-pack command",
+      "type": "object",
+    },
+    "ReceivePackCommands": {
+      "description": "The update commands of a git-receive-pack request in the order sent: 1–10000 commands, each ref named by at most one of them.",
+      "examples": [
+        [
+          {
+            "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            "ref": "refs/heads/main",
+          },
+        ],
+      ],
+      "items": {
+        "$ref": "#/$defs/ReceivePackCommand",
+      },
+      "maxItems": 10000,
+      "minItems": 1,
+      "title": "receive-pack commands",
+      "type": "array",
+    },
+    "ReceivePackPush": {
+      "additionalProperties": false,
+      "description": "A git-receive-pack request the gateway sends to a storage backend: update commands, capabilities, push options and the pack.",
+      "examples": [
+        {
+          "capabilities": [
+            "report-status",
+          ],
+          "commands": [
+            {
+              "newSha": "0000000000000000000000000000000000000000",
+              "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+              "ref": "refs/heads/old",
+            },
+          ],
+          "pushOptions": [],
+        },
+      ],
+      "properties": {
+        "capabilities": {
+          "default": [
+            "report-status",
+          ],
+          "description": "Capabilities to request on the first command; default ["report-status"]. "push-options" is added automatically when push options are given.",
+          "items": {
+            "$ref": "#/$defs/Capability",
+          },
+          "maxItems": 100,
+          "type": "array",
+        },
+        "commands": {
+          "$ref": "#/$defs/ReceivePackCommands",
+          "description": "The update commands to send, in order; 1–10000, each ref at most once.",
+        },
+        "pack": {
+          "$ref": "#/$defs/Bytes",
+          "description": "The pack holding the objects the commands need, as written by writePack. Absent: no pack is sent, which is right only when every command deletes a ref.",
+        },
+        "pushOptions": {
+          "default": [],
+          "description": "Push options to send after the commands; default none.",
+          "items": {
+            "$ref": "#/$defs/PushOption",
+          },
+          "maxItems": 100,
+          "type": "array",
+        },
+      },
+      "required": [
+        "commands",
+        "capabilities",
+        "pushOptions",
+      ],
+      "title": "receive-pack push",
+      "type": "object",
+    },
+    "ReceivePackRequest": {
+      "additionalProperties": false,
+      "description": "The leading part of a protocol v0/v1 git-receive-pack request body, before the pack: shallow lines, update commands with the capabilities on the first, and push options.",
+      "examples": [
+        {
+          "capabilities": [
+            "report-status",
+            "side-band-64k",
+            "agent=git/2.43.0",
+          ],
+          "commands": [
+            {
+              "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+              "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+              "ref": "refs/heads/main",
+            },
+          ],
+          "pushOptions": [],
+          "shallow": [],
+        },
+      ],
+      "properties": {
+        "capabilities": {
+          "description": "Capabilities the client requested on the first command, in the order sent; may be empty.",
+          "items": {
+            "$ref": "#/$defs/Capability",
+          },
+          "maxItems": 100,
+          "type": "array",
+        },
+        "commands": {
+          "$ref": "#/$defs/ReceivePackCommands",
+          "description": "The update commands in the order sent; 1–10000, each ref at most once.",
+        },
+        "pushOptions": {
+          "description": "Push options sent after the commands, in order; empty when the "push-options" capability was not requested.",
+          "items": {
+            "$ref": "#/$defs/PushOption",
+          },
+          "maxItems": 100,
+          "type": "array",
+        },
+        "shallow": {
+          "description": ""shallow <id>" lines sent before the commands by a client pushing from a shallow clone; usually empty.",
+          "items": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id of a shallow boundary commit the client holds.",
+          },
+          "maxItems": 10000,
+          "type": "array",
+        },
+      },
+      "required": [
+        "commands",
+        "capabilities",
+        "pushOptions",
+        "shallow",
+      ],
+      "title": "receive-pack request head",
+      "type": "object",
+    },
+    "RefStatus": {
+      "description": "The outcome of one update command in a report-status response, discriminated by \`status\`.",
+      "examples": [
+        {
+          "ref": "refs/heads/main",
+          "status": "ok",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/RefStatusOk",
+        },
+        {
+          "$ref": "#/$defs/RefStatusRejected",
+        },
+      ],
+      "title": "Ref status",
+    },
+    "RefStatusOk": {
+      "additionalProperties": false,
+      "description": "The server applied the update command for this ref.",
+      "examples": [
+        {
+          "ref": "refs/heads/main",
+          "status": "ok",
+        },
+      ],
+      "properties": {
+        "ref": {
+          "$ref": "#/$defs/GitRefName",
+          "description": "The ref the command named.",
+        },
+        "status": {
+          "const": "ok",
+          "description": "The ref was updated ("ok <ref>").",
+          "type": "string",
+        },
+      },
+      "required": [
+        "ref",
+        "status",
+      ],
+      "title": "ref status: ok",
+      "type": "object",
+    },
+    "RefStatusRejected": {
+      "additionalProperties": false,
+      "description": "The server refused the update command for this ref and said why.",
+      "examples": [
+        {
+          "reason": "fetch first",
+          "ref": "refs/heads/main",
+          "status": "ng",
+        },
+      ],
+      "properties": {
+        "reason": {
+          "description": "Why the server refused, as it said it: e.g. "fetch first" or "failed to lock" for a stale old id, "non-fast-forward", or a policy message. One line, 1–1000 characters.",
+          "maxLength": 1000,
+          "minLength": 1,
+          "pattern": "^[^\\n\\0]+$",
+          "type": "string",
+        },
+        "ref": {
+          "$ref": "#/$defs/GitRefName",
+          "description": "The ref the command named.",
+        },
+        "status": {
+          "const": "ng",
+          "description": "The ref was not updated ("ng <ref> <reason>").",
+          "type": "string",
+        },
+      },
+      "required": [
+        "ref",
+        "status",
+        "reason",
+      ],
+      "title": "ref status: rejected",
+      "type": "object",
+    },
+    "RefUpdate": {
+      "additionalProperties": false,
+      "description": "One ref moved by a write, in receive-pack command form: the ref, the id it named before and the id it names after. Creation and deletion use the all-zero id on the missing side.",
+      "examples": [
+        {
+          "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "ref": "refs/heads/main",
+        },
+      ],
+      "properties": {
+        "newSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the ref points at after the update; the all-zero id when the update deleted the ref.",
+        },
+        "oldSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the ref pointed at before the update; the all-zero id when the update created the ref.",
+        },
+        "ref": {
+          "$ref": "#/$defs/FullRefName",
+          "description": "The ref that moved, fully qualified (refs/heads/<branch>).",
+        },
+      },
+      "required": [
+        "ref",
+        "oldSha",
+        "newSha",
+      ],
+      "title": "Ref update",
+      "type": "object",
+    },
+    "RemoveEntryChange": {
+      "additionalProperties": false,
+      "description": "Removes a non-directory entry; directories it leaves empty are removed too.",
+      "examples": [
+        {
+          "op": "remove",
+          "path": "content/old.md",
+        },
+      ],
+      "properties": {
+        "op": {
+          "const": "remove",
+          "description": "Remove the entry at \`path\`.",
+          "type": "string",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of a non-directory entry. Fails with path_not_found if it is absent or a directory. Directories left empty disappear.",
+        },
+      },
+      "required": [
+        "op",
+        "path",
+      ],
+      "title": "Remove entry",
+      "type": "object",
+    },
+    "ReportStatus": {
+      "additionalProperties": false,
+      "description": "The report-status response of git-receive-pack: whether the pack unpacked, and whether each ref was updated. A push succeeded only when \`unpack\` is "ok" and every ref is "ok".",
+      "examples": [
+        {
+          "refs": [
+            {
+              "ref": "refs/heads/main",
+              "status": "ok",
+            },
+          ],
+          "unpack": "ok",
+        },
+      ],
+      "properties": {
+        "refs": {
+          "description": "One status per update command, in the order the server reported them.",
+          "items": {
+            "$ref": "#/$defs/RefStatus",
+          },
+          "maxItems": 10000,
+          "type": "array",
+        },
+        "unpack": {
+          "description": "The unpack result: "ok" when the pack was received and stored, otherwise the error the server gave.",
+          "maxLength": 1000,
+          "minLength": 1,
+          "pattern": "^[^\\n\\0]+$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "unpack",
+        "refs",
+      ],
+      "title": "Report status",
+      "type": "object",
+    },
+    "SetEntryChange": {
+      "additionalProperties": false,
+      "description": "Creates or replaces a non-directory entry at a path, creating parent directories as needed.",
+      "examples": [
+        {
+          "mode": "100644",
+          "op": "set",
+          "path": "content/about.md",
+          "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+        },
+      ],
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/EntryMode",
+        },
+        "op": {
+          "const": "set",
+          "description": "Create or replace the entry at \`path\`.",
+          "type": "string",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the entry. Missing parent directories are created; fails with path_exists if the path is a directory and path_conflict if a parent is not a directory.",
+        },
+        "sha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the blob (or submodule commit) the entry names. It must exist or be pushed with the tree.",
+        },
+      },
+      "required": [
+        "op",
+        "path",
+        "mode",
+        "sha",
+      ],
+      "title": "Set entry",
+      "type": "object",
+    },
+    "Sha": {
+      "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
+      "examples": [
+        "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+      ],
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Object id",
+      "type": "string",
+    },
+    "Signature": {
+      "additionalProperties": false,
+      "description": "An identity together with the time it authored or committed a commit, as stored in the commit.",
+      "examples": [
+        {
+          "date": "2026-11-20T09:30:00.000Z",
+          "email": "ada@example.com",
+          "name": "Ada Lovelace",
+        },
+      ],
+      "properties": {
+        "date": {
+          "$ref": "#/$defs/Timestamp",
+          "description": "When this person authored or committed the change, as an ISO 8601 UTC timestamp.",
+        },
+        "email": {
+          "description": "Email address, at most 255 characters.",
+          "format": "email",
+          "maxLength": 255,
+          "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+          "type": "string",
+        },
+        "name": {
+          "description": "Display name, 1–255 characters, without "<", ">", newlines or NUL (git cannot store them).",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^<>\\n\\0]+$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+        "email",
+        "date",
+      ],
+      "title": "Signature",
+      "type": "object",
+    },
+    "SpecialPacket": {
+      "additionalProperties": false,
+      "description": "A length-only pkt-line with no payload: flush ("0000"), delim ("0001") or response-end ("0002").",
+      "examples": [
+        {
+          "type": "flush",
+        },
+      ],
+      "properties": {
+        "type": {
+          "description": "Which special packet this is.",
+          "enum": [
+            "flush",
+            "delim",
+            "response-end",
+          ],
+          "enumDescriptions": {
+            "delim": ""0001": separates sections of a protocol v2 message.",
+            "flush": ""0000": ends a list of pkt-lines (a section or a message).",
+            "response-end": ""0002": ends a stateless protocol v2 response.",
+          },
+          "type": "string",
+        },
+      },
+      "required": [
+        "type",
+      ],
+      "title": "Special pkt-line",
+      "type": "object",
+    },
+    "Timestamp": {
+      "description": "A point in time as an ISO 8601 UTC timestamp ending in "Z", with optional fractional seconds (e.g. 2026-11-20T09:30:00.000Z).",
+      "examples": [
+        "2026-11-20T09:30:00.000Z",
+      ],
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+      "title": "Timestamp",
+      "type": "string",
+    },
+    "TreeChange": {
+      "description": "One low-level edit of a tree by path, discriminated by \`op\`. Changes apply in order.",
+      "examples": [
+        {
+          "op": "remove",
+          "path": "content/old.md",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SetEntryChange",
+        },
+        {
+          "$ref": "#/$defs/RemoveEntryChange",
+        },
+      ],
+      "title": "Tree change",
+    },
+    "TreeMergeResult": {
+      "description": "The outcome of mergeTrees, discriminated by \`status\`.",
+      "examples": [
+        {
+          "paths": [
+            "content/about.md",
+          ],
+          "status": "conflict",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/TreesMerged",
+        },
+        {
+          "$ref": "#/$defs/TreesConflict",
+        },
+      ],
+      "title": "Tree merge result",
+    },
+    "TreesConflict": {
+      "additionalProperties": false,
+      "description": "The merge failed: the listed paths changed differently on both sides. Nothing is written.",
+      "examples": [
+        {
+          "paths": [
+            "content/about.md",
+          ],
+          "status": "conflict",
+        },
+      ],
+      "properties": {
+        "paths": {
+          "description": "Every conflicting path, sorted in byte order: changed differently on both sides, or a file where the merged result has a directory (the file and every merged path beneath it).",
+          "items": {
+            "$ref": "#/$defs/FilePath",
+            "description": "A conflicting path.",
+          },
+          "minItems": 1,
+          "type": "array",
+        },
+        "status": {
+          "const": "conflict",
+          "description": "Some paths cannot be merged at file level.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "paths",
+      ],
+      "title": "Trees conflict",
+      "type": "object",
+    },
+    "TreesMerged": {
+      "additionalProperties": false,
+      "description": "The merge succeeded: each path changed on one side took that side, and paths changed identically on both took either.",
+      "examples": [
+        {
+          "objects": [],
+          "status": "merged",
+          "tree": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        },
+      ],
+      "properties": {
+        "objects": {
+          "description": "Tree objects the merged tree needs that none of the three inputs had, deepest first.",
+          "items": {
+            "$ref": "#/$defs/GitObject",
+          },
+          "type": "array",
+        },
+        "status": {
+          "const": "merged",
+          "description": "Every path merged without conflict.",
+          "type": "string",
+        },
+        "tree": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the merged root tree.",
+        },
+      },
+      "required": [
+        "status",
+        "tree",
+        "objects",
+      ],
+      "title": "Trees merged",
+      "type": "object",
+    },
+    "UpdateAction": {
+      "additionalProperties": false,
+      "description": "Replaces the content of an existing file, keeping its executable bit. Fails with path_not_found if the path is not a file.",
+      "examples": [
+        {
+          "action": "update",
+          "content": "# About us
+",
+          "encoding": "text",
+          "path": "content/about.md",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "update",
+          "description": "Replace an existing file. Fails with path_not_found if it is absent.",
+          "type": "string",
+        },
+        "content": {
+          "$ref": "#/$defs/FileContent",
+          "description": "New content of the file, encoded as \`encoding\` says.",
+        },
+        "encoding": {
+          "$ref": "#/$defs/ContentEncoding",
+          "default": "text",
+          "description": "How \`content\` is encoded; defaults to "text".",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the existing file to replace.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "content",
+        "encoding",
+      ],
+      "title": "Update action",
+      "type": "object",
+    },
+    "UpsertAction": {
+      "additionalProperties": false,
+      "description": "Creates the file, or replaces it (keeping its executable bit) if it exists. Fails with path_exists if the path is a directory and path_conflict if a parent is a file. Not part of the GitLab Commits API.",
+      "examples": [
+        {
+          "action": "upsert",
+          "content": "iVBORw0KGgo=",
+          "encoding": "base64",
+          "path": "assets/logo.png",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "upsert",
+          "description": "Create the file, or replace it if it exists.",
+          "type": "string",
+        },
+        "content": {
+          "$ref": "#/$defs/FileContent",
+          "description": "Content of the file, encoded as \`encoding\` says.",
+        },
+        "encoding": {
+          "$ref": "#/$defs/ContentEncoding",
+          "default": "text",
+          "description": "How \`content\` is encoded; defaults to "text".",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the file to create or replace.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "content",
+        "encoding",
+      ],
+      "title": "Upsert action",
+      "type": "object",
+    },
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 }
 `;

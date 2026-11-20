@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Nightly: the whole suite against the lowest version in each peer range (zod, hono, cloudflare),
-# and the whole suite against the latest, ignoring the Turbo cache.
+# the whole suite against the latest, ignoring the Turbo cache, and Stryker mutation testing on core.
 name: nightly
 
 on:
@@ -43,3 +43,24 @@ jobs:
 
       - name: Build and test everything
         run: bunx turbo run build test --force
+
+  mutation:
+    name: mutation (core)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-toolchain
+        with:
+          cache-key: nightly-mutation
+
+      # Stryker mutates core's source in place (restoring it afterwards) and reruns the tests that
+      # cover each mutant, conformance tests against the runner's git included. Upstream packages are
+      # built first because core's tests import them through their published entry points.
+      - name: Mutation testing (Stryker) on core
+        run: |
+          bunx turbo run build --filter=@leed-ai/git-gateway-core^...
+          bun run --cwd packages/core test:mutation

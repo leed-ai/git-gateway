@@ -10,6 +10,8 @@ dist/
 .vitest/
 .wrangler/
 coverage/
+.stryker-tmp/
+reports/
 
 # local environment
 .env

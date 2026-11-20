@@ -27,10 +27,175 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
+    "./actions/apply-commit-actions": {
+      "source": "./src/actions/apply-commit-actions.ts",
+      "types": "./dist/actions/apply-commit-actions.d.ts",
+      "default": "./dist/actions/apply-commit-actions.js"
+    },
+    "./bytes": {
+      "source": "./src/bytes.ts",
+      "types": "./dist/bytes.d.ts",
+      "default": "./dist/bytes.js"
+    },
+    "./commit/build-commit": {
+      "source": "./src/commit/build-commit.ts",
+      "types": "./dist/commit/build-commit.d.ts",
+      "default": "./dist/commit/build-commit.js"
+    },
+    "./core-error": {
+      "source": "./src/core-error.ts",
+      "types": "./dist/core-error.d.ts",
+      "default": "./dist/core-error.js"
+    },
+    "./idempotency/find-idempotent-commit": {
+      "source": "./src/idempotency/find-idempotent-commit.ts",
+      "types": "./dist/idempotency/find-idempotent-commit.d.ts",
+      "default": "./dist/idempotency/find-idempotent-commit.js"
+    },
+    "./merge/merge-trees": {
+      "source": "./src/merge/merge-trees.ts",
+      "types": "./dist/merge/merge-trees.d.ts",
+      "default": "./dist/merge/merge-trees.js"
+    },
+    "./objects/commit-object": {
+      "source": "./src/objects/commit-object.ts",
+      "types": "./dist/objects/commit-object.d.ts",
+      "default": "./dist/objects/commit-object.js"
+    },
+    "./objects/hash-object": {
+      "source": "./src/objects/hash-object.ts",
+      "types": "./dist/objects/hash-object.d.ts",
+      "default": "./dist/objects/hash-object.js"
+    },
+    "./objects/tree-object": {
+      "source": "./src/objects/tree-object.ts",
+      "types": "./dist/objects/tree-object.d.ts",
+      "default": "./dist/objects/tree-object.js"
+    },
+    "./pack/deflate": {
+      "source": "./src/pack/deflate.ts",
+      "types": "./dist/pack/deflate.d.ts",
+      "default": "./dist/pack/deflate.js"
+    },
+    "./pack/write-pack": {
+      "source": "./src/pack/write-pack.ts",
+      "types": "./dist/pack/write-pack.d.ts",
+      "default": "./dist/pack/write-pack.js"
+    },
     "./package-name": {
       "source": "./src/package-name.ts",
       "types": "./dist/package-name.d.ts",
       "default": "./dist/package-name.js"
+    },
+    "./pkt-line/decode": {
+      "source": "./src/pkt-line/decode.ts",
+      "types": "./dist/pkt-line/decode.d.ts",
+      "default": "./dist/pkt-line/decode.js"
+    },
+    "./pkt-line/encode": {
+      "source": "./src/pkt-line/encode.ts",
+      "types": "./dist/pkt-line/encode.d.ts",
+      "default": "./dist/pkt-line/encode.js"
+    },
+    "./pkt-line/length-header": {
+      "source": "./src/pkt-line/length-header.ts",
+      "types": "./dist/pkt-line/length-header.d.ts",
+      "default": "./dist/pkt-line/length-header.js"
+    },
+    "./pkt-line/pkt-line-reader": {
+      "source": "./src/pkt-line/pkt-line-reader.ts",
+      "types": "./dist/pkt-line/pkt-line-reader.d.ts",
+      "default": "./dist/pkt-line/pkt-line-reader.js"
+    },
+    "./receive-pack/encode-request": {
+      "source": "./src/receive-pack/encode-request.ts",
+      "types": "./dist/receive-pack/encode-request.d.ts",
+      "default": "./dist/receive-pack/encode-request.js"
+    },
+    "./receive-pack/parse-request": {
+      "source": "./src/receive-pack/parse-request.ts",
+      "types": "./dist/receive-pack/parse-request.d.ts",
+      "default": "./dist/receive-pack/parse-request.js"
+    },
+    "./receive-pack/report-status": {
+      "source": "./src/receive-pack/report-status.ts",
+      "types": "./dist/receive-pack/report-status.d.ts",
+      "default": "./dist/receive-pack/report-status.js"
+    },
+    "./receive-pack/side-band": {
+      "source": "./src/receive-pack/side-band.ts",
+      "types": "./dist/receive-pack/side-band.d.ts",
+      "default": "./dist/receive-pack/side-band.js"
+    },
+    "./schemas/build-commit": {
+      "source": "./src/schemas/build-commit.ts",
+      "types": "./dist/schemas/build-commit.d.ts",
+      "default": "./dist/schemas/build-commit.js"
+    },
+    "./schemas/commit-actions": {
+      "source": "./src/schemas/commit-actions.ts",
+      "types": "./dist/schemas/commit-actions.d.ts",
+      "default": "./dist/schemas/commit-actions.js"
+    },
+    "./schemas/core-error-body": {
+      "source": "./src/schemas/core-error-body.ts",
+      "types": "./dist/schemas/core-error-body.d.ts",
+      "default": "./dist/schemas/core-error-body.js"
+    },
+    "./schemas/git-object": {
+      "source": "./src/schemas/git-object.ts",
+      "types": "./dist/schemas/git-object.d.ts",
+      "default": "./dist/schemas/git-object.js"
+    },
+    "./schemas/idempotency-lookup": {
+      "source": "./src/schemas/idempotency-lookup.ts",
+      "types": "./dist/schemas/idempotency-lookup.d.ts",
+      "default": "./dist/schemas/idempotency-lookup.js"
+    },
+    "./schemas/packet": {
+      "source": "./src/schemas/packet.ts",
+      "types": "./dist/schemas/packet.d.ts",
+      "default": "./dist/schemas/packet.js"
+    },
+    "./schemas/receive-pack": {
+      "source": "./src/schemas/receive-pack.ts",
+      "types": "./dist/schemas/receive-pack.d.ts",
+      "default": "./dist/schemas/receive-pack.js"
+    },
+    "./schemas/report-status": {
+      "source": "./src/schemas/report-status.ts",
+      "types": "./dist/schemas/report-status.d.ts",
+      "default": "./dist/schemas/report-status.js"
+    },
+    "./schemas/tree-edit": {
+      "source": "./src/schemas/tree-edit.ts",
+      "types": "./dist/schemas/tree-edit.d.ts",
+      "default": "./dist/schemas/tree-edit.js"
+    },
+    "./schemas/tree-merge": {
+      "source": "./src/schemas/tree-merge.ts",
+      "types": "./dist/schemas/tree-merge.d.ts",
+      "default": "./dist/schemas/tree-merge.js"
+    },
+    "./tree/edit-tree": {
+      "source": "./src/tree/edit-tree.ts",
+      "types": "./dist/tree/edit-tree.d.ts",
+      "default": "./dist/tree/edit-tree.js"
+    },
+    "./tree/path-rules": {
+      "source": "./src/tree/path-rules.ts",
+      "types": "./dist/tree/path-rules.d.ts",
+      "default": "./dist/tree/path-rules.js"
+    },
+    "./tree/tree-overlay": {
+      "source": "./src/tree/tree-overlay.ts",
+      "types": "./dist/tree/tree-overlay.d.ts",
+      "default": "./dist/tree/tree-overlay.js"
+    },
+    "./tree/tree-reader": {
+      "source": "./src/tree/tree-reader.ts",
+      "types": "./dist/tree/tree-reader.d.ts",
+      "default": "./dist/tree/tree-reader.js"
     },
     "./package.json": "./package.json"
   },
@@ -41,14 +206,24 @@
   "scripts": {
     "build": "vp pack",
     "check": "vp check",
-    "test": "vp test"
+    "test": "vp test --coverage --exclude 'test/**/*.conformance.test.ts'",
+    "test:conformance": "vp test conformance",
+    "test:mutation": "stryker run"
+  },
+  "dependencies": {
+    "@leed-ai/git-gateway-contract": "workspace:*"
   },
   "devDependencies": {
     "@leed-ai/git-gateway-repo-tools": "workspace:*",
     "@leed-ai/git-gateway-schema-docs": "workspace:*",
+    "@stryker-mutator/core": "^10.1.1",
+    "@stryker-mutator/vitest-runner": "^10.1.1",
     "@types/node": "^24.19.2",
+    "@vitest/coverage-v8": ">=5.1.0 <5.1.1",
+    "fast-check": "^4.10.3",
     "typescript": "^7.0.2",
     "vite-plus": "^1.7.0",
+    "vitest": ">=5.1.0 <5.1.1",
     "zod": "^4.6.7"
   },
   "peerDependencies": {
