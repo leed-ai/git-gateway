@@ -71,6 +71,13 @@ Three libraries are the foundation, and each is a **peer dependency** declared b
 | `hono` (`^4`) | Routing in the Worker: the smart-HTTP endpoints, health, and any HTTP surface; auth and policy run as Hono middleware. | `worker`, `examples/gateway` |
 | `cloudflare` (`^5`) | **All Cloudflare REST API calls** (the official SDK): Artifacts control plane outside a binding (namespaces, repos, tokens), Workers Builds, Queues event subscriptions. Where the SDK has no typed resource yet, its generic request methods (`client.get`/`client.post`) are used — never hand-rolled `fetch` to `api.cloudflare.com`. Responses are parsed with Zod. | `backend-artifacts`, `testkit` |
 
+**Every Zod schema is self-documenting.** The schemas are the documentation, so each one is fully described:
+
+- Every schema, every object field, every enum member and every union branch carries a description through Zod 4 metadata — `.meta({ id, title, description, examples })` on named schemas, `.describe()` at minimum on fields. A description says what the value means, its units and format (e.g. "40-character lowercase hex SHA-1"), its constraints and defaults, and when it is absent.
+- Constraints live in the schema, not in prose alone: lengths, regexes for SHAs and ref names, integer ranges, `.default()` values, discriminated unions for action kinds and error codes.
+- Named schemas are registered in one registry (`z.globalRegistry` or a package registry) with stable ids, and the reference docs and the published JSON Schema for the RPC API and configuration are generated from it with `z.toJSONSchema` — never written by hand.
+- A test walks every exported schema (including nested fields) and fails the build if any node lacks a description or a named schema lacks an id and an example; the generated JSON Schema is snapshot-tested, so a change to a contract shows up in review.
+
 `peerDependenciesMeta` marks a peer optional where only part of a package needs it. Each package's dev dependencies install the latest peers so CI tests against current versions, and a nightly CI leg tests against the lowest version in each declared range.
 
 Inside a Worker, bindings (`env.ARTIFACTS`, Workflows, Queues) are preferred over REST; the SDK covers what bindings do not.
