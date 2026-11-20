@@ -287,6 +287,41 @@
       "types": "./dist/schemas/tree-entry.d.ts",
       "default": "./dist/schemas/tree-entry.js"
     },
+    "./storage/git-remote": {
+      "source": "./src/storage/git-remote.ts",
+      "types": "./dist/storage/git-remote.d.ts",
+      "default": "./dist/storage/git-remote.js"
+    },
+    "./storage/storage-backend": {
+      "source": "./src/storage/storage-backend.ts",
+      "types": "./dist/storage/storage-backend.d.ts",
+      "default": "./dist/storage/storage-backend.js"
+    },
+    "./storage/storage-errors": {
+      "source": "./src/storage/storage-errors.ts",
+      "types": "./dist/storage/storage-errors.d.ts",
+      "default": "./dist/storage/storage-errors.js"
+    },
+    "./storage/storage-input": {
+      "source": "./src/storage/storage-input.ts",
+      "types": "./dist/storage/storage-input.d.ts",
+      "default": "./dist/storage/storage-input.js"
+    },
+    "./storage/storage-read": {
+      "source": "./src/storage/storage-read.ts",
+      "types": "./dist/storage/storage-read.d.ts",
+      "default": "./dist/storage/storage-read.js"
+    },
+    "./storage/storage-repo-info": {
+      "source": "./src/storage/storage-repo-info.ts",
+      "types": "./dist/storage/storage-repo-info.d.ts",
+      "default": "./dist/storage/storage-repo-info.js"
+    },
+    "./storage/storage-tree-entry": {
+      "source": "./src/storage/storage-tree-entry.ts",
+      "types": "./dist/storage/storage-tree-entry.d.ts",
+      "default": "./dist/storage/storage-tree-entry.js"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {

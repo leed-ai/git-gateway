@@ -3,7 +3,7 @@ import { libraryPack, nodeTest, workersTestPlugin } from '@leed-ai/git-gateway-r
 import { defineConfig } from 'vite-plus';
 
 export default defineConfig({
-  plugins: [workersTestPlugin()],
+  plugins: [workersTestPlugin('./test/wrangler.jsonc')],
   pack: libraryPack(),
-  test: nodeTest(),
+  test: nodeTest({ testTimeout: 30_000 }),
 });

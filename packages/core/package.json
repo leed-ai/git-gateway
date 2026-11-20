@@ -72,15 +72,40 @@
       "types": "./dist/objects/tree-object.d.ts",
       "default": "./dist/objects/tree-object.js"
     },
+    "./pack/apply-delta": {
+      "source": "./src/pack/apply-delta.ts",
+      "types": "./dist/pack/apply-delta.d.ts",
+      "default": "./dist/pack/apply-delta.js"
+    },
+    "./pack/bit-reader": {
+      "source": "./src/pack/bit-reader.ts",
+      "types": "./dist/pack/bit-reader.d.ts",
+      "default": "./dist/pack/bit-reader.js"
+    },
     "./pack/deflate": {
       "source": "./src/pack/deflate.ts",
       "types": "./dist/pack/deflate.d.ts",
       "default": "./dist/pack/deflate.js"
     },
+    "./pack/huffman": {
+      "source": "./src/pack/huffman.ts",
+      "types": "./dist/pack/huffman.d.ts",
+      "default": "./dist/pack/huffman.js"
+    },
+    "./pack/read-pack": {
+      "source": "./src/pack/read-pack.ts",
+      "types": "./dist/pack/read-pack.d.ts",
+      "default": "./dist/pack/read-pack.js"
+    },
     "./pack/write-pack": {
       "source": "./src/pack/write-pack.ts",
       "types": "./dist/pack/write-pack.d.ts",
       "default": "./dist/pack/write-pack.js"
+    },
+    "./pack/zlib-inflate": {
+      "source": "./src/pack/zlib-inflate.ts",
+      "types": "./dist/pack/zlib-inflate.d.ts",
+      "default": "./dist/pack/zlib-inflate.js"
     },
     "./package-name": {
       "source": "./src/package-name.ts",
@@ -162,6 +187,11 @@
       "types": "./dist/schemas/receive-pack.d.ts",
       "default": "./dist/schemas/receive-pack.js"
     },
+    "./schemas/ref-advertisement": {
+      "source": "./src/schemas/ref-advertisement.ts",
+      "types": "./dist/schemas/ref-advertisement.d.ts",
+      "default": "./dist/schemas/ref-advertisement.js"
+    },
     "./schemas/report-status": {
       "source": "./src/schemas/report-status.ts",
       "types": "./dist/schemas/report-status.d.ts",
@@ -176,6 +206,21 @@
       "source": "./src/schemas/tree-merge.ts",
       "types": "./dist/schemas/tree-merge.d.ts",
       "default": "./dist/schemas/tree-merge.js"
+    },
+    "./schemas/upload-pack": {
+      "source": "./src/schemas/upload-pack.ts",
+      "types": "./dist/schemas/upload-pack.d.ts",
+      "default": "./dist/schemas/upload-pack.js"
+    },
+    "./smart-http/git-http-client": {
+      "source": "./src/smart-http/git-http-client.ts",
+      "types": "./dist/smart-http/git-http-client.d.ts",
+      "default": "./dist/smart-http/git-http-client.js"
+    },
+    "./smart-http/ref-advertisement": {
+      "source": "./src/smart-http/ref-advertisement.ts",
+      "types": "./dist/smart-http/ref-advertisement.d.ts",
+      "default": "./dist/smart-http/ref-advertisement.js"
     },
     "./tree/edit-tree": {
       "source": "./src/tree/edit-tree.ts",
@@ -196,6 +241,16 @@
       "source": "./src/tree/tree-reader.ts",
       "types": "./dist/tree/tree-reader.d.ts",
       "default": "./dist/tree/tree-reader.js"
+    },
+    "./upload-pack/encode-request": {
+      "source": "./src/upload-pack/encode-request.ts",
+      "types": "./dist/upload-pack/encode-request.d.ts",
+      "default": "./dist/upload-pack/encode-request.js"
+    },
+    "./upload-pack/parse-response": {
+      "source": "./src/upload-pack/parse-response.ts",
+      "types": "./dist/upload-pack/parse-response.d.ts",
+      "default": "./dist/upload-pack/parse-response.js"
     },
     "./package.json": "./package.json"
   },

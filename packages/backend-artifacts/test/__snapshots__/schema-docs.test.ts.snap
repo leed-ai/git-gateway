@@ -2,14 +2,1035 @@
 
 exports[`schema documentation > generates the JSON Schema for what the schemas accept 1`] = `
 {
-  "$defs": {},
+  "$defs": {
+    "ArtifactsBindingError": {
+      "description": "The fields of an ArtifactsError the backend relies on. Parsed from whatever was thrown, since an error crossing the binding's RPC boundary may lose its prototype.",
+      "examples": [
+        {
+          "code": "NOT_FOUND",
+          "message": "Repository not found: acme",
+        },
+      ],
+      "properties": {
+        "code": {
+          "description": "String error code, e.g. "NOT_FOUND" or "ALREADY_EXISTS".",
+          "minLength": 1,
+          "type": "string",
+        },
+        "message": {
+          "description": "Human-readable message from the binding.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+      ],
+      "title": "Artifacts binding error",
+      "type": "object",
+    },
+    "ArtifactsCommit": {
+      "description": "Decoded commit metadata from ArtifactsRepo.readCommit() and log(). Time zones are not reported and one trailing newline of the message is removed.",
+      "examples": [
+        {
+          "author": {
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+          "authoredAt": 1795211753,
+          "committedAt": 1795211753,
+          "committer": {
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+          "hash": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "message": "Update about page",
+          "parents": [],
+          "treeHash": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+        },
+      ],
+      "properties": {
+        "author": {
+          "description": "Author identity.",
+          "properties": {
+            "email": {
+              "description": "Email as recorded in the commit.",
+              "type": "string",
+            },
+            "name": {
+              "description": "Name as recorded in the commit.",
+              "type": "string",
+            },
+          },
+          "required": [
+            "name",
+            "email",
+          ],
+          "type": "object",
+        },
+        "authoredAt": {
+          "description": "Author timestamp, Unix seconds.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "committedAt": {
+          "description": "Committer timestamp, Unix seconds.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "committer": {
+          "description": "Committer identity.",
+          "properties": {
+            "email": {
+              "description": "Email as recorded in the commit.",
+              "type": "string",
+            },
+            "name": {
+              "description": "Name as recorded in the commit.",
+              "type": "string",
+            },
+          },
+          "required": [
+            "name",
+            "email",
+          ],
+          "type": "object",
+        },
+        "hash": {
+          "description": "40-character lowercase hex commit id.",
+          "pattern": "^[0-9a-f]{40}$",
+          "type": "string",
+        },
+        "message": {
+          "description": "Commit message with one trailing newline removed, if it had one.",
+          "type": "string",
+        },
+        "parents": {
+          "description": "Parent ids in git order; empty for a root commit.",
+          "items": {
+            "description": "A parent commit id.",
+            "pattern": "^[0-9a-f]{40}$",
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "treeHash": {
+          "description": "Id of the commit's root tree.",
+          "pattern": "^[0-9a-f]{40}$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "hash",
+        "treeHash",
+        "message",
+        "author",
+        "committer",
+        "parents",
+        "authoredAt",
+        "committedAt",
+      ],
+      "title": "Artifacts commit",
+      "type": "object",
+    },
+    "ArtifactsCreateResult": {
+      "description": "What Artifacts.create() returns: the new repository and an initial write token.",
+      "examples": [
+        {
+          "defaultBranch": "main",
+          "id": "tq6o4x0af6vky45b",
+          "name": "acme-raw-content",
+          "remote": "https://acct.artifacts.cloudflare.net/git/default/acme-raw-content.git",
+          "token": "art_v2_example?expires=1795298153",
+        },
+      ],
+      "properties": {
+        "defaultBranch": {
+          "description": "Default branch name.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "id": {
+          "description": "Unique repository id assigned by Artifacts.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "name": {
+          "description": "Repository name within the namespace.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "remote": {
+          "description": "Git remote URL of the new repository.",
+          "format": "uri",
+          "type": "string",
+        },
+        "token": {
+          "description": "Initial write token, plaintext. Secret: the backend revokes it immediately and never returns it.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "id",
+        "name",
+        "defaultBranch",
+        "remote",
+        "token",
+      ],
+      "title": "Artifacts create result",
+      "type": "object",
+    },
+    "ArtifactsRepoInfo": {
+      "description": "What ArtifactsRepo.info() returns: the repository metadata, including its git remote URL. Unknown extra fields are ignored.",
+      "examples": [
+        {
+          "createdAt": "2026-11-20T21:55:53.422Z",
+          "defaultBranch": "main",
+          "description": null,
+          "id": "tq6o4x0af6vky45b",
+          "lastPushAt": null,
+          "name": "acme-raw-content",
+          "readOnly": false,
+          "remote": "https://acct.artifacts.cloudflare.net/git/default/acme-raw-content.git",
+          "source": null,
+          "updatedAt": "2026-11-20T21:55:53.422Z",
+        },
+      ],
+      "properties": {
+        "createdAt": {
+          "description": "When the repository was created, ISO 8601.",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+          "type": "string",
+        },
+        "defaultBranch": {
+          "description": "Default branch name, e.g. "main".",
+          "minLength": 1,
+          "type": "string",
+        },
+        "description": {
+          "description": "Repository description; null when none was set.",
+          "type": [
+            "string",
+            "null",
+          ],
+        },
+        "id": {
+          "description": "Unique repository id assigned by Artifacts.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "lastPushAt": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "When the repository was last pushed to, ISO 8601; null if never.",
+        },
+        "name": {
+          "description": "Repository name within the namespace.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "readOnly": {
+          "description": "true when the repository refuses pushes.",
+          "type": "boolean",
+        },
+        "remote": {
+          "description": "HTTPS (HTTP locally) git remote URL of the repository, ending in ".git".",
+          "format": "uri",
+          "type": "string",
+        },
+        "source": {
+          "description": "Fork or import source such as "github:owner/repo"; null when neither.",
+          "type": [
+            "string",
+            "null",
+          ],
+        },
+        "updatedAt": {
+          "description": "When the repository metadata last changed, ISO 8601.",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "defaultBranch",
+        "createdAt",
+        "updatedAt",
+        "lastPushAt",
+        "source",
+        "readOnly",
+        "remote",
+      ],
+      "title": "Artifacts repository info",
+      "type": "object",
+    },
+    "ArtifactsRestNamespace": {
+      "description": "A namespace from the Artifacts REST API; only its name is relied on, other fields are ignored.",
+      "examples": [
+        {
+          "name": "default",
+        },
+      ],
+      "properties": {
+        "name": {
+          "description": "The namespace name.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+      ],
+      "title": "Artifacts REST namespace",
+      "type": "object",
+    },
+    "ArtifactsRestRepo": {
+      "description": "A repository from the Artifacts REST API (GET or POST …/namespaces/{namespace}/repos). Extra fields are ignored.",
+      "examples": [
+        {
+          "created_at": "2026-11-20T09:30:00.000Z",
+          "default_branch": "main",
+          "description": null,
+          "id": "tq6o4x0af6vky45b",
+          "name": "acme-raw-content",
+          "remote": "https://acct.artifacts.cloudflare.net/git/default/acme-raw-content.git",
+        },
+      ],
+      "properties": {
+        "created_at": {
+          "description": "Creation time, ISO 8601; absent in a create result.",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+          "type": "string",
+        },
+        "default_branch": {
+          "description": "Default branch name.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "description": {
+          "description": "Repository description; null or absent when none.",
+          "type": [
+            "string",
+            "null",
+          ],
+        },
+        "id": {
+          "description": "Unique repository id.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "name": {
+          "description": "Repository name within the namespace.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "remote": {
+          "description": "Git remote URL of the repository.",
+          "format": "uri",
+          "type": "string",
+        },
+      },
+      "required": [
+        "id",
+        "name",
+        "default_branch",
+        "remote",
+      ],
+      "title": "Artifacts REST repository",
+      "type": "object",
+    },
+    "ArtifactsRestToken": {
+      "description": "A repository token minted through POST …/namespaces/{namespace}/tokens.",
+      "examples": [
+        {
+          "expires_at": "2026-11-20T09:35:00.000Z",
+          "id": "hh50uo1kos7zorfv",
+          "plaintext": "art_v2_example",
+          "scope": "read",
+        },
+      ],
+      "properties": {
+        "expires_at": {
+          "description": "When the token stops working, ISO 8601.",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+          "type": "string",
+        },
+        "id": {
+          "description": "Unique token id, used to revoke it.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "plaintext": {
+          "description": "The token. Secret: authenticates git only, never REST.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "scope": {
+          "description": "What the token allows.",
+          "enum": [
+            "read",
+            "write",
+          ],
+          "enumDescriptions": {
+            "read": "Fetch and clone only.",
+            "write": "Fetch, clone and push.",
+          },
+          "type": "string",
+        },
+      },
+      "required": [
+        "id",
+        "plaintext",
+        "scope",
+        "expires_at",
+      ],
+      "title": "Artifacts REST token",
+      "type": "object",
+    },
+    "ArtifactsToken": {
+      "description": "A repository access token minted by ArtifactsRepo.createToken(); authenticates git only.",
+      "examples": [
+        {
+          "expiresAt": "2026-11-20T22:05:53.602Z",
+          "id": "hh50uo1kos7zorfv",
+          "plaintext": "art_v2_example?expires=1795212353",
+          "scope": "write",
+        },
+      ],
+      "properties": {
+        "expiresAt": {
+          "description": "When the token stops working, ISO 8601.",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+          "type": "string",
+        },
+        "id": {
+          "description": "Unique token id, usable to revoke it.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "plaintext": {
+          "description": "The token itself. Secret: sent only as a Bearer header to the remote.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "scope": {
+          "description": "What the token allows.",
+          "enum": [
+            "read",
+            "write",
+          ],
+          "enumDescriptions": {
+            "read": "Fetch and clone only.",
+            "write": "Fetch, clone and push.",
+          },
+          "type": "string",
+        },
+      },
+      "required": [
+        "id",
+        "plaintext",
+        "scope",
+        "expiresAt",
+      ],
+      "title": "Artifacts token",
+      "type": "object",
+    },
+    "ArtifactsTreeEntry": {
+      "description": "One immediate child of a tree, as ArtifactsRepo.readTree() returns it.",
+      "examples": [
+        {
+          "hash": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+          "mode": "100644",
+          "name": "about.md",
+          "type": "blob",
+        },
+      ],
+      "properties": {
+        "hash": {
+          "description": "40-character lowercase hex id of the object the entry names.",
+          "pattern": "^[0-9a-f]{40}$",
+          "type": "string",
+        },
+        "mode": {
+          "description": "Canonical git mode as Artifacts reports it, e.g. "100644" or "40000" (no leading zero).",
+          "pattern": "^[0-7]{5,6}$",
+          "type": "string",
+        },
+        "name": {
+          "description": "Entry name within the tree.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "type": {
+          "description": "Classification Artifacts derives from the mode.",
+          "enum": [
+            "tree",
+            "blob",
+            "symlink",
+            "gitlink",
+            "exec",
+          ],
+          "enumDescriptions": {
+            "blob": "A regular file (mode 100644).",
+            "exec": "An executable file (mode 100755).",
+            "gitlink": "A submodule commit (mode 160000).",
+            "symlink": "A symbolic link (mode 120000).",
+            "tree": "A directory (mode 40000).",
+          },
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+        "mode",
+        "hash",
+        "type",
+      ],
+      "title": "Artifacts tree entry",
+      "type": "object",
+    },
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 }
 `;
 
 exports[`schema documentation > generates the JSON Schema for what the schemas produce 1`] = `
 {
-  "$defs": {},
+  "$defs": {
+    "ArtifactsBindingError": {
+      "additionalProperties": false,
+      "description": "The fields of an ArtifactsError the backend relies on. Parsed from whatever was thrown, since an error crossing the binding's RPC boundary may lose its prototype.",
+      "examples": [
+        {
+          "code": "NOT_FOUND",
+          "message": "Repository not found: acme",
+        },
+      ],
+      "properties": {
+        "code": {
+          "description": "String error code, e.g. "NOT_FOUND" or "ALREADY_EXISTS".",
+          "minLength": 1,
+          "type": "string",
+        },
+        "message": {
+          "description": "Human-readable message from the binding.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+      ],
+      "title": "Artifacts binding error",
+      "type": "object",
+    },
+    "ArtifactsCommit": {
+      "additionalProperties": false,
+      "description": "Decoded commit metadata from ArtifactsRepo.readCommit() and log(). Time zones are not reported and one trailing newline of the message is removed.",
+      "examples": [
+        {
+          "author": {
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+          "authoredAt": 1795211753,
+          "committedAt": 1795211753,
+          "committer": {
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+          "hash": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "message": "Update about page",
+          "parents": [],
+          "treeHash": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+        },
+      ],
+      "properties": {
+        "author": {
+          "additionalProperties": false,
+          "description": "Author identity.",
+          "properties": {
+            "email": {
+              "description": "Email as recorded in the commit.",
+              "type": "string",
+            },
+            "name": {
+              "description": "Name as recorded in the commit.",
+              "type": "string",
+            },
+          },
+          "required": [
+            "name",
+            "email",
+          ],
+          "type": "object",
+        },
+        "authoredAt": {
+          "description": "Author timestamp, Unix seconds.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "committedAt": {
+          "description": "Committer timestamp, Unix seconds.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "committer": {
+          "additionalProperties": false,
+          "description": "Committer identity.",
+          "properties": {
+            "email": {
+              "description": "Email as recorded in the commit.",
+              "type": "string",
+            },
+            "name": {
+              "description": "Name as recorded in the commit.",
+              "type": "string",
+            },
+          },
+          "required": [
+            "name",
+            "email",
+          ],
+          "type": "object",
+        },
+        "hash": {
+          "description": "40-character lowercase hex commit id.",
+          "pattern": "^[0-9a-f]{40}$",
+          "type": "string",
+        },
+        "message": {
+          "description": "Commit message with one trailing newline removed, if it had one.",
+          "type": "string",
+        },
+        "parents": {
+          "description": "Parent ids in git order; empty for a root commit.",
+          "items": {
+            "description": "A parent commit id.",
+            "pattern": "^[0-9a-f]{40}$",
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "treeHash": {
+          "description": "Id of the commit's root tree.",
+          "pattern": "^[0-9a-f]{40}$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "hash",
+        "treeHash",
+        "message",
+        "author",
+        "committer",
+        "parents",
+        "authoredAt",
+        "committedAt",
+      ],
+      "title": "Artifacts commit",
+      "type": "object",
+    },
+    "ArtifactsCreateResult": {
+      "additionalProperties": false,
+      "description": "What Artifacts.create() returns: the new repository and an initial write token.",
+      "examples": [
+        {
+          "defaultBranch": "main",
+          "id": "tq6o4x0af6vky45b",
+          "name": "acme-raw-content",
+          "remote": "https://acct.artifacts.cloudflare.net/git/default/acme-raw-content.git",
+          "token": "art_v2_example?expires=1795298153",
+        },
+      ],
+      "properties": {
+        "defaultBranch": {
+          "description": "Default branch name.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "id": {
+          "description": "Unique repository id assigned by Artifacts.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "name": {
+          "description": "Repository name within the namespace.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "remote": {
+          "description": "Git remote URL of the new repository.",
+          "format": "uri",
+          "type": "string",
+        },
+        "token": {
+          "description": "Initial write token, plaintext. Secret: the backend revokes it immediately and never returns it.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "id",
+        "name",
+        "defaultBranch",
+        "remote",
+        "token",
+      ],
+      "title": "Artifacts create result",
+      "type": "object",
+    },
+    "ArtifactsRepoInfo": {
+      "additionalProperties": false,
+      "description": "What ArtifactsRepo.info() returns: the repository metadata, including its git remote URL. Unknown extra fields are ignored.",
+      "examples": [
+        {
+          "createdAt": "2026-11-20T21:55:53.422Z",
+          "defaultBranch": "main",
+          "description": null,
+          "id": "tq6o4x0af6vky45b",
+          "lastPushAt": null,
+          "name": "acme-raw-content",
+          "readOnly": false,
+          "remote": "https://acct.artifacts.cloudflare.net/git/default/acme-raw-content.git",
+          "source": null,
+          "updatedAt": "2026-11-20T21:55:53.422Z",
+        },
+      ],
+      "properties": {
+        "createdAt": {
+          "description": "When the repository was created, ISO 8601.",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+          "type": "string",
+        },
+        "defaultBranch": {
+          "description": "Default branch name, e.g. "main".",
+          "minLength": 1,
+          "type": "string",
+        },
+        "description": {
+          "description": "Repository description; null when none was set.",
+          "type": [
+            "string",
+            "null",
+          ],
+        },
+        "id": {
+          "description": "Unique repository id assigned by Artifacts.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "lastPushAt": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "When the repository was last pushed to, ISO 8601; null if never.",
+        },
+        "name": {
+          "description": "Repository name within the namespace.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "readOnly": {
+          "description": "true when the repository refuses pushes.",
+          "type": "boolean",
+        },
+        "remote": {
+          "description": "HTTPS (HTTP locally) git remote URL of the repository, ending in ".git".",
+          "format": "uri",
+          "type": "string",
+        },
+        "source": {
+          "description": "Fork or import source such as "github:owner/repo"; null when neither.",
+          "type": [
+            "string",
+            "null",
+          ],
+        },
+        "updatedAt": {
+          "description": "When the repository metadata last changed, ISO 8601.",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "defaultBranch",
+        "createdAt",
+        "updatedAt",
+        "lastPushAt",
+        "source",
+        "readOnly",
+        "remote",
+      ],
+      "title": "Artifacts repository info",
+      "type": "object",
+    },
+    "ArtifactsRestNamespace": {
+      "additionalProperties": false,
+      "description": "A namespace from the Artifacts REST API; only its name is relied on, other fields are ignored.",
+      "examples": [
+        {
+          "name": "default",
+        },
+      ],
+      "properties": {
+        "name": {
+          "description": "The namespace name.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+      ],
+      "title": "Artifacts REST namespace",
+      "type": "object",
+    },
+    "ArtifactsRestRepo": {
+      "additionalProperties": false,
+      "description": "A repository from the Artifacts REST API (GET or POST …/namespaces/{namespace}/repos). Extra fields are ignored.",
+      "examples": [
+        {
+          "created_at": "2026-11-20T09:30:00.000Z",
+          "default_branch": "main",
+          "description": null,
+          "id": "tq6o4x0af6vky45b",
+          "name": "acme-raw-content",
+          "remote": "https://acct.artifacts.cloudflare.net/git/default/acme-raw-content.git",
+        },
+      ],
+      "properties": {
+        "created_at": {
+          "description": "Creation time, ISO 8601; absent in a create result.",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+          "type": "string",
+        },
+        "default_branch": {
+          "description": "Default branch name.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "description": {
+          "description": "Repository description; null or absent when none.",
+          "type": [
+            "string",
+            "null",
+          ],
+        },
+        "id": {
+          "description": "Unique repository id.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "name": {
+          "description": "Repository name within the namespace.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "remote": {
+          "description": "Git remote URL of the repository.",
+          "format": "uri",
+          "type": "string",
+        },
+      },
+      "required": [
+        "id",
+        "name",
+        "default_branch",
+        "remote",
+      ],
+      "title": "Artifacts REST repository",
+      "type": "object",
+    },
+    "ArtifactsRestToken": {
+      "additionalProperties": false,
+      "description": "A repository token minted through POST …/namespaces/{namespace}/tokens.",
+      "examples": [
+        {
+          "expires_at": "2026-11-20T09:35:00.000Z",
+          "id": "hh50uo1kos7zorfv",
+          "plaintext": "art_v2_example",
+          "scope": "read",
+        },
+      ],
+      "properties": {
+        "expires_at": {
+          "description": "When the token stops working, ISO 8601.",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+          "type": "string",
+        },
+        "id": {
+          "description": "Unique token id, used to revoke it.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "plaintext": {
+          "description": "The token. Secret: authenticates git only, never REST.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "scope": {
+          "description": "What the token allows.",
+          "enum": [
+            "read",
+            "write",
+          ],
+          "enumDescriptions": {
+            "read": "Fetch and clone only.",
+            "write": "Fetch, clone and push.",
+          },
+          "type": "string",
+        },
+      },
+      "required": [
+        "id",
+        "plaintext",
+        "scope",
+        "expires_at",
+      ],
+      "title": "Artifacts REST token",
+      "type": "object",
+    },
+    "ArtifactsToken": {
+      "additionalProperties": false,
+      "description": "A repository access token minted by ArtifactsRepo.createToken(); authenticates git only.",
+      "examples": [
+        {
+          "expiresAt": "2026-11-20T22:05:53.602Z",
+          "id": "hh50uo1kos7zorfv",
+          "plaintext": "art_v2_example?expires=1795212353",
+          "scope": "write",
+        },
+      ],
+      "properties": {
+        "expiresAt": {
+          "description": "When the token stops working, ISO 8601.",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+          "type": "string",
+        },
+        "id": {
+          "description": "Unique token id, usable to revoke it.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "plaintext": {
+          "description": "The token itself. Secret: sent only as a Bearer header to the remote.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "scope": {
+          "description": "What the token allows.",
+          "enum": [
+            "read",
+            "write",
+          ],
+          "enumDescriptions": {
+            "read": "Fetch and clone only.",
+            "write": "Fetch, clone and push.",
+          },
+          "type": "string",
+        },
+      },
+      "required": [
+        "id",
+        "plaintext",
+        "scope",
+        "expiresAt",
+      ],
+      "title": "Artifacts token",
+      "type": "object",
+    },
+    "ArtifactsTreeEntry": {
+      "additionalProperties": false,
+      "description": "One immediate child of a tree, as ArtifactsRepo.readTree() returns it.",
+      "examples": [
+        {
+          "hash": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+          "mode": "100644",
+          "name": "about.md",
+          "type": "blob",
+        },
+      ],
+      "properties": {
+        "hash": {
+          "description": "40-character lowercase hex id of the object the entry names.",
+          "pattern": "^[0-9a-f]{40}$",
+          "type": "string",
+        },
+        "mode": {
+          "description": "Canonical git mode as Artifacts reports it, e.g. "100644" or "40000" (no leading zero).",
+          "pattern": "^[0-7]{5,6}$",
+          "type": "string",
+        },
+        "name": {
+          "description": "Entry name within the tree.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "type": {
+          "description": "Classification Artifacts derives from the mode.",
+          "enum": [
+            "tree",
+            "blob",
+            "symlink",
+            "gitlink",
+            "exec",
+          ],
+          "enumDescriptions": {
+            "blob": "A regular file (mode 100644).",
+            "exec": "An executable file (mode 100755).",
+            "gitlink": "A submodule commit (mode 160000).",
+            "symlink": "A symbolic link (mode 120000).",
+            "tree": "A directory (mode 40000).",
+          },
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+        "mode",
+        "hash",
+        "type",
+      ],
+      "title": "Artifacts tree entry",
+      "type": "object",
+    },
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 }
 `;

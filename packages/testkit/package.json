@@ -26,10 +26,100 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
+    "./contract-suite/backend-case": {
+      "source": "./src/contract-suite/backend-case.ts",
+      "types": "./dist/contract-suite/backend-case.d.ts",
+      "default": "./dist/contract-suite/backend-case.js"
+    },
+    "./contract-suite/backend-contract-suite": {
+      "source": "./src/contract-suite/backend-contract-suite.ts",
+      "types": "./dist/contract-suite/backend-contract-suite.d.ts",
+      "default": "./dist/contract-suite/backend-contract-suite.js"
+    },
+    "./contract-suite/backend-fixtures": {
+      "source": "./src/contract-suite/backend-fixtures.ts",
+      "types": "./dist/contract-suite/backend-fixtures.d.ts",
+      "default": "./dist/contract-suite/backend-fixtures.js"
+    },
+    "./contract-suite/content-cases": {
+      "source": "./src/contract-suite/content-cases.ts",
+      "types": "./dist/contract-suite/content-cases.d.ts",
+      "default": "./dist/contract-suite/content-cases.js"
+    },
+    "./contract-suite/lifecycle-cases": {
+      "source": "./src/contract-suite/lifecycle-cases.ts",
+      "types": "./dist/contract-suite/lifecycle-cases.d.ts",
+      "default": "./dist/contract-suite/lifecycle-cases.js"
+    },
+    "./contract-suite/push-cases": {
+      "source": "./src/contract-suite/push-cases.ts",
+      "types": "./dist/contract-suite/push-cases.d.ts",
+      "default": "./dist/contract-suite/push-cases.js"
+    },
+    "./contract-suite/push-helpers": {
+      "source": "./src/contract-suite/push-helpers.ts",
+      "types": "./dist/contract-suite/push-helpers.d.ts",
+      "default": "./dist/contract-suite/push-helpers.js"
+    },
+    "./contract-suite/read-cases": {
+      "source": "./src/contract-suite/read-cases.ts",
+      "types": "./dist/contract-suite/read-cases.d.ts",
+      "default": "./dist/contract-suite/read-cases.js"
+    },
+    "./contract-suite/transport-cases": {
+      "source": "./src/contract-suite/transport-cases.ts",
+      "types": "./dist/contract-suite/transport-cases.d.ts",
+      "default": "./dist/contract-suite/transport-cases.js"
+    },
     "./git-binary": {
       "source": "./src/git-binary.ts",
       "types": "./dist/git-binary.d.ts",
       "default": "./dist/git-binary.js"
+    },
+    "./memory/memory-backend": {
+      "source": "./src/memory/memory-backend.ts",
+      "types": "./dist/memory/memory-backend.d.ts",
+      "default": "./dist/memory/memory-backend.js"
+    },
+    "./memory/memory-reads": {
+      "source": "./src/memory/memory-reads.ts",
+      "types": "./dist/memory/memory-reads.d.ts",
+      "default": "./dist/memory/memory-reads.js"
+    },
+    "./memory/memory-repository": {
+      "source": "./src/memory/memory-repository.ts",
+      "types": "./dist/memory/memory-repository.d.ts",
+      "default": "./dist/memory/memory-repository.js"
+    },
+    "./memory/memory-tokens": {
+      "source": "./src/memory/memory-tokens.ts",
+      "types": "./dist/memory/memory-tokens.d.ts",
+      "default": "./dist/memory/memory-tokens.js"
+    },
+    "./memory/pack-selection": {
+      "source": "./src/memory/pack-selection.ts",
+      "types": "./dist/memory/pack-selection.d.ts",
+      "default": "./dist/memory/pack-selection.js"
+    },
+    "./memory/receive-pack-service": {
+      "source": "./src/memory/receive-pack-service.ts",
+      "types": "./dist/memory/receive-pack-service.d.ts",
+      "default": "./dist/memory/receive-pack-service.js"
+    },
+    "./memory/smart-http-server": {
+      "source": "./src/memory/smart-http-server.ts",
+      "types": "./dist/memory/smart-http-server.d.ts",
+      "default": "./dist/memory/smart-http-server.js"
+    },
+    "./memory/upload-pack-service": {
+      "source": "./src/memory/upload-pack-service.ts",
+      "types": "./dist/memory/upload-pack-service.d.ts",
+      "default": "./dist/memory/upload-pack-service.js"
+    },
+    "./node/serve-fetch-handler": {
+      "source": "./src/node/serve-fetch-handler.ts",
+      "types": "./dist/node/serve-fetch-handler.d.ts",
+      "default": "./dist/node/serve-fetch-handler.js"
     },
     "./package.json": "./package.json"
   },
@@ -41,7 +131,12 @@
     "build": "vp pack",
     "check": "vp check",
     "test": "vp test --exclude 'test/**/*.conformance.test.ts'",
-    "test:conformance": "vp test conformance"
+    "test:conformance": "vp test conformance",
+    "test:contract": "vp test test/contract/"
+  },
+  "dependencies": {
+    "@leed-ai/git-gateway-contract": "workspace:*",
+    "@leed-ai/git-gateway-core": "workspace:*"
   },
   "devDependencies": {
     "@leed-ai/git-gateway-repo-tools": "workspace:*",

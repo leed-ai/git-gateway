@@ -4,5 +4,5 @@ import { defineConfig } from 'vite-plus';
 
 export default defineConfig({
   pack: libraryPack(),
-  test: nodeTest(),
+  test: nodeTest({ testTimeout: 60_000 }),
 });

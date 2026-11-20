@@ -69,6 +69,25 @@ export const RemoteError = variant(
   { message: 'Remote error: access denied', details: { remoteMessage: 'access denied' } },
 );
 
+/** The remote git server answered a smart-HTTP request with a non-2xx status. */
+export const RemoteHttpError = variant(
+  'remote_http_error',
+  'The remote git server answered a smart-HTTP request with a non-2xx HTTP status (an outage, an expired or refused credential, a missing repository), before any git protocol exchange. Unlike remote_error this says nothing about the objects or refs asked for.',
+  {
+    status: z.int().min(100).max(599).describe('The HTTP status code the remote answered with; never 2xx.'),
+    path: z
+      .string()
+      .min(1)
+      .describe(
+        'Path of the request URL (no query string, no credentials), e.g. "/acme.git/git-upload-pack".',
+      ),
+  },
+  {
+    message: 'Remote HTTP error: HTTP 503 from /acme.git/git-upload-pack',
+    details: { status: 503, path: '/acme.git/git-upload-pack' },
+  },
+);
+
 /** The kind of object that was missing or invalid. */
 const objectType = z.enum(['blob', 'tree', 'commit']).meta({
   description: 'The kind of git object involved.',
@@ -101,6 +120,17 @@ export const InvalidObjectError = variant(
   },
 );
 
+/** A packfile or one of its compressed entries cannot be read. */
+export const InvalidPackError = variant(
+  'invalid_pack',
+  'A packfile cannot be read: bad signature, version or checksum, a truncated or corrupt zlib stream, an unknown entry type, or a delta whose base is missing or whose instructions do not fit the base.',
+  { offset, reason },
+  {
+    message: 'Invalid pack',
+    details: { offset: 0, reason: 'the pack does not start with "PACK"' },
+  },
+);
+
 /** Every error the core library reports itself, discriminated by `code`. */
 export const CoreErrorBody = z
   .discriminatedUnion('code', [
@@ -108,8 +138,10 @@ export const CoreErrorBody = z
     MalformedRequestError,
     UnsupportedRequestError,
     RemoteError,
+    RemoteHttpError,
     MissingObjectError,
     InvalidObjectError,
+    InvalidPackError,
   ])
   .meta({
     id: 'CoreErrorBody',

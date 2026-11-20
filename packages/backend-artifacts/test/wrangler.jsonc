@@ -1,0 +1,10 @@
+// SPDX-License-Identifier: Apache-2.0
+// The Workers runtime the backend's tests run in: an Artifacts binding on the local simulator
+// (wrangler's default for Artifacts in local development), which serves real git remotes on
+// loopback and needs git 2.32 or later on the PATH. Nothing here reaches Cloudflare.
+{
+  "name": "backend-artifacts-test",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "artifacts": [{ "binding": "ARTIFACTS", "namespace": "contract", "remote": false }],
+}

@@ -61,11 +61,16 @@
     "packages/backend-artifacts": {
       "name": "@leed-ai/git-gateway-backend-artifacts",
       "version": "0.0.0",
+      "dependencies": {
+        "@leed-ai/git-gateway-contract": "workspace:*",
+        "@leed-ai/git-gateway-core": "workspace:*",
+      },
       "devDependencies": {
         "@cloudflare/vitest-plugin": "^1.8.5",
         "@cloudflare/workers-types": "^5.20261120.1",
         "@leed-ai/git-gateway-repo-tools": "workspace:*",
         "@leed-ai/git-gateway-schema-docs": "workspace:*",
+        "@leed-ai/git-gateway-testkit": "workspace:*",
         "cloudflare": "^5.2.0",
         "typescript": "^7.0.2",
         "vite-plus": "^1.7.0",
@@ -75,13 +80,21 @@
         "cloudflare": "^5",
         "zod": "^4",
       },
+      "optionalPeers": [
+        "cloudflare",
+      ],
     },
     "packages/backend-gitlab": {
       "name": "@leed-ai/git-gateway-backend-gitlab",
       "version": "0.0.0",
+      "dependencies": {
+        "@leed-ai/git-gateway-contract": "workspace:*",
+        "@leed-ai/git-gateway-core": "workspace:*",
+      },
       "devDependencies": {
         "@leed-ai/git-gateway-repo-tools": "workspace:*",
         "@leed-ai/git-gateway-schema-docs": "workspace:*",
+        "@leed-ai/git-gateway-testkit": "workspace:*",
         "@types/node": "^24.19.2",
         "typescript": "^7.0.2",
         "vite-plus": "^1.7.0",
@@ -133,6 +146,10 @@
     "packages/testkit": {
       "name": "@leed-ai/git-gateway-testkit",
       "version": "0.0.0",
+      "dependencies": {
+        "@leed-ai/git-gateway-contract": "workspace:*",
+        "@leed-ai/git-gateway-core": "workspace:*",
+      },
       "devDependencies": {
         "@leed-ai/git-gateway-repo-tools": "workspace:*",
         "@leed-ai/git-gateway-schema-docs": "workspace:*",

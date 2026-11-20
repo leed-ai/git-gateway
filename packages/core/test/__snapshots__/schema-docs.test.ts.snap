@@ -84,6 +84,55 @@ exports[`schema documentation > generates the JSON Schema for what the schemas a
       ],
       "title": "Actions result",
     },
+    "AdvertisedRef": {
+      "additionalProperties": false,
+      "description": "One ref line of a protocol v0/v1 ref advertisement.",
+      "examples": [
+        {
+          "name": "refs/heads/main",
+          "peeled": null,
+          "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        },
+      ],
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GitRefName",
+              "description": "A fully qualified ref under "refs/".",
+            },
+            {
+              "const": "HEAD",
+              "description": "The symbolic HEAD, advertised by upload-pack when it resolves.",
+              "type": "string",
+            },
+          ],
+          "description": "The ref name as advertised.",
+        },
+        "peeled": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "For an annotated tag, the id of the object it points at (the "<ref>^{}" line); null otherwise.",
+        },
+        "sha": {
+          "$ref": "#/$defs/Sha",
+          "description": "The object id the ref names.",
+        },
+      },
+      "required": [
+        "name",
+        "sha",
+        "peeled",
+      ],
+      "title": "Advertised ref",
+      "type": "object",
+    },
     "ApplyActionsInput": {
       "additionalProperties": false,
       "description": "A root tree and the commit actions to apply to it with GitLab Commits API semantics.",
@@ -771,6 +820,61 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "title": "invalid_object core error",
       "type": "object",
     },
+    "CoreError.invalid_pack": {
+      "additionalProperties": false,
+      "description": "A packfile cannot be read: bad signature, version or checksum, a truncated or corrupt zlib stream, an unknown entry type, or a delta whose base is missing or whose instructions do not fit the base.",
+      "examples": [
+        {
+          "code": "invalid_pack",
+          "details": {
+            "offset": 0,
+            "reason": "the pack does not start with "PACK"",
+          },
+          "message": "Invalid pack",
+        },
+      ],
+      "properties": {
+        "code": {
+          "const": "invalid_pack",
+          "description": "A packfile cannot be read: bad signature, version or checksum, a truncated or corrupt zlib stream, an unknown entry type, or a delta whose base is missing or whose instructions do not fit the base.",
+          "type": "string",
+        },
+        "details": {
+          "additionalProperties": false,
+          "description": "Machine-readable facts about the invalid_pack error.",
+          "properties": {
+            "offset": {
+              "description": "Byte offset from the start of the input at which the problem was found.",
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "reason": {
+              "description": "What exactly is wrong.",
+              "minLength": 1,
+              "type": "string",
+            },
+          },
+          "required": [
+            "offset",
+            "reason",
+          ],
+          "type": "object",
+        },
+        "message": {
+          "description": "Human-readable explanation of the failure.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+        "details",
+      ],
+      "title": "invalid_pack core error",
+      "type": "object",
+    },
     "CoreError.malformed_pkt_line": {
       "additionalProperties": false,
       "description": "The bytes are not valid pkt-line framing: a bad length header, a length below 4 that is not a special packet, a packet over 65520 bytes, or input that ends inside a packet.",
@@ -981,6 +1085,61 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "title": "remote_error core error",
       "type": "object",
     },
+    "CoreError.remote_http_error": {
+      "additionalProperties": false,
+      "description": "The remote git server answered a smart-HTTP request with a non-2xx HTTP status (an outage, an expired or refused credential, a missing repository), before any git protocol exchange. Unlike remote_error this says nothing about the objects or refs asked for.",
+      "examples": [
+        {
+          "code": "remote_http_error",
+          "details": {
+            "path": "/acme.git/git-upload-pack",
+            "status": 503,
+          },
+          "message": "Remote HTTP error: HTTP 503 from /acme.git/git-upload-pack",
+        },
+      ],
+      "properties": {
+        "code": {
+          "const": "remote_http_error",
+          "description": "The remote git server answered a smart-HTTP request with a non-2xx HTTP status (an outage, an expired or refused credential, a missing repository), before any git protocol exchange. Unlike remote_error this says nothing about the objects or refs asked for.",
+          "type": "string",
+        },
+        "details": {
+          "additionalProperties": false,
+          "description": "Machine-readable facts about the remote_http_error error.",
+          "properties": {
+            "path": {
+              "description": "Path of the request URL (no query string, no credentials), e.g. "/acme.git/git-upload-pack".",
+              "minLength": 1,
+              "type": "string",
+            },
+            "status": {
+              "description": "The HTTP status code the remote answered with; never 2xx.",
+              "maximum": 599,
+              "minimum": 100,
+              "type": "integer",
+            },
+          },
+          "required": [
+            "status",
+            "path",
+          ],
+          "type": "object",
+        },
+        "message": {
+          "description": "Human-readable explanation of the failure.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+        "details",
+      ],
+      "title": "remote_http_error core error",
+      "type": "object",
+    },
     "CoreError.unsupported_request": {
       "additionalProperties": false,
       "description": "The request uses a git protocol feature the gateway does not support, such as signed pushes or SHA-256 repositories.",
@@ -1053,10 +1212,16 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
           "$ref": "#/$defs/CoreError.remote_error",
         },
         {
+          "$ref": "#/$defs/CoreError.remote_http_error",
+        },
+        {
           "$ref": "#/$defs/CoreError.missing_object",
         },
         {
           "$ref": "#/$defs/CoreError.invalid_object",
+        },
+        {
+          "$ref": "#/$defs/CoreError.invalid_pack",
         },
       ],
       "title": "Core error",
@@ -1384,6 +1549,22 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "title": "Git ref name",
       "type": "string",
     },
+    "GitService": {
+      "description": "A git smart-HTTP service, as named in "info/refs?service=…" and the POST endpoint.",
+      "enum": [
+        "git-upload-pack",
+        "git-receive-pack",
+      ],
+      "enumDescriptions": {
+        "git-receive-pack": "Push: the client sends objects and ref updates to the server.",
+        "git-upload-pack": "Fetch and clone: the server sends objects to the client.",
+      },
+      "examples": [
+        "git-upload-pack",
+      ],
+      "title": "Git service",
+      "type": "string",
+    },
     "GitTreeEntry": {
       "additionalProperties": false,
       "description": "One entry of a git tree object as stored: the name within its directory, the mode, and the id of the blob, tree or submodule commit. A contract TreeEntry without its derived path and type, so a TreeEntry list from a backend can be passed where these are read.",
@@ -1606,6 +1787,16 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "title": "Move action",
       "type": "object",
     },
+    "ObjectFilter": {
+      "description": "A partial-clone filter spec the server applies to the pack ("filter" capability): "blob:none" omits every blob, "blob:limit=<n>[kmg]" omits blobs larger than n bytes, "tree:<depth>" omits trees and blobs at or below that depth from the root tree (tree:0 sends commits only).",
+      "examples": [
+        "tree:0",
+        "blob:none",
+      ],
+      "pattern": "^(?:blob:none|blob:limit=\\d+[kmg]?|tree:\\d+)$",
+      "title": "Object filter",
+      "type": "string",
+    },
     "Packet": {
       "anyOf": [
         {
@@ -1806,6 +1997,69 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
         "shallow",
       ],
       "title": "receive-pack request head",
+      "type": "object",
+    },
+    "RefAdvertisement": {
+      "additionalProperties": false,
+      "description": "The protocol v0/v1 answer to GET info/refs?service=…: the refs a repository has, the capabilities the server supports and the symbolic refs it reports.",
+      "examples": [
+        {
+          "capabilities": [
+            "side-band-64k",
+            "symref=HEAD:refs/heads/main",
+          ],
+          "refs": [
+            {
+              "name": "refs/heads/main",
+              "peeled": null,
+              "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            },
+          ],
+          "service": "git-upload-pack",
+          "symrefs": {
+            "HEAD": "refs/heads/main",
+          },
+        },
+      ],
+      "properties": {
+        "capabilities": {
+          "description": "The capabilities sent after the NUL on the first line, in order.",
+          "items": {
+            "$ref": "#/$defs/Capability",
+          },
+          "type": "array",
+        },
+        "refs": {
+          "description": "Every advertised ref in the order sent; empty for an empty repository.",
+          "items": {
+            "$ref": "#/$defs/AdvertisedRef",
+          },
+          "type": "array",
+        },
+        "service": {
+          "$ref": "#/$defs/GitService",
+        },
+        "symrefs": {
+          "additionalProperties": {
+            "$ref": "#/$defs/GitRefName",
+            "description": "The ref it points at, e.g. "refs/heads/main".",
+          },
+          "description": "Symbolic refs from "symref=<from>:<to>" capabilities, e.g. HEAD → refs/heads/main.",
+          "propertyNames": {
+            "description": "The symbolic ref, e.g. "HEAD".",
+            "minLength": 1,
+            "type": "string",
+          },
+          "type": "object",
+        },
+      },
+      "required": [
+        "service",
+        "refs",
+        "capabilities",
+        "symrefs",
+      ],
+      "title": "Ref advertisement",
       "type": "object",
     },
     "RefStatus": {
@@ -2259,6 +2513,118 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "title": "Update action",
       "type": "object",
     },
+    "UploadPackRequest": {
+      "additionalProperties": false,
+      "description": "A stateless (smart-HTTP) protocol v0/v1 git-upload-pack request: want lines with capabilities, optional deepen and filter lines, have lines, then "done" — one round, no multi-round negotiation.",
+      "examples": [
+        {
+          "capabilities": [
+            "side-band-64k",
+          ],
+          "depth": 1,
+          "filter": "tree:0",
+          "haves": [],
+          "wants": [
+            "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          ],
+        },
+      ],
+      "properties": {
+        "capabilities": {
+          "default": [
+            "side-band-64k",
+            "ofs-delta",
+            "no-progress",
+          ],
+          "description": "Capabilities requested on the first want line. Default side-band-64k, ofs-delta and no-progress; "shallow" and "filter" are added when \`depth\` or \`filter\` is set.",
+          "items": {
+            "$ref": "#/$defs/Capability",
+          },
+          "type": "array",
+        },
+        "depth": {
+          "description": "Shallow fetch: send only this many commits of history from each want ("deepen <n>"). Absent: full history.",
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "filter": {
+          "$ref": "#/$defs/ObjectFilter",
+          "description": "Partial-clone filter for the pack. Absent: no filter.",
+        },
+        "haves": {
+          "default": [],
+          "description": "Objects the client already has; the server leaves out what they reach. Default none.",
+          "items": {
+            "$ref": "#/$defs/Sha",
+            "description": "An object the client already has.",
+          },
+          "maxItems": 10000,
+          "type": "array",
+        },
+        "wants": {
+          "description": "The objects to send: 1–10000 ids, normally ref tips. Duplicates are sent once.",
+          "items": {
+            "$ref": "#/$defs/Sha",
+            "description": "An object the client wants, with everything it needs.",
+          },
+          "maxItems": 10000,
+          "minItems": 1,
+          "type": "array",
+        },
+      },
+      "required": [
+        "wants",
+      ],
+      "title": "upload-pack request",
+      "type": "object",
+    },
+    "UploadPackResponse": {
+      "additionalProperties": false,
+      "description": "The answer to a stateless git-upload-pack request: shallow boundary, acknowledgements, and the packfile demultiplexed from side-band channel 1.",
+      "examples": [
+        {
+          "acknowledged": [],
+          "pack": {},
+          "progress": "",
+          "shallow": [],
+        },
+      ],
+      "properties": {
+        "acknowledged": {
+          "description": "Ids from "ACK <id>" lines; empty when the server answered "NAK".",
+          "items": {
+            "$ref": "#/$defs/Sha",
+            "description": "A have the server found in common.",
+          },
+          "type": "array",
+        },
+        "pack": {
+          "$ref": "#/$defs/Bytes",
+          "description": "The packfile bytes, side-band channel 1 joined; empty when the server sent no pack.",
+        },
+        "progress": {
+          "description": "Text the server sent on side-band channel 2; empty with no-progress.",
+          "type": "string",
+        },
+        "shallow": {
+          "description": "Commits reported by "shallow <id>" lines after a deepen; empty without one.",
+          "items": {
+            "$ref": "#/$defs/Sha",
+            "description": "A commit whose parents the client must treat as absent.",
+          },
+          "type": "array",
+        },
+      },
+      "required": [
+        "shallow",
+        "acknowledged",
+        "pack",
+        "progress",
+      ],
+      "title": "upload-pack response",
+      "type": "object",
+    },
     "UpsertAction": {
       "additionalProperties": false,
       "description": "Creates the file, or replaces it (keeping its executable bit) if it exists. Fails with path_exists if the path is a directory and path_conflict if a parent is a file. Not part of the GitLab Commits API.",
@@ -2386,6 +2752,55 @@ exports[`schema documentation > generates the JSON Schema for what the schemas p
         },
       ],
       "title": "Actions result",
+    },
+    "AdvertisedRef": {
+      "additionalProperties": false,
+      "description": "One ref line of a protocol v0/v1 ref advertisement.",
+      "examples": [
+        {
+          "name": "refs/heads/main",
+          "peeled": null,
+          "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        },
+      ],
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GitRefName",
+              "description": "A fully qualified ref under "refs/".",
+            },
+            {
+              "const": "HEAD",
+              "description": "The symbolic HEAD, advertised by upload-pack when it resolves.",
+              "type": "string",
+            },
+          ],
+          "description": "The ref name as advertised.",
+        },
+        "peeled": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "For an annotated tag, the id of the object it points at (the "<ref>^{}" line); null otherwise.",
+        },
+        "sha": {
+          "$ref": "#/$defs/Sha",
+          "description": "The object id the ref names.",
+        },
+      },
+      "required": [
+        "name",
+        "sha",
+        "peeled",
+      ],
+      "title": "Advertised ref",
+      "type": "object",
     },
     "ApplyActionsInput": {
       "additionalProperties": false,
@@ -3074,6 +3489,61 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "title": "invalid_object core error",
       "type": "object",
     },
+    "CoreError.invalid_pack": {
+      "additionalProperties": false,
+      "description": "A packfile cannot be read: bad signature, version or checksum, a truncated or corrupt zlib stream, an unknown entry type, or a delta whose base is missing or whose instructions do not fit the base.",
+      "examples": [
+        {
+          "code": "invalid_pack",
+          "details": {
+            "offset": 0,
+            "reason": "the pack does not start with "PACK"",
+          },
+          "message": "Invalid pack",
+        },
+      ],
+      "properties": {
+        "code": {
+          "const": "invalid_pack",
+          "description": "A packfile cannot be read: bad signature, version or checksum, a truncated or corrupt zlib stream, an unknown entry type, or a delta whose base is missing or whose instructions do not fit the base.",
+          "type": "string",
+        },
+        "details": {
+          "additionalProperties": false,
+          "description": "Machine-readable facts about the invalid_pack error.",
+          "properties": {
+            "offset": {
+              "description": "Byte offset from the start of the input at which the problem was found.",
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "reason": {
+              "description": "What exactly is wrong.",
+              "minLength": 1,
+              "type": "string",
+            },
+          },
+          "required": [
+            "offset",
+            "reason",
+          ],
+          "type": "object",
+        },
+        "message": {
+          "description": "Human-readable explanation of the failure.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+        "details",
+      ],
+      "title": "invalid_pack core error",
+      "type": "object",
+    },
     "CoreError.malformed_pkt_line": {
       "additionalProperties": false,
       "description": "The bytes are not valid pkt-line framing: a bad length header, a length below 4 that is not a special packet, a packet over 65520 bytes, or input that ends inside a packet.",
@@ -3284,6 +3754,61 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "title": "remote_error core error",
       "type": "object",
     },
+    "CoreError.remote_http_error": {
+      "additionalProperties": false,
+      "description": "The remote git server answered a smart-HTTP request with a non-2xx HTTP status (an outage, an expired or refused credential, a missing repository), before any git protocol exchange. Unlike remote_error this says nothing about the objects or refs asked for.",
+      "examples": [
+        {
+          "code": "remote_http_error",
+          "details": {
+            "path": "/acme.git/git-upload-pack",
+            "status": 503,
+          },
+          "message": "Remote HTTP error: HTTP 503 from /acme.git/git-upload-pack",
+        },
+      ],
+      "properties": {
+        "code": {
+          "const": "remote_http_error",
+          "description": "The remote git server answered a smart-HTTP request with a non-2xx HTTP status (an outage, an expired or refused credential, a missing repository), before any git protocol exchange. Unlike remote_error this says nothing about the objects or refs asked for.",
+          "type": "string",
+        },
+        "details": {
+          "additionalProperties": false,
+          "description": "Machine-readable facts about the remote_http_error error.",
+          "properties": {
+            "path": {
+              "description": "Path of the request URL (no query string, no credentials), e.g. "/acme.git/git-upload-pack".",
+              "minLength": 1,
+              "type": "string",
+            },
+            "status": {
+              "description": "The HTTP status code the remote answered with; never 2xx.",
+              "maximum": 599,
+              "minimum": 100,
+              "type": "integer",
+            },
+          },
+          "required": [
+            "status",
+            "path",
+          ],
+          "type": "object",
+        },
+        "message": {
+          "description": "Human-readable explanation of the failure.",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+        "details",
+      ],
+      "title": "remote_http_error core error",
+      "type": "object",
+    },
     "CoreError.unsupported_request": {
       "additionalProperties": false,
       "description": "The request uses a git protocol feature the gateway does not support, such as signed pushes or SHA-256 repositories.",
@@ -3356,10 +3881,16 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
           "$ref": "#/$defs/CoreError.remote_error",
         },
         {
+          "$ref": "#/$defs/CoreError.remote_http_error",
+        },
+        {
           "$ref": "#/$defs/CoreError.missing_object",
         },
         {
           "$ref": "#/$defs/CoreError.invalid_object",
+        },
+        {
+          "$ref": "#/$defs/CoreError.invalid_pack",
         },
       ],
       "title": "Core error",
@@ -3686,6 +4217,22 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "minLength": 6,
       "pattern": "^refs\\/(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\]+$",
       "title": "Git ref name",
+      "type": "string",
+    },
+    "GitService": {
+      "description": "A git smart-HTTP service, as named in "info/refs?service=…" and the POST endpoint.",
+      "enum": [
+        "git-upload-pack",
+        "git-receive-pack",
+      ],
+      "enumDescriptions": {
+        "git-receive-pack": "Push: the client sends objects and ref updates to the server.",
+        "git-upload-pack": "Fetch and clone: the server sends objects to the client.",
+      },
+      "examples": [
+        "git-upload-pack",
+      ],
+      "title": "Git service",
       "type": "string",
     },
     "GitTreeEntry": {
@@ -3915,6 +4462,16 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "title": "Move action",
       "type": "object",
     },
+    "ObjectFilter": {
+      "description": "A partial-clone filter spec the server applies to the pack ("filter" capability): "blob:none" omits every blob, "blob:limit=<n>[kmg]" omits blobs larger than n bytes, "tree:<depth>" omits trees and blobs at or below that depth from the root tree (tree:0 sends commits only).",
+      "examples": [
+        "tree:0",
+        "blob:none",
+      ],
+      "pattern": "^(?:blob:none|blob:limit=\\d+[kmg]?|tree:\\d+)$",
+      "title": "Object filter",
+      "type": "string",
+    },
     "Packet": {
       "anyOf": [
         {
@@ -4117,6 +4674,69 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
         "shallow",
       ],
       "title": "receive-pack request head",
+      "type": "object",
+    },
+    "RefAdvertisement": {
+      "additionalProperties": false,
+      "description": "The protocol v0/v1 answer to GET info/refs?service=…: the refs a repository has, the capabilities the server supports and the symbolic refs it reports.",
+      "examples": [
+        {
+          "capabilities": [
+            "side-band-64k",
+            "symref=HEAD:refs/heads/main",
+          ],
+          "refs": [
+            {
+              "name": "refs/heads/main",
+              "peeled": null,
+              "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            },
+          ],
+          "service": "git-upload-pack",
+          "symrefs": {
+            "HEAD": "refs/heads/main",
+          },
+        },
+      ],
+      "properties": {
+        "capabilities": {
+          "description": "The capabilities sent after the NUL on the first line, in order.",
+          "items": {
+            "$ref": "#/$defs/Capability",
+          },
+          "type": "array",
+        },
+        "refs": {
+          "description": "Every advertised ref in the order sent; empty for an empty repository.",
+          "items": {
+            "$ref": "#/$defs/AdvertisedRef",
+          },
+          "type": "array",
+        },
+        "service": {
+          "$ref": "#/$defs/GitService",
+        },
+        "symrefs": {
+          "additionalProperties": {
+            "$ref": "#/$defs/GitRefName",
+            "description": "The ref it points at, e.g. "refs/heads/main".",
+          },
+          "description": "Symbolic refs from "symref=<from>:<to>" capabilities, e.g. HEAD → refs/heads/main.",
+          "propertyNames": {
+            "description": "The symbolic ref, e.g. "HEAD".",
+            "minLength": 1,
+            "type": "string",
+          },
+          "type": "object",
+        },
+      },
+      "required": [
+        "service",
+        "refs",
+        "capabilities",
+        "symrefs",
+      ],
+      "title": "Ref advertisement",
       "type": "object",
     },
     "RefStatus": {
@@ -4569,6 +5189,120 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
         "encoding",
       ],
       "title": "Update action",
+      "type": "object",
+    },
+    "UploadPackRequest": {
+      "additionalProperties": false,
+      "description": "A stateless (smart-HTTP) protocol v0/v1 git-upload-pack request: want lines with capabilities, optional deepen and filter lines, have lines, then "done" — one round, no multi-round negotiation.",
+      "examples": [
+        {
+          "capabilities": [
+            "side-band-64k",
+          ],
+          "depth": 1,
+          "filter": "tree:0",
+          "haves": [],
+          "wants": [
+            "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          ],
+        },
+      ],
+      "properties": {
+        "capabilities": {
+          "default": [
+            "side-band-64k",
+            "ofs-delta",
+            "no-progress",
+          ],
+          "description": "Capabilities requested on the first want line. Default side-band-64k, ofs-delta and no-progress; "shallow" and "filter" are added when \`depth\` or \`filter\` is set.",
+          "items": {
+            "$ref": "#/$defs/Capability",
+          },
+          "type": "array",
+        },
+        "depth": {
+          "description": "Shallow fetch: send only this many commits of history from each want ("deepen <n>"). Absent: full history.",
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "filter": {
+          "$ref": "#/$defs/ObjectFilter",
+          "description": "Partial-clone filter for the pack. Absent: no filter.",
+        },
+        "haves": {
+          "default": [],
+          "description": "Objects the client already has; the server leaves out what they reach. Default none.",
+          "items": {
+            "$ref": "#/$defs/Sha",
+            "description": "An object the client already has.",
+          },
+          "maxItems": 10000,
+          "type": "array",
+        },
+        "wants": {
+          "description": "The objects to send: 1–10000 ids, normally ref tips. Duplicates are sent once.",
+          "items": {
+            "$ref": "#/$defs/Sha",
+            "description": "An object the client wants, with everything it needs.",
+          },
+          "maxItems": 10000,
+          "minItems": 1,
+          "type": "array",
+        },
+      },
+      "required": [
+        "wants",
+        "haves",
+        "capabilities",
+      ],
+      "title": "upload-pack request",
+      "type": "object",
+    },
+    "UploadPackResponse": {
+      "additionalProperties": false,
+      "description": "The answer to a stateless git-upload-pack request: shallow boundary, acknowledgements, and the packfile demultiplexed from side-band channel 1.",
+      "examples": [
+        {
+          "acknowledged": [],
+          "pack": {},
+          "progress": "",
+          "shallow": [],
+        },
+      ],
+      "properties": {
+        "acknowledged": {
+          "description": "Ids from "ACK <id>" lines; empty when the server answered "NAK".",
+          "items": {
+            "$ref": "#/$defs/Sha",
+            "description": "A have the server found in common.",
+          },
+          "type": "array",
+        },
+        "pack": {
+          "$ref": "#/$defs/Bytes",
+          "description": "The packfile bytes, side-band channel 1 joined; empty when the server sent no pack.",
+        },
+        "progress": {
+          "description": "Text the server sent on side-band channel 2; empty with no-progress.",
+          "type": "string",
+        },
+        "shallow": {
+          "description": "Commits reported by "shallow <id>" lines after a deepen; empty without one.",
+          "items": {
+            "$ref": "#/$defs/Sha",
+            "description": "A commit whose parents the client must treat as absent.",
+          },
+          "type": "array",
+        },
+      },
+      "required": [
+        "shallow",
+        "acknowledged",
+        "pack",
+        "progress",
+      ],
+      "title": "upload-pack response",
       "type": "object",
     },
     "UpsertAction": {
