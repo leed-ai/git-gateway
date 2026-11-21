@@ -24,7 +24,7 @@ export class FrontedProjects {
     this.#pattern =
       config === undefined
         ? undefined
-        : new RegExp(`^${config.prefix.replace(/[.]/g, '\\.')}([1-9][0-9]{0,15})$`);
+        : new RegExp(`^${config.prefix.replace(/[.*+?^${}()|[\]\\/-]/g, '\\$&')}([1-9][0-9]{0,15})$`);
   }
 
   /** The project id `repo` addresses when it is a reserved name; null for an ordinary name. */

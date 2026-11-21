@@ -31,13 +31,18 @@ export const GitVersion = z
 /** The version of a git binary, inferred from {@link GitVersion}. */
 export type GitVersion = z.infer<typeof GitVersion>;
 
-const VERSION_LINE = /^git version ((\d+)\.(\d+)(?:\.(\d+))?\S*(?:\s.*)?)$/;
+// Only the leading numbers are matched; the rest of the line is kept verbatim in `raw`. (A pattern
+// that also matched the suffix, as `\S*(?:\s.*)?$`, backtracks in polynomial time.)
+const VERSION_PREFIX = 'git version ';
+const VERSION_NUMBERS = /^(\d+)\.(\d+)(?:\.(\d+))?(?![\d.]*\d)/;
 
 /** Parses the output of `git --version`; throws on anything else. */
 export function parseGitVersion(output: string): GitVersion {
-  const match = VERSION_LINE.exec(output.trim());
+  const line = output.trim();
+  const raw = line.startsWith(VERSION_PREFIX) ? line.slice(VERSION_PREFIX.length) : '';
+  const match = line.includes('\n') ? null : VERSION_NUMBERS.exec(raw);
   if (match === null) throw new Error(`not a git --version line: ${JSON.stringify(output)}`);
-  const [, raw, major, minor, patch] = match;
+  const [, major, minor, patch] = match;
   return GitVersion.parse({ major: Number(major), minor: Number(minor), patch: Number(patch ?? 0), raw });
 }
 

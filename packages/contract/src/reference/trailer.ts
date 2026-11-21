@@ -7,12 +7,12 @@ const TRAILER_LINE = new RegExp(`^${IDEMPOTENCY_TRAILER}: ([A-Za-z0-9][A-Za-z0-9
 
 /** The message with the idempotency trailer appended as its last paragraph. */
 export function appendIdempotencyTrailer(message: string, key: string): string {
-  return `${message.replace(/\s+$/, '')}\n\n${IDEMPOTENCY_TRAILER}: ${key}\n`;
+  return `${message.trimEnd()}\n\n${IDEMPOTENCY_TRAILER}: ${key}\n`;
 }
 
 /** The idempotency key in a message's trailer, or null when it has none. */
 export function readIdempotencyTrailer(message: string): string | null {
-  const lines = message.replace(/\s+$/, '').split('\n');
+  const lines = message.trimEnd().split('\n');
   const last = lines.at(-1) ?? '';
   return TRAILER_LINE.exec(last)?.[1] ?? null;
 }

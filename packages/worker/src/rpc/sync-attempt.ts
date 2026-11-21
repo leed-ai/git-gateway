@@ -21,7 +21,12 @@ export type SyncAttempt =
   | { readonly kind: 'stale'; readonly intoHead: string };
 
 /** A commit message as git stores it: ending in exactly one newline. */
-const asStoredMessage = (message: string): string => `${message.replace(/\n+$/, '')}\n`;
+const asStoredMessage = (message: string): string => {
+  // A scan from the end, not /\n+$/: that regex retries from every newline run (polynomial time).
+  let end = message.length;
+  while (end > 0 && message.charCodeAt(end - 1) === 10) end -= 1;
+  return `${message.slice(0, end)}\n`;
+};
 
 /**
  * One attempt at syncBranch(): `into` already contains `from` → up_to_date; `into` has nothing of

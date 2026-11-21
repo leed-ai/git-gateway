@@ -76,5 +76,8 @@ export function withRepoLock<T>(repo: RepoState, work: () => Promise<T>): Promis
 
 /** The clone URL of a repository under the configured public base URL. */
 export function remoteUrlOf(config: GatewayConfig, repo: string): string {
-  return `${config.publicBaseUrl.replace(/\/+$/, '')}/${repo}.git`;
+  // A scan from the end, not /\/+$/, which retries from every slash run (polynomial time).
+  let end = config.publicBaseUrl.length;
+  while (end > 0 && config.publicBaseUrl.charCodeAt(end - 1) === 47) end -= 1;
+  return `${config.publicBaseUrl.slice(0, end)}/${repo}.git`;
 }

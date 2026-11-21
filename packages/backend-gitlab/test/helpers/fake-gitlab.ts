@@ -98,7 +98,7 @@ export function fakeGitLab(
   };
   const fetch: FetchLike = async (request) => {
     const url = new URL(request.url);
-    if (!url.href.startsWith(base)) return new Response('wrong host', { status: 502 });
+    if (url.origin !== new URL(base).origin) return new Response('wrong host', { status: 502 });
     if (url.pathname.startsWith('/api/v4/')) {
       state.requests.push(`${request.method} ${url.pathname.slice(7)}${url.search}`);
       if (request.headers.get('PRIVATE-TOKEN') !== token) return json(401, { message: '401 Unauthorized' });

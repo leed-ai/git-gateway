@@ -170,7 +170,7 @@ describe('the BranchPolicy hook', () => {
       [o.tree, o.child],
     );
     const { refs } = await report(await push(app, 'alice-token', body));
-    expect(refs).toEqual([{ ref: 'refs/heads/main', status: 'ng', reason: reason.replace('\r', ' ') }]);
+    expect(refs).toEqual([{ ref: 'refs/heads/main', status: 'ng', reason: reason.replaceAll('\r', ' ') }]);
     expect(upstream.received).toEqual([]);
   });
 

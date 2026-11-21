@@ -34,13 +34,21 @@ async function seeded(): Promise<{ client: GitHttpClient; first: string; second:
 }
 
 describe('spec open question 1 (Artifacts receive-pack semantics)', () => {
-  it('refuses an update whose old id is stale with "failed to update ref", leaving the ref alone', async () => {
+  it('refuses an update whose old id is stale, leaving the ref alone', async () => {
     const { client, first, second } = await seeded();
     const stale = await fixtureCommit({ 'a.txt': 'stale\n' }, [first]);
     const report = await client.push([{ oldSha: first, newSha: stale.sha, ref: MAIN }], stale.objects);
     expect(report).toEqual({
       unpack: 'ok',
-      refs: [{ ref: MAIN, status: 'ng', reason: 'failed to update ref' }],
+      // The wording follows the server's git: older releases say "failed to update ref", newer
+      // ones "incorrect old value provided". Either way the update is refused.
+      refs: [
+        {
+          ref: MAIN,
+          status: 'ng',
+          reason: expect.stringMatching(/^(failed to update ref|incorrect old value provided)$/),
+        },
+      ],
     });
     expect(await backend.resolveRef(repo, 'main')).toBe(second);
   });
