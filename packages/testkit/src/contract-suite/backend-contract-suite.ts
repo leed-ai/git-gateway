@@ -35,6 +35,11 @@ export interface BackendSuiteOptions {
   readonly largeFileBytes?: number;
   /** Delete each case's repository when it ends; default true. */
   readonly cleanup?: boolean;
+  /**
+   * Which cases to register; default every case. For a backend mode that cannot run a whole group,
+   * such as names that createRepo refuses, which the lifecycle group creates.
+   */
+  readonly include?: (entry: BackendCase) => boolean;
 }
 
 let runCounter = 0;
@@ -70,7 +75,8 @@ export async function runBackendCase(entry: BackendCase, options: BackendSuiteOp
  *   });
  */
 export function registerBackendContractSuite(test: TestRegistrar, options: BackendSuiteOptions): void {
-  const groups = Map.groupBy(BACKEND_CASES, (entry) => entry.group);
+  const included = BACKEND_CASES.filter((entry) => options.include?.(entry) ?? true);
+  const groups = Map.groupBy(included, (entry) => entry.group);
   test.describe(options.name ?? 'StorageBackend contract', () => {
     for (const [group, cases] of groups) {
       test.describe(group, () => {

@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { FakeGitLabState } from './fake-gitlab.ts';
 
+/** The full path of a project's group. */
+export function namespaceOf(state: FakeGitLabState, path: string): string {
+  return state.projects.get(path)?.namespace ?? state.group.fullPath;
+}
+
 const json = (status: number, body: unknown): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 const notFound = (what: string): Response => json(404, { message: `404 ${what} Not Found` });
@@ -12,10 +17,10 @@ function projectJson(state: FakeGitLabState, path: string): unknown {
   return {
     id: project?.id,
     path,
-    path_with_namespace: `${state.group.fullPath}/${path}`,
+    path_with_namespace: `${namespaceOf(state, path)}/${path}`,
     default_branch: project?.defaultBranch,
     created_at: project?.createdAt,
-    http_url_to_repo: `${state.base}/${state.group.fullPath}/${path}.git`,
+    http_url_to_repo: `${state.base}/${namespaceOf(state, path)}/${path}.git`,
     marked_for_deletion_on: null,
     visibility: 'private',
   };
@@ -25,7 +30,8 @@ function projectJson(state: FakeGitLabState, path: string): unknown {
 function projectOf(state: FakeGitLabState, id: string): string | null {
   const decoded = decodeURIComponent(id);
   for (const [path, project] of state.projects) {
-    if (String(project.id) === decoded || `${state.group.fullPath}/${path}` === decoded) return path;
+    if (String(project.id) === decoded || `${project.namespace ?? state.group.fullPath}/${path}` === decoded)
+      return path;
   }
   return null;
 }

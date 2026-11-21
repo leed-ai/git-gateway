@@ -2,7 +2,7 @@
 import type { FetchLike } from '@leed-ai/git-gateway-core/smart-http/git-http-client';
 import { MemoryBackend } from '@leed-ai/git-gateway-testkit/memory/memory-backend';
 
-import { answerRest } from './fake-gitlab-rest.ts';
+import { answerRest, namespaceOf } from './fake-gitlab-rest.ts';
 
 /** The state of a fake GitLab instance: one group whose projects live in a MemoryBackend. */
 export interface FakeGitLabState {
@@ -10,7 +10,14 @@ export interface FakeGitLabState {
   readonly token: string;
   readonly group: { readonly id: number; readonly fullPath: string };
   readonly memory: MemoryBackend;
-  readonly projects: Map<string, { id: number; createdAt: string; defaultBranch: string }>;
+  /**
+   * Projects by path. A project with a `namespace` lives in that group instead of the fake's own
+   * (an existing project the backend fronts by id); its path must still be unique in the map.
+   */
+  readonly projects: Map<
+    string,
+    { id: number; createdAt: string; defaultBranch: string; namespace?: string }
+  >;
   nextId: number;
   /** Every API request seen, as "METHOD /path?query", for assertions. */
   readonly requests: string[];
@@ -25,15 +32,16 @@ export interface FakeGitLab {
 const json = (status: number, body: unknown): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
-/** Answers git requests for "<group>/<project>.git/…", checking the token and forwarding to the memory backend. */
+/** Answers git requests for "<namespace>/<project>.git/…", checking the token and forwarding to the memory backend. */
 async function answerGit(state: FakeGitLabState, request: Request, path: string): Promise<Response> {
-  const prefix = `/${state.group.fullPath}/`;
-  const rest = path.slice(prefix.length);
-  const project = rest.slice(0, rest.indexOf('.git/'));
+  const project = [...state.projects.keys()].find((candidate) =>
+    path.startsWith(`/${namespaceOf(state, candidate)}/${candidate}.git/`),
+  );
   const expected = `Basic ${btoa(`oauth2:${state.token}`)}`;
   if (request.headers.get('Authorization') !== expected)
     return new Response('HTTP Basic: Access denied', { status: 401 });
-  if (!state.projects.has(project)) return new Response('not found', { status: 404 });
+  if (project === undefined) return new Response('not found', { status: 404 });
+  const rest = path.slice(`/${namespaceOf(state, project)}/`.length);
   const remote = await state.memory.gitRemote(project, 'write');
   const url = new URL(request.url);
   const headers = new Headers(request.headers);
@@ -44,6 +52,33 @@ async function answerGit(state: FakeGitLabState, request: Request, path: string)
     ...(request.method === 'POST' ? { body: await request.arrayBuffer() } : {}),
   });
   return state.memory.handle(forwarded);
+}
+
+/**
+ * Plants an existing project `path` in group `namespace` (outside the fake's own group, as a project
+ * the backend fronts by id would be) and returns its id.
+ */
+export async function plantProject(
+  state: FakeGitLabState,
+  path: string,
+  namespace: string,
+  defaultBranch = 'main',
+): Promise<number> {
+  await state.memory.createRepo(path, { defaultBranch });
+  state.nextId += 1;
+  state.projects.set(path, {
+    id: state.nextId,
+    createdAt: new Date().toISOString(),
+    defaultBranch,
+    namespace,
+  });
+  return state.nextId;
+}
+
+/** Removes a project planted with {@link plantProject}. */
+export async function removeProject(state: FakeGitLabState, path: string): Promise<void> {
+  state.projects.delete(path);
+  await state.memory.deleteRepo(path);
 }
 
 /** Starts a fake GitLab at `base` with one group, accepting `token`. */

@@ -21,6 +21,7 @@ import { GitHttpClient, type FetchLike } from '@leed-ai/git-gateway-core/smart-h
 import { z } from 'zod';
 
 import { GitLabApi, GitLabHttpError } from './gitlab-api.ts';
+import { FrontedProjects, frontedLifecycleRefused } from './gitlab-fronted.ts';
 import { readCommitsOverGit, readTreeOverGit } from './gitlab-git-reads.ts';
 import { GitLabBackendConfig } from './schemas/gitlab-config.ts';
 import { GitLabCommitSummary, GitLabGroup, GitLabProject, GitLabRef } from './schemas/gitlab-responses.ts';
@@ -40,12 +41,18 @@ const enc = encodeURIComponent;
  * blobs, files and history use the REST API (v4); commits and trees are read as git objects over
  * the smart-HTTP transport (GitLab's API reports neither tree ids nor raw messages), and writes
  * are git pushes to {@link gitRemote}. Every API response is parsed with Zod.
+ *
+ * With `frontedProjects`, a reserved name `<prefix><projectId>` addresses an existing project by
+ * id, wherever it lives under `frontedProjects.namespace`, so the gateway can front repositories
+ * that predate it without moving them. Those names can be read and pushed but never created or
+ * deleted.
  */
 export class GitLabBackend implements StorageBackend {
   readonly #config: z.output<typeof GitLabBackendConfig>;
   readonly #api: GitLabApi;
   readonly #fetch: FetchLike;
   #namespaceId: number | undefined;
+  readonly #fronted: FrontedProjects;
 
   constructor(options: GitLabBackendOptions) {
     const { fetch, ...config } = options;
@@ -53,11 +60,13 @@ export class GitLabBackend implements StorageBackend {
     this.#fetch = fetch ?? (async (request) => globalThis.fetch(request));
     this.#api = new GitLabApi(this.#config.baseUrl, this.#config.token, this.#fetch);
     this.#namespaceId = this.#config.namespaceId;
+    this.#fronted = new FrontedProjects(this.#config.frontedProjects);
   }
 
   async createRepo(name: string, options: CreateStorageRepoOptions = {}): Promise<StorageRepoInfo> {
     const repo = parseStorageInput(RepoName, name);
     const { defaultBranch } = parseStorageInput(CreateStorageRepoOptions, options);
+    if (this.#fronted.idOf(repo) !== null) throw frontedLifecycleRefused(repo, 'created');
     return this.#call(repo, 'createRepo', async () => {
       const namespaceId = await this.#resolveNamespaceId();
       try {
@@ -87,6 +96,7 @@ export class GitLabBackend implements StorageBackend {
 
   async deleteRepo(name: string): Promise<void> {
     const repo = parseStorageInput(RepoName, name);
+    if (this.#fronted.idOf(repo) !== null) throw frontedLifecycleRefused(repo, 'deleted');
     await this.#call(repo, 'deleteRepo', async () => {
       const project = await this.#projectOrNull(repo);
       if (project === null) return;
@@ -107,7 +117,7 @@ export class GitLabBackend implements StorageBackend {
     const repo = parseStorageInput(RepoName, name);
     return this.#call(repo, 'repoInfo', async () => {
       const project = await this.#projectOrNull(repo);
-      return project === null ? null : this.#info(project, 'main');
+      return project === null ? null : this.#info(project, 'main', repo);
     });
   }
 
@@ -120,7 +130,7 @@ export class GitLabBackend implements StorageBackend {
     return this.#call(repo, 'resolveRef', async () => {
       try {
         return (
-          await this.#api.json(GitLabRef, `${this.#projectPath(repo)}/repository/${kind}/${enc(short)}`)
+          await this.#api.json(GitLabRef, `${await this.#projectPath(repo)}/repository/${kind}/${enc(short)}`)
         ).commit.id;
       } catch (error) {
         if (error instanceof GitLabHttpError && error.status === 404 && !error.projectMissing) return null;
@@ -133,7 +143,7 @@ export class GitLabBackend implements StorageBackend {
     const repo = parseStorageInput(RepoName, name);
     const id = parseStorageInput(Sha, sha);
     return this.#call(repo, 'readCommit', async () => {
-      const found = await this.#api.bytesOrNull(`${this.#projectPath(repo)}/repository/commits/${id}`);
+      const found = await this.#api.bytesOrNull(`${await this.#projectPath(repo)}/repository/commits/${id}`);
       if (found === null) return null;
       const [commit] = await readCommitsOverGit(await this.#client(repo), [id]);
       return commit ?? null;
@@ -150,7 +160,7 @@ export class GitLabBackend implements StorageBackend {
     const repo = parseStorageInput(RepoName, name);
     const id = parseStorageInput(Sha, sha);
     return this.#call(repo, 'readBlob', async () =>
-      this.#api.bytesOrNull(`${this.#projectPath(repo)}/repository/blobs/${id}/raw`),
+      this.#api.bytesOrNull(`${await this.#projectPath(repo)}/repository/blobs/${id}/raw`),
     );
   }
 
@@ -159,7 +169,7 @@ export class GitLabBackend implements StorageBackend {
     const revision = parseStorageInput(Revision, ref);
     const file = parseStorageInput(FilePath, path);
     return this.#call(repo, 'readFile', async () =>
-      this.#api.bytesOrNull(`${this.#projectPath(repo)}/repository/files/${enc(file)}/raw`, {
+      this.#api.bytesOrNull(`${await this.#projectPath(repo)}/repository/files/${enc(file)}/raw`, {
         ref: revision,
       }),
     );
@@ -201,7 +211,7 @@ export class GitLabBackend implements StorageBackend {
         const query = { ref_name: revision, first_parent: true, per_page: PAGE, page };
         listed = await this.#api.json(
           z.array(GitLabCommitSummary),
-          `${this.#projectPath(repo)}/repository/commits`,
+          `${await this.#projectPath(repo)}/repository/commits`,
           { query },
         );
       } catch (error) {
@@ -218,16 +228,26 @@ export class GitLabBackend implements StorageBackend {
     return new GitHttpClient(await this.gitRemote(repo, 'read'), { fetch: this.#fetch });
   }
 
-  #projectPath(repo: string): string {
-    return `/projects/${enc(`${this.#config.namespace}/${repo}`)}`;
+  /**
+   * The API path of `repo`'s project. A fronted name is checked to lie under the fronted namespace
+   * first (once per id), so a project elsewhere is repo_not_found rather than reachable by id.
+   */
+  async #projectPath(repo: string): Promise<string> {
+    const id = this.#fronted.idOf(repo);
+    if (id === null) return `/projects/${enc(`${this.#config.namespace}/${repo}`)}`;
+    if (!this.#fronted.verified(id) && (await this.#projectOrNull(repo)) === null) throw repoNotFound(repo);
+    return `/projects/${id}`;
   }
 
   async #projectOrNull(repo: string): Promise<GitLabProject | null> {
+    const id = this.#fronted.idOf(repo);
+    const path = id === null ? `/projects/${enc(`${this.#config.namespace}/${repo}`)}` : `/projects/${id}`;
     try {
-      const project = await this.#api.json(GitLabProject, this.#projectPath(repo));
-      return project.marked_for_deletion_on === null || project.marked_for_deletion_on === undefined
-        ? project
-        : null;
+      const project = await this.#api.json(GitLabProject, path);
+      if (project.marked_for_deletion_on !== null && project.marked_for_deletion_on !== undefined)
+        return null;
+      if (id === null) return project;
+      return this.#fronted.admits(id, project) ? project : null;
     } catch (error) {
       if (error instanceof GitLabHttpError && error.status === 404) return null;
       throw error;
@@ -239,9 +259,10 @@ export class GitLabBackend implements StorageBackend {
     return this.#namespaceId;
   }
 
-  #info(project: GitLabProject, fallbackBranch: string): StorageRepoInfo {
+  /** The StorageRepoInfo of `project`; a fronted project is named by the reserved `name` it was opened by. */
+  #info(project: GitLabProject, fallbackBranch: string, name?: string): StorageRepoInfo {
     return StorageRepoInfo.parse({
-      name: project.path,
+      name: name !== undefined && this.#fronted.idOf(name) !== null ? name : project.path,
       defaultBranch: project.default_branch ?? fallbackBranch,
       createdAt: new Date(project.created_at).toISOString(),
     });

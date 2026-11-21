@@ -13,6 +13,16 @@ exports[`schema documentation > generates the JSON Schema for what the schemas a
           "namespace": "acme/sites",
           "token": "glpat-example",
         },
+        {
+          "baseUrl": "https://gitlab.com",
+          "frontedProjects": {
+            "namespace": "acme/customers",
+            "prefix": "gl-",
+          },
+          "gitUsername": "oauth2",
+          "namespace": "acme/sites",
+          "token": "glpat-example",
+        },
       ],
       "properties": {
         "baseUrl": {
@@ -20,6 +30,31 @@ exports[`schema documentation > generates the JSON Schema for what the schemas a
           "description": "Base URL of the GitLab instance, without a trailing "/api/v4". Default "https://gitlab.com".",
           "format": "uri",
           "type": "string",
+        },
+        "frontedProjects": {
+          "additionalProperties": false,
+          "description": "Fronts projects that already exist outside \`namespace\`, addressed by project id instead of by name. A repository named <prefix><projectId> is project <projectId>, provided it lives under \`frontedProjects.namespace\`; createRepo and deleteRepo refuse such names with invalid_input, since the gateway did not create those projects and must not remove them. Absent: every name is a project in \`namespace\`.",
+          "properties": {
+            "namespace": {
+              "description": "Full path of the group whose projects (at any depth below it) may be fronted, e.g. "acme/customers". A project id outside it answers repo_not_found, so the token's other projects stay unreachable.",
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_.][A-Za-z0-9_.-]*(?:\\/[A-Za-z0-9_.][A-Za-z0-9_.-]*)*$",
+              "type": "string",
+            },
+            "prefix": {
+              "default": "gl-",
+              "description": "Prefix of the reserved repository names that address an existing project by id: <prefix><projectId>, e.g. "gl-1234" for project 1234. 1–20 characters, starting with a letter and ending in "-". Default "gl-".",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[A-Za-z][A-Za-z0-9_.]*-$",
+              "type": "string",
+            },
+          },
+          "required": [
+            "namespace",
+          ],
+          "type": "object",
         },
         "gitUsername": {
           "default": "oauth2",
@@ -287,6 +322,16 @@ exports[`schema documentation > generates the JSON Schema for what the schemas p
           "namespace": "acme/sites",
           "token": "glpat-example",
         },
+        {
+          "baseUrl": "https://gitlab.com",
+          "frontedProjects": {
+            "namespace": "acme/customers",
+            "prefix": "gl-",
+          },
+          "gitUsername": "oauth2",
+          "namespace": "acme/sites",
+          "token": "glpat-example",
+        },
       ],
       "properties": {
         "baseUrl": {
@@ -294,6 +339,32 @@ exports[`schema documentation > generates the JSON Schema for what the schemas p
           "description": "Base URL of the GitLab instance, without a trailing "/api/v4". Default "https://gitlab.com".",
           "format": "uri",
           "type": "string",
+        },
+        "frontedProjects": {
+          "additionalProperties": false,
+          "description": "Fronts projects that already exist outside \`namespace\`, addressed by project id instead of by name. A repository named <prefix><projectId> is project <projectId>, provided it lives under \`frontedProjects.namespace\`; createRepo and deleteRepo refuse such names with invalid_input, since the gateway did not create those projects and must not remove them. Absent: every name is a project in \`namespace\`.",
+          "properties": {
+            "namespace": {
+              "description": "Full path of the group whose projects (at any depth below it) may be fronted, e.g. "acme/customers". A project id outside it answers repo_not_found, so the token's other projects stay unreachable.",
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_.][A-Za-z0-9_.-]*(?:\\/[A-Za-z0-9_.][A-Za-z0-9_.-]*)*$",
+              "type": "string",
+            },
+            "prefix": {
+              "default": "gl-",
+              "description": "Prefix of the reserved repository names that address an existing project by id: <prefix><projectId>, e.g. "gl-1234" for project 1234. 1–20 characters, starting with a letter and ending in "-". Default "gl-".",
+              "maxLength": 20,
+              "minLength": 1,
+              "pattern": "^[A-Za-z][A-Za-z0-9_.]*-$",
+              "type": "string",
+            },
+          },
+          "required": [
+            "prefix",
+            "namespace",
+          ],
+          "type": "object",
         },
         "gitUsername": {
           "default": "oauth2",
