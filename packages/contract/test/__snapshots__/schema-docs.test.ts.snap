@@ -1193,7 +1193,7 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
         },
         "syncRules": {
           "default": [],
-          "description": "Branch syncs run automatically after pushes; at most 50, default none.",
+          "description": "Branch syncs started after every accepted push to a rule's \`from\` branch, through the smart-HTTP proxy or an RPC write. The worker starts each as a SyncBranchWorkflow and refuses to start without that Workflow binding when any rule is set; the in-memory reference has no push hooks and ignores them. At most 50, default none.",
           "items": {
             "$ref": "#/$defs/SyncRule",
           },
@@ -3099,7 +3099,7 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
         },
         "maxAuditReportBytes": {
           "default": 1048576,
-          "description": "Most bytes of a storage host push response kept to read its per-ref report for the audit event; past it the refs are audited as "unknown". 0 skips reading reports. Default 1 MiB (1048576).",
+          "description": "Most bytes of a storage host push response kept to read its per-ref report for the audit event and the push event; past it the refs are audited as "unknown" and no push event is sent. 0 skips reading reports for audit; when an onPush hook is set the report is still read, up to the 1 MiB default. Default 1 MiB (1048576).",
           "maximum": 16777216,
           "minimum": 0,
           "type": "integer",
@@ -4956,7 +4956,7 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
         },
         "syncRules": {
           "default": [],
-          "description": "Branch syncs run automatically after pushes; at most 50, default none.",
+          "description": "Branch syncs started after every accepted push to a rule's \`from\` branch, through the smart-HTTP proxy or an RPC write. The worker starts each as a SyncBranchWorkflow and refuses to start without that Workflow binding when any rule is set; the in-memory reference has no push hooks and ignores them. At most 50, default none.",
           "items": {
             "$ref": "#/$defs/SyncRule",
           },
@@ -6888,7 +6888,7 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
         },
         "maxAuditReportBytes": {
           "default": 1048576,
-          "description": "Most bytes of a storage host push response kept to read its per-ref report for the audit event; past it the refs are audited as "unknown". 0 skips reading reports. Default 1 MiB (1048576).",
+          "description": "Most bytes of a storage host push response kept to read its per-ref report for the audit event and the push event; past it the refs are audited as "unknown" and no push event is sent. 0 skips reading reports for audit; when an onPush hook is set the report is still read, up to the 1 MiB default. Default 1 MiB (1048576).",
           "maximum": 16777216,
           "minimum": 0,
           "type": "integer",

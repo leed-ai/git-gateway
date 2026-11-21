@@ -11,6 +11,7 @@ import type { StorageBackend } from '@leed-ai/git-gateway-contract/storage/stora
 import type { AuditRecorder } from '../audit/audit-recorder.ts';
 import type { DecisionCache } from '../cache/decision-cache.ts';
 import type { Logger } from '../logging/logger.ts';
+import type { OnPushHook } from '../workflows/on-push.ts';
 import type { UpstreamFetch } from './upstream.ts';
 
 /** A cached authentication or authorization decision. */
@@ -32,4 +33,8 @@ export interface GatewayDeps {
   readonly cacheTtlMs: number;
   readonly fetch: UpstreamFetch;
   readonly now: () => Date;
+  /** Run after every accepted push (the sync rules and the deployment's hook); undefined: none. */
+  readonly onPush: OnPushHook | undefined;
+  /** Receives onPush failures after they are logged. */
+  readonly onPushError: (error: unknown) => void;
 }

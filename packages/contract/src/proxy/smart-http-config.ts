@@ -51,7 +51,7 @@ export const SmartHttpConfig = z
       .max(16 * 1024 * 1024)
       .default(1024 * 1024)
       .describe(
-        'Most bytes of a storage host push response kept to read its per-ref report for the audit event; past it the refs are audited as "unknown". 0 skips reading reports. Default 1 MiB (1048576).',
+        'Most bytes of a storage host push response kept to read its per-ref report for the audit event and the push event; past it the refs are audited as "unknown" and no push event is sent. 0 skips reading reports for audit; when an onPush hook is set the report is still read, up to the 1 MiB default. Default 1 MiB (1048576).',
       ),
   })
   .strict()

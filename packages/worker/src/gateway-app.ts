@@ -28,6 +28,9 @@ import { receivePack } from './proxy/receive-pack.ts';
 import { requestLog } from './proxy/request-log.ts';
 import { resolveRoute } from './proxy/resolve-route.ts';
 import type { UpstreamFetch } from './proxy/upstream.ts';
+import { composeOnPush, type OnPushHook } from './workflows/on-push.ts';
+import type { SyncBranchWorkflowParams } from './workflows/sync-workflow-schemas.ts';
+import type { WorkflowStarter } from './workflows/workflow-starter.ts';
 
 /** What a deployment composes the gateway from. */
 export interface GatewayAppOptions {
@@ -41,6 +44,21 @@ export interface GatewayAppOptions {
   readonly branchPolicy: BranchPolicy;
   /** Receives every authenticated operation; optional. */
   readonly audit?: AuditHook;
+  /**
+   * Called after every push the storage host accepted through the proxy, with the refs its
+   * report-status marked "ok" (refused refs are left out; a push refused outright sends nothing),
+   * beside the sync rules, e.g. to send the event to a Queue. It runs after the response is under
+   * way (through `waitUntil`); a failure is logged, passed to {@link onPushError} and never
+   * changes the response.
+   */
+  readonly onPush?: OnPushHook;
+  /** Receives onPush failures after they are logged, e.g. to count them; default: nothing more. */
+  readonly onPushError?: (error: unknown) => void;
+  /**
+   * The SyncBranchWorkflow binding `gateway.syncRules` start instances of after every accepted
+   * push to a rule's `from` branch; required when there are sync rules.
+   */
+  readonly syncWorkflow?: WorkflowStarter<SyncBranchWorkflowParams>;
   /** Structured logs; default none (pass `consoleLogger` in a Worker). */
   readonly logger?: Logger;
   /** Shared gateway settings; `authCacheSeconds` sets how long decisions are cached. */
@@ -60,7 +78,9 @@ export interface GatewayAppOptions {
  * `/<repo>.git/git-upload-pack` and `/<repo>.git/git-receive-pack`, each running route
  * resolution → authentication → authorization (→ branch policy for pushes) as middleware before
  * the request is proxied, streamed, to the storage host with a credential minted for it alone.
- * Create it once per isolate: it holds the decision cache.
+ * Accepted pushes are delivered to the onPush hook and the sync rules after the response. Throws
+ * a TypeError when `gateway.syncRules` are set without a `syncWorkflow`. Create it once per
+ * isolate: it holds the decision cache.
  */
 export function createGatewayApp(options: GatewayAppOptions): Hono<GatewayEnv> {
   const logger = options.logger ?? silentLogger;
@@ -82,6 +102,12 @@ export function createGatewayApp(options: GatewayAppOptions): Hono<GatewayEnv> {
     cacheTtlMs: gateway.authCacheSeconds * 1000,
     fetch: options.fetch ?? (async (request) => fetch(request)),
     now,
+    onPush: composeOnPush({
+      syncRules: gateway.syncRules,
+      syncWorkflow: options.syncWorkflow,
+      onPush: options.onPush,
+    }),
+    onPushError: options.onPushError ?? (() => undefined),
   };
   const app = new Hono<GatewayEnv>();
   app.use('*', requestLog(logger, now));

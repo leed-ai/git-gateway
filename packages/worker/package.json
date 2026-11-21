@@ -126,6 +126,11 @@
       "types": "./dist/proxy/git-route.d.ts",
       "default": "./dist/proxy/git-route.js"
     },
+    "./proxy/push-events": {
+      "source": "./src/proxy/push-events.ts",
+      "types": "./dist/proxy/push-events.d.ts",
+      "default": "./dist/proxy/push-events.js"
+    },
     "./proxy/push-guard": {
       "source": "./src/proxy/push-guard.ts",
       "types": "./dist/proxy/push-guard.d.ts",

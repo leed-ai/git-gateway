@@ -5,10 +5,14 @@ import type { BranchPolicy } from '@leed-ai/git-gateway-contract/proxy/gateway-h
 import type { PrincipalInput } from '@leed-ai/git-gateway-contract/proxy/principal';
 import { readCredential } from '@leed-ai/git-gateway-contract/proxy/request-credential';
 import type { SmartHttpConfigInput } from '@leed-ai/git-gateway-contract/proxy/smart-http-config';
+import type { SyncRule } from '@leed-ai/git-gateway-contract/schemas/gateway-config';
 
 import { createGatewayApp } from '../../src/gateway-app.ts';
 import type { LogEntry } from '../../src/logging/logger.ts';
 import { RuleBranchPolicy } from '../../src/policy/rule-branch-policy.ts';
+import type { OnPushHook } from '../../src/workflows/on-push.ts';
+import type { SyncBranchWorkflowParams } from '../../src/workflows/sync-workflow-schemas.ts';
+import type { WorkflowStarter } from '../../src/workflows/workflow-starter.ts';
 import { FakeBackend } from './fake-backend.ts';
 import { FakeUpstream } from './fake-upstream.ts';
 
@@ -28,6 +32,10 @@ export interface FixtureOptions {
   readonly authCacheSeconds?: number;
   readonly principals?: Readonly<Record<string, PrincipalInput>>;
   readonly now?: () => Date;
+  readonly onPush?: OnPushHook;
+  readonly onPushError?: (error: unknown) => void;
+  readonly syncRules?: readonly SyncRule[];
+  readonly syncWorkflow?: WorkflowStarter<SyncBranchWorkflowParams>;
 }
 
 /**
@@ -62,10 +70,13 @@ export function gatewayFixture(options: FixtureOptions = {}) {
       audits.push(event);
     },
     logger: { log: (entry) => logs.push(entry) },
-    gateway: { authCacheSeconds: options.authCacheSeconds ?? 60 },
+    gateway: { authCacheSeconds: options.authCacheSeconds ?? 60, syncRules: [...(options.syncRules ?? [])] },
     smartHttp: options.smartHttp ?? {},
     fetch: upstream.fetch,
     ...(options.now ? { now: options.now } : {}),
+    ...(options.onPush ? { onPush: options.onPush } : {}),
+    ...(options.onPushError ? { onPushError: options.onPushError } : {}),
+    ...(options.syncWorkflow ? { syncWorkflow: options.syncWorkflow } : {}),
   });
   return { app, backend, upstream, audits, logs, calls };
 }

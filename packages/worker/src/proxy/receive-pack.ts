@@ -8,8 +8,12 @@ import { deferWith } from './defer.ts';
 import type { GatewayDeps } from './gateway-deps.ts';
 import type { GatewayEnv } from './gateway-env.ts';
 import { refusePush, textResponse, type RefRefusal } from './git-responses.ts';
+import { deliverPushEvents } from './push-events.ts';
 import { guardPush } from './push-guard.ts';
 import { callUpstream, streamToClient, type UpstreamResult } from './upstream-call.ts';
+
+/** Bytes of a host report read for push events when the audit report is switched off (1 MiB). */
+const DEFAULT_REPORT_BYTES = 1024 * 1024;
 
 /**
  * Holds a 2xx storage host answer back until the push guard has decided, so a host that answers
@@ -44,7 +48,9 @@ async function awaitVerdict(
  * they are; a refusal then fails the upstream request (the host gets a truncated pack and updates
  * nothing) and the client is told in-protocol which refs were refused and why. The host's answer
  * is held until that verdict is known, and the push is audited only after it; otherwise it
- * streams back untouched; when an audit hook is set, a copy of it is read for per-ref outcomes.
+ * streams back untouched. When an audit hook or an onPush hook is set, a copy of the answer is
+ * read for per-ref outcomes: the audit event gets them, and the refs the host accepted go to the
+ * onPush hook as push events, both after the response through `waitUntil`.
  */
 export function receivePack(deps: GatewayDeps): Handler<GatewayEnv> {
   return async (context) => {
@@ -153,24 +159,33 @@ export function receivePack(deps: GatewayDeps): Handler<GatewayEnv> {
       return result.response;
     }
     const upstream = result.response;
-    if (!deps.audit.enabled || upstream.body === null || deps.config.maxAuditReportBytes === 0) {
-      deps.audit.record(
-        { requestId, principal, git, outcome: 'allowed', reason: null, refs: unknownOutcomes(push.request) },
-        defer,
-        requestId,
-      );
+    const auditReport = deps.audit.enabled && deps.config.maxAuditReportBytes > 0;
+    const onPush = deps.onPush;
+    const unknown = { requestId, principal, git, outcome: 'allowed' as const, reason: null };
+    if (upstream.body === null || (!auditReport && onPush === undefined)) {
+      deps.audit.record({ ...unknown, refs: unknownOutcomes(push.request) }, defer, requestId);
       return streamToClient(upstream, upstream.body, requestId);
     }
-    const [toClient, toAudit] = upstream.body.tee();
-    const facts = readPushOutcomes(toAudit, push.request, deps.config.maxAuditReportBytes).then((refs) => ({
+    const [toClient, toReport] = upstream.body.tee();
+    const limit = auditReport ? deps.config.maxAuditReportBytes : DEFAULT_REPORT_BYTES;
+    const outcomes = readPushOutcomes(toReport, push.request, limit);
+    deps.audit.record(
+      auditReport
+        ? outcomes.then((refs) => ({ ...unknown, refs }))
+        : { ...unknown, refs: unknownOutcomes(push.request) },
+      defer,
       requestId,
-      principal,
-      git,
-      outcome: 'allowed' as const,
-      reason: null,
-      refs,
-    }));
-    deps.audit.record(facts, defer, requestId);
+    );
+    if (onPush !== undefined) {
+      defer(
+        deliverPushEvents(
+          { onPush, onPushError: deps.onPushError, logger: deps.logger, now: deps.now },
+          git.repo,
+          outcomes,
+          requestId,
+        ),
+      );
+    }
     return streamToClient(upstream, toClient, requestId);
   };
 }

@@ -3,7 +3,9 @@ import { readGatewayError } from '@leed-ai/git-gateway-contract/gateway-error';
 import { ZERO_SHA } from '@leed-ai/git-gateway-contract/schemas/sha';
 import { describe, expect, it } from 'vite-plus/test';
 
+import { gatewayContext } from '../../src/rpc/gateway-context.ts';
 import {
+  composeOnPush,
   consumePushEvents,
   dispatchPushEvent,
   syncRuleHook,
@@ -13,7 +15,7 @@ import { runSyncWorkflow } from '../../src/workflows/run-sync-workflow.ts';
 import type { SyncBranchWorkflowParams } from '../../src/workflows/sync-workflow-schemas.ts';
 import { syncWorkflowId } from '../../src/workflows/workflow-instance-id.ts';
 import { FakeStepRunner, FakeWorkflowStarter } from '../helpers/fake-workflow.ts';
-import { memoryGateway, seed, write } from '../helpers/memory-gateway.ts';
+import { memoryGateway, SECRET, seed, write } from '../helpers/memory-gateway.ts';
 
 const A = '1'.repeat(40);
 const B = '2'.repeat(40);
@@ -105,6 +107,41 @@ describe('syncRuleHook', () => {
       status: 'fast_forward',
       head,
     });
+  });
+});
+
+describe('configured sync rules', () => {
+  it('start a SyncBranchWorkflow after an RPC write when the binding is supplied', async () => {
+    const starter = new FakeWorkflowStarter<SyncBranchWorkflowParams>();
+    const seen: string[] = [];
+    const { gateway } = memoryGateway({
+      config: { syncRules: [{ from: 'main', into: 'staging' }] },
+      syncWorkflow: starter,
+      onPush: async (event) => void seen.push(event.repo),
+    });
+    await seed(gateway, 'acme');
+    const head = await write(gateway, 'acme', 'main', { 'n.md': 'n' });
+    expect([...starter.instances.values()]).toContainEqual({
+      repo: 'acme',
+      from: 'main',
+      into: 'staging',
+      fromHead: head,
+    });
+    expect(seen).toContain('acme');
+  });
+
+  it('refuse to run without a SyncBranchWorkflow binding', () => {
+    expect(() =>
+      gatewayContext({
+        backend: memoryGateway().backend,
+        readTokenSecret: SECRET,
+        config: { syncRules: [{ from: 'main', into: 'staging' }] },
+      }),
+    ).toThrow(TypeError);
+  });
+
+  it('compose to nothing when there are neither rules nor a hook', () => {
+    expect(composeOnPush({ syncRules: [] })).toBeUndefined();
   });
 });
 

@@ -48,6 +48,38 @@ export async function dispatchPushEvent(event: unknown, hooks: readonly OnPushHo
   if (failures.length > 0) throw new AggregateError(failures, `${failures.length} onPush hook(s) failed`);
 }
 
+/** What {@link composeOnPush} builds the deployment's onPush hook from. */
+export interface OnPushOptions {
+  /** The configured sync rules (GatewayConfig.syncRules). */
+  readonly syncRules: readonly SyncRule[];
+  /** The SyncBranchWorkflow binding the sync rules start instances of; required when there are rules. */
+  readonly syncWorkflow?: WorkflowStarter<SyncBranchWorkflowParams> | undefined;
+  /** The deployment's own hook, run beside the sync rules. */
+  readonly onPush?: OnPushHook | undefined;
+}
+
+/**
+ * The one onPush hook a gateway runs after every accepted push: {@link syncRuleHook} for the
+ * configured sync rules and the deployment's own hook, each run even when the other fails (see
+ * {@link dispatchPushEvent}); a lone hook is returned as it is. Undefined when there is nothing
+ * to run. Throws a TypeError when sync rules are configured without a SyncBranchWorkflow binding,
+ * which would leave them dead.
+ */
+export function composeOnPush(options: OnPushOptions): OnPushHook | undefined {
+  const hooks: OnPushHook[] = [];
+  if (options.syncRules.length > 0) {
+    if (options.syncWorkflow === undefined) {
+      throw new TypeError(
+        'GatewayConfig.syncRules are set but no SyncBranchWorkflow binding (syncWorkflow) was given to start them',
+      );
+    }
+    hooks.push(syncRuleHook(options.syncRules, options.syncWorkflow));
+  }
+  if (options.onPush !== undefined) hooks.push(options.onPush);
+  if (hooks.length <= 1) return hooks[0];
+  return async (event) => dispatchPushEvent(event, hooks);
+}
+
 /** The part of a Queues message the consumer uses. */
 export interface PushEventMessage {
   readonly body: unknown;

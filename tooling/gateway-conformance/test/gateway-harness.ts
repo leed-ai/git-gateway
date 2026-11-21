@@ -4,6 +4,8 @@ import { webcrypto } from 'node:crypto';
 import { JwtAuthenticator } from '@leed-ai/git-gateway-auth-jwt/jwt-authenticator';
 import { createGatewayApp } from '@leed-ai/git-gateway-worker/gateway-app';
 import { RuleBranchPolicy } from '@leed-ai/git-gateway-worker/policy/rule-branch-policy';
+import type { SyncBranchWorkflowParams } from '@leed-ai/git-gateway-worker/workflows/sync-workflow-schemas';
+import type { WorkflowStarter } from '@leed-ai/git-gateway-worker/workflows/workflow-starter';
 
 import { GitSandbox, type GitRun } from '@leed-ai/git-gateway-testkit/git-sandbox';
 import { MemoryBackend } from '@leed-ai/git-gateway-testkit/memory/memory-backend';
@@ -74,6 +76,8 @@ export interface GatewayHarness {
   readonly sandbox: GitSandbox;
   /** Tokens by principal: alice (maintainer), bob (editor), reader (read-only), expired (alice, expired). */
   readonly tokens: Readonly<Record<'alice' | 'bob' | 'reader' | 'expired', string>>;
+  /** SyncBranchWorkflow instances the main→staging sync rule started, by instance id. */
+  readonly syncs: Map<string, SyncBranchWorkflowParams>;
   /** Log entry messages the gateway wrote, in order. */
   readonly logs: string[];
   /** Push bytes: from the client socket to the storage host. */
@@ -131,8 +135,19 @@ export async function startGatewayHarness(): Promise<GatewayHarness> {
     reader: await token('reader', ['reader'], now + 3600),
     expired: await token('alice', ['maintainer'], now - 3600),
   };
+  const syncs = new Map<string, SyncBranchWorkflowParams>();
+  const syncWorkflow: WorkflowStarter<SyncBranchWorkflowParams> = {
+    create: async ({ id, params }) => {
+      if (syncs.has(id)) throw new Error(`instance ${id} already exists`);
+      syncs.set(id, params);
+      return { id };
+    },
+    get: async (id) => ({ id, status: async () => ({ status: 'queued' }), restart: async () => undefined }),
+  };
   const app = createGatewayApp({
     backend,
+    gateway: { syncRules: [{ from: 'main', into: 'staging' }] },
+    syncWorkflow,
     authenticator: new JwtAuthenticator(
       { issuer: ISSUER, audience: [AUDIENCE], jwksUrl: `${ISSUER}/jwks.json` },
       { fetch: async () => Response.json(keys.jwks) },
@@ -170,6 +185,7 @@ export async function startGatewayHarness(): Promise<GatewayHarness> {
   return {
     url: server.url,
     backend,
+    syncs,
     sandbox,
     tokens,
     logs,

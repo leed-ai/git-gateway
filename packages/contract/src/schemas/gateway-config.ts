@@ -88,7 +88,9 @@ export const GatewayConfig = z
       .array(SyncRule)
       .max(50)
       .default([])
-      .describe('Branch syncs run automatically after pushes; at most 50, default none.'),
+      .describe(
+        "Branch syncs started after every accepted push to a rule's `from` branch, through the smart-HTTP proxy or an RPC write. The worker starts each as a SyncBranchWorkflow and refuses to start without that Workflow binding when any rule is set; the in-memory reference has no push hooks and ignores them. At most 50, default none.",
+      ),
   })
   .strict()
   .meta({

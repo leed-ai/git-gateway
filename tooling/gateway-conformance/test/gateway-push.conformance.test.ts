@@ -125,6 +125,24 @@ describe('pushing through the gateway with the git binary', () => {
     expect(moved.stderr).toContain('[remote rejected] v1 -> v1');
   });
 
+  it('starts the main→staging SyncBranchWorkflow after a git push to main, and nothing for a refused one', async () => {
+    const repo = await seeded();
+    const head = await commit(repo.work, 'sync.txt', 'sync me');
+    expect((await h.git('alice', ['push', '-q', 'origin', 'main'], repo.work)).status).toBe(0);
+    const started = async () =>
+      [...h.syncs.values()].filter((params) => params.repo === repo.name && params.fromHead === head);
+    for (let wait = 0; wait < 50 && (await started()).length === 0; wait += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    expect(await started()).toEqual([{ repo: repo.name, from: 'main', into: 'staging', fromHead: head }]);
+
+    const before = h.syncs.size;
+    await h.sandbox.ok(['commit', '-q', '--amend', '-m', 'rewritten'], { cwd: repo.work });
+    expect((await h.git('alice', ['push', '--force', 'origin', 'main'], repo.work)).status).not.toBe(0);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(h.syncs.size).toBe(before);
+  });
+
   it('lets exactly one of two concurrent pushes to the same branch win', async () => {
     const repo = await seeded();
     const other = h.sandbox.path(`${repo.name}-other`);
