@@ -31,6 +31,156 @@
       "types": "./dist/health.d.ts",
       "default": "./dist/health.js"
     },
+    "./rpc/branch-methods": {
+      "source": "./src/rpc/branch-methods.ts",
+      "types": "./dist/rpc/branch-methods.d.ts",
+      "default": "./dist/rpc/branch-methods.js"
+    },
+    "./rpc/commit-attempt": {
+      "source": "./src/rpc/commit-attempt.ts",
+      "types": "./dist/rpc/commit-attempt.d.ts",
+      "default": "./dist/rpc/commit-attempt.js"
+    },
+    "./rpc/commit-graph": {
+      "source": "./src/rpc/commit-graph.ts",
+      "types": "./dist/rpc/commit-graph.d.ts",
+      "default": "./dist/rpc/commit-graph.js"
+    },
+    "./rpc/commit-method": {
+      "source": "./src/rpc/commit-method.ts",
+      "types": "./dist/rpc/commit-method.d.ts",
+      "default": "./dist/rpc/commit-method.js"
+    },
+    "./rpc/commit-source": {
+      "source": "./src/rpc/commit-source.ts",
+      "types": "./dist/rpc/commit-source.d.ts",
+      "default": "./dist/rpc/commit-source.js"
+    },
+    "./rpc/gateway-context": {
+      "source": "./src/rpc/gateway-context.ts",
+      "types": "./dist/rpc/gateway-context.d.ts",
+      "default": "./dist/rpc/gateway-context.js"
+    },
+    "./rpc/gateway-rpc": {
+      "source": "./src/rpc/gateway-rpc.ts",
+      "types": "./dist/rpc/gateway-rpc.d.ts",
+      "default": "./dist/rpc/gateway-rpc.js"
+    },
+    "./rpc/gateway-service": {
+      "source": "./src/rpc/gateway-service.ts",
+      "types": "./dist/rpc/gateway-service.d.ts",
+      "default": "./dist/rpc/gateway-service.js"
+    },
+    "./rpc/history-page": {
+      "source": "./src/rpc/history-page.ts",
+      "types": "./dist/rpc/history-page.d.ts",
+      "default": "./dist/rpc/history-page.js"
+    },
+    "./rpc/lifecycle-methods": {
+      "source": "./src/rpc/lifecycle-methods.ts",
+      "types": "./dist/rpc/lifecycle-methods.d.ts",
+      "default": "./dist/rpc/lifecycle-methods.js"
+    },
+    "./rpc/paint-down": {
+      "source": "./src/rpc/paint-down.ts",
+      "types": "./dist/rpc/paint-down.d.ts",
+      "default": "./dist/rpc/paint-down.js"
+    },
+    "./rpc/promote-attempt": {
+      "source": "./src/rpc/promote-attempt.ts",
+      "types": "./dist/rpc/promote-attempt.d.ts",
+      "default": "./dist/rpc/promote-attempt.js"
+    },
+    "./rpc/push-ref": {
+      "source": "./src/rpc/push-ref.ts",
+      "types": "./dist/rpc/push-ref.d.ts",
+      "default": "./dist/rpc/push-ref.js"
+    },
+    "./rpc/read-methods": {
+      "source": "./src/rpc/read-methods.ts",
+      "types": "./dist/rpc/read-methods.d.ts",
+      "default": "./dist/rpc/read-methods.js"
+    },
+    "./rpc/read-token": {
+      "source": "./src/rpc/read-token.ts",
+      "types": "./dist/rpc/read-token.d.ts",
+      "default": "./dist/rpc/read-token.js"
+    },
+    "./rpc/repo-access": {
+      "source": "./src/rpc/repo-access.ts",
+      "types": "./dist/rpc/repo-access.d.ts",
+      "default": "./dist/rpc/repo-access.js"
+    },
+    "./rpc/sync-attempt": {
+      "source": "./src/rpc/sync-attempt.ts",
+      "types": "./dist/rpc/sync-attempt.d.ts",
+      "default": "./dist/rpc/sync-attempt.js"
+    },
+    "./workflows/commit-workflow": {
+      "source": "./src/workflows/commit-workflow.ts",
+      "types": "./dist/workflows/commit-workflow.d.ts",
+      "default": "./dist/workflows/commit-workflow.js"
+    },
+    "./workflows/commit-workflow-schemas": {
+      "source": "./src/workflows/commit-workflow-schemas.ts",
+      "types": "./dist/workflows/commit-workflow-schemas.d.ts",
+      "default": "./dist/workflows/commit-workflow-schemas.js"
+    },
+    "./workflows/on-push": {
+      "source": "./src/workflows/on-push.ts",
+      "types": "./dist/workflows/on-push.d.ts",
+      "default": "./dist/workflows/on-push.js"
+    },
+    "./workflows/push-event": {
+      "source": "./src/workflows/push-event.ts",
+      "types": "./dist/workflows/push-event.d.ts",
+      "default": "./dist/workflows/push-event.js"
+    },
+    "./workflows/run-commit-workflow": {
+      "source": "./src/workflows/run-commit-workflow.ts",
+      "types": "./dist/workflows/run-commit-workflow.d.ts",
+      "default": "./dist/workflows/run-commit-workflow.js"
+    },
+    "./workflows/run-sync-workflow": {
+      "source": "./src/workflows/run-sync-workflow.ts",
+      "types": "./dist/workflows/run-sync-workflow.d.ts",
+      "default": "./dist/workflows/run-sync-workflow.js"
+    },
+    "./workflows/step-errors": {
+      "source": "./src/workflows/step-errors.ts",
+      "types": "./dist/workflows/step-errors.d.ts",
+      "default": "./dist/workflows/step-errors.js"
+    },
+    "./workflows/step-runner": {
+      "source": "./src/workflows/step-runner.ts",
+      "types": "./dist/workflows/step-runner.d.ts",
+      "default": "./dist/workflows/step-runner.js"
+    },
+    "./workflows/sync-branch-workflow": {
+      "source": "./src/workflows/sync-branch-workflow.ts",
+      "types": "./dist/workflows/sync-branch-workflow.d.ts",
+      "default": "./dist/workflows/sync-branch-workflow.js"
+    },
+    "./workflows/sync-workflow-schemas": {
+      "source": "./src/workflows/sync-workflow-schemas.ts",
+      "types": "./dist/workflows/sync-workflow-schemas.d.ts",
+      "default": "./dist/workflows/sync-workflow-schemas.js"
+    },
+    "./workflows/workflow-instance-id": {
+      "source": "./src/workflows/workflow-instance-id.ts",
+      "types": "./dist/workflows/workflow-instance-id.d.ts",
+      "default": "./dist/workflows/workflow-instance-id.js"
+    },
+    "./workflows/workflow-runtime": {
+      "source": "./src/workflows/workflow-runtime.ts",
+      "types": "./dist/workflows/workflow-runtime.d.ts",
+      "default": "./dist/workflows/workflow-runtime.js"
+    },
+    "./workflows/workflow-starter": {
+      "source": "./src/workflows/workflow-starter.ts",
+      "types": "./dist/workflows/workflow-starter.d.ts",
+      "default": "./dist/workflows/workflow-starter.js"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -43,13 +193,16 @@
     "test": "vp test"
   },
   "dependencies": {
-    "@leed-ai/git-gateway-contract": "workspace:*"
+    "@leed-ai/git-gateway-contract": "workspace:*",
+    "@leed-ai/git-gateway-core": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.8.5",
     "@cloudflare/workers-types": "^5.20261120.1",
     "@leed-ai/git-gateway-repo-tools": "workspace:*",
     "@leed-ai/git-gateway-schema-docs": "workspace:*",
+    "@leed-ai/git-gateway-testkit": "workspace:*",
+    "fast-check": "^4.10.3",
     "hono": "^4.13.19",
     "typescript": "^7.0.2",
     "vite-plus": "^1.7.0",

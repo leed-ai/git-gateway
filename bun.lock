@@ -172,12 +172,15 @@
       "version": "0.0.0",
       "dependencies": {
         "@leed-ai/git-gateway-contract": "workspace:*",
+        "@leed-ai/git-gateway-core": "workspace:*",
       },
       "devDependencies": {
         "@cloudflare/vitest-plugin": "^1.8.5",
         "@cloudflare/workers-types": "^5.20261120.1",
         "@leed-ai/git-gateway-repo-tools": "workspace:*",
         "@leed-ai/git-gateway-schema-docs": "workspace:*",
+        "@leed-ai/git-gateway-testkit": "workspace:*",
+        "fast-check": "^4.10.3",
         "hono": "^4.13.19",
         "typescript": "^7.0.2",
         "vite-plus": "^1.7.0",

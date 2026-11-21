@@ -2,14 +2,1924 @@
 
 exports[`schema documentation > generates the JSON Schema for what the schemas accept 1`] = `
 {
-  "$defs": {},
+  "$defs": {
+    "BranchName": {
+      "description": "A short branch name, 1–255 characters, valid under git check-ref-format (no "..", "@{", "//", spaces, control characters or ~ ^ : ? * [ or backslash; no component starting with "." or ending with ".lock"; not starting with "-" or "refs/"; not "HEAD"; not 40 lowercase hex characters, which a Revision always reads as a commit id). The gateway stores it as refs/heads/<name>.",
+      "examples": [
+        "main",
+        "staging",
+        "feature/new-page",
+      ],
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^(?!refs\\/)(?!HEAD$)(?![0-9a-f]{40}$)(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+      "title": "Branch name",
+      "type": "string",
+    },
+    "ChmodAction": {
+      "additionalProperties": false,
+      "description": "Sets (true) or clears (false) the executable bit of an existing file. Fails with path_not_found if the path is not a file. Setting the bit it already has changes nothing.",
+      "examples": [
+        {
+          "action": "chmod",
+          "executeFilemode": true,
+          "path": "scripts/build.sh",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "chmod",
+          "description": "Set or clear the executable bit of an existing file.",
+          "type": "string",
+        },
+        "executeFilemode": {
+          "description": "true: mode 100755 (executable); false: mode 100644 (not executable).",
+          "type": "boolean",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the existing file.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "executeFilemode",
+      ],
+      "title": "Chmod action",
+      "type": "object",
+    },
+    "CommitAction": {
+      "description": "One change in a commit, discriminated by \`action\`. Actions apply in order, each to the result of the one before, with the GitLab Commits API semantics (plus upsert).",
+      "examples": [
+        {
+          "action": "create",
+          "content": "# About
+",
+          "encoding": "text",
+          "path": "content/about.md",
+        },
+        {
+          "action": "delete",
+          "path": "content/old.md",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CreateAction",
+        },
+        {
+          "$ref": "#/$defs/UpdateAction",
+        },
+        {
+          "$ref": "#/$defs/UpsertAction",
+        },
+        {
+          "$ref": "#/$defs/DeleteAction",
+        },
+        {
+          "$ref": "#/$defs/MoveAction",
+        },
+        {
+          "$ref": "#/$defs/ChmodAction",
+        },
+      ],
+      "title": "Commit action",
+    },
+    "CommitInput": {
+      "additionalProperties": false,
+      "description": "Input of commit(): a multi-file commit to one branch, built without a clone. Checked in this order: idempotency replay, then stale head, then the actions.",
+      "examples": [
+        {
+          "actions": [
+            {
+              "action": "update",
+              "content": "# About us
+",
+              "encoding": "text",
+              "path": "content/about.md",
+            },
+          ],
+          "author": {
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+          "branch": "staging",
+          "expectedHead": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "idempotencyKey": "cms:publish:2f9c1e",
+          "message": "Update about page",
+          "repo": "acme-raw-content",
+        },
+      ],
+      "properties": {
+        "actions": {
+          "description": "Changes to apply, in order, each to the result of the previous; 1–1000 actions.",
+          "items": {
+            "$ref": "#/$defs/CommitAction",
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "type": "array",
+        },
+        "author": {
+          "$ref": "#/$defs/Identity",
+          "description": "Who wrote the change.",
+        },
+        "branch": {
+          "$ref": "#/$defs/BranchName",
+          "description": "Branch to commit to. If it does not exist it is created: from \`startBranch\` when given, or as a root commit when the repository has no branches at all; otherwise the call fails with ref_not_found.",
+        },
+        "committer": {
+          "$ref": "#/$defs/Identity",
+          "description": "Who records the commit. Absent: the author.",
+        },
+        "expectedHead": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "Head the caller based its change on. When given and the branch head differs, the call fails with stale_head; null expects the branch not to exist yet. Absent: commit onto whatever the head is.",
+        },
+        "idempotencyKey": {
+          "$ref": "#/$defs/IdempotencyKey",
+          "description": "Makes the call safe to retry: if a commit with this key is in the branch's recent history, it is returned (status "replayed") and nothing is written.",
+        },
+        "message": {
+          "description": "Commit message, 1–65536 characters and not blank. The gateway appends the idempotency trailer.",
+          "maxLength": 65536,
+          "minLength": 1,
+          "type": "string",
+        },
+        "repo": {
+          "$ref": "#/$defs/RepoName",
+          "description": "Repository to commit to.",
+        },
+        "startBranch": {
+          "$ref": "#/$defs/BranchName",
+          "description": "Branch to start \`branch\` from when \`branch\` does not exist yet; ignored when it does. Absent: no start branch.",
+        },
+      },
+      "required": [
+        "repo",
+        "branch",
+        "message",
+        "author",
+        "actions",
+        "idempotencyKey",
+      ],
+      "title": "commit input",
+      "type": "object",
+    },
+    "CommitStepCommitted": {
+      "additionalProperties": false,
+      "description": "The CommitWorkflow's commit step wrote the commit. Carries the commit id only.",
+      "examples": [
+        {
+          "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "status": "committed",
+        },
+      ],
+      "properties": {
+        "sha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the commit written.",
+        },
+        "status": {
+          "const": "committed",
+          "description": "The workflow wrote a new commit and moved the branch to it.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "sha",
+      ],
+      "title": "commit step: committed",
+      "type": "object",
+    },
+    "CommitStepNoop": {
+      "additionalProperties": false,
+      "description": "The CommitWorkflow's commit step applied the actions to the head and nothing changed.",
+      "examples": [
+        {
+          "head": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "status": "noop",
+        },
+      ],
+      "properties": {
+        "head": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "The branch head, unchanged; null when the branch does not exist.",
+        },
+        "status": {
+          "const": "noop",
+          "description": "The actions left the tree unchanged; nothing was written.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "head",
+      ],
+      "title": "commit step: no-op",
+      "type": "object",
+    },
+    "CommitStepReplayed": {
+      "additionalProperties": false,
+      "description": "The CommitWorkflow's commit step found the commit already written, so a replayed step never commits twice.",
+      "examples": [
+        {
+          "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "status": "replayed",
+        },
+      ],
+      "properties": {
+        "sha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the earlier commit carrying the key.",
+        },
+        "status": {
+          "const": "replayed",
+          "description": "A commit carrying the same idempotency key was already in the branch history (an earlier attempt, or a step that ran before a crash); nothing was written.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "sha",
+      ],
+      "title": "commit step: replayed",
+      "type": "object",
+    },
+    "CommitStepResult": {
+      "description": "What the CommitWorkflow's commit step stores and the instance returns, discriminated by \`status\`: commit ids only, never file content or a credential.",
+      "examples": [
+        {
+          "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "status": "committed",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CommitStepCommitted",
+        },
+        {
+          "$ref": "#/$defs/CommitStepReplayed",
+        },
+        {
+          "$ref": "#/$defs/CommitStepNoop",
+        },
+      ],
+      "title": "CommitWorkflow result",
+    },
+    "CommitWorkflowParams": {
+      "$ref": "#/$defs/CommitInput",
+      "description": "The params a CommitWorkflow instance is started with: exactly the commit() input whose inline retries ran out, idempotency key included, so the workflow writes the same commit at most once. Params may carry file content; step results never do.",
+      "examples": [
+        {
+          "actions": [
+            {
+              "action": "update",
+              "content": "# About us
+",
+              "encoding": "text",
+              "path": "content/about.md",
+            },
+          ],
+          "author": {
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+          "branch": "staging",
+          "idempotencyKey": "cms:publish:2f9c1e",
+          "message": "Update about page",
+          "repo": "acme-raw-content",
+        },
+      ],
+      "title": "CommitWorkflow params",
+    },
+    "ContentEncoding": {
+      "description": "How file content is carried in a JSON string.",
+      "enum": [
+        "text",
+        "base64",
+      ],
+      "enumDescriptions": {
+        "base64": "The string is standard base64 (RFC 4648, with padding) of the raw file bytes; use for binary files.",
+        "text": "The string is the file content itself, stored as UTF-8 bytes.",
+      },
+      "examples": [
+        "text",
+        "base64",
+      ],
+      "title": "Content encoding",
+      "type": "string",
+    },
+    "CreateAction": {
+      "additionalProperties": false,
+      "description": "Creates a file that does not exist yet. Fails with path_exists if the path is a file or a directory, and with path_conflict if a parent is a file. The new file is not executable.",
+      "examples": [
+        {
+          "action": "create",
+          "content": "# About
+",
+          "encoding": "text",
+          "path": "content/about.md",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "create",
+          "description": "Create a new file. Fails with path_exists if the path exists.",
+          "type": "string",
+        },
+        "content": {
+          "$ref": "#/$defs/FileContent",
+          "description": "Content of the new file, encoded as \`encoding\` says.",
+        },
+        "encoding": {
+          "$ref": "#/$defs/ContentEncoding",
+          "default": "text",
+          "description": "How \`content\` is encoded; defaults to "text".",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the file to create; it and every parent must not already be a file.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "content",
+      ],
+      "title": "Create action",
+      "type": "object",
+    },
+    "DeleteAction": {
+      "additionalProperties": false,
+      "description": "Deletes an existing file. Fails with path_not_found if the path is not a file (a directory cannot be deleted in one action).",
+      "examples": [
+        {
+          "action": "delete",
+          "path": "content/old.md",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "delete",
+          "description": "Delete an existing file. Fails with path_not_found if it is absent.",
+          "type": "string",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the file to delete. Directories left empty disappear with it.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+      ],
+      "title": "Delete action",
+      "type": "object",
+    },
+    "FileContent": {
+      "description": "File content as a string, interpreted according to the accompanying encoding: UTF-8 text, or base64 of the raw bytes. At most 48 MiB of characters (32 MiB of bytes as base64). An empty string is an empty file.",
+      "examples": [
+        "# Hello
+",
+        "iVBORw0KGgo=",
+      ],
+      "maxLength": 50331648,
+      "title": "File content",
+      "type": "string",
+    },
+    "FilePath": {
+      "description": "A path inside the repository relative to its root, 1–4096 characters, "/"-separated into segments of 1–255 characters: no leading or trailing "/", no empty, "." or ".." segment, no ".git" segment (any case), no backslash and no control character (U+0000–U+001F, U+007F). Case-sensitive; unicode allowed.",
+      "examples": [
+        "content/index.md",
+        "templates/layouts/page.hbs",
+      ],
+      "maxLength": 4096,
+      "minLength": 1,
+      "pattern": "^(?!\\/)(?!.*\\/\\/)(?!.*\\/$)(?!(?:.*\\/)?[^/]{256})(?!(?:.*\\/)?\\.\\.?(?:\\/|$))(?!(?:.*\\/)?\\.[gG][iI][tT](?:\\/|$))[^\\x00-\\x1f\\x7f\\\\]+$",
+      "title": "File path",
+      "type": "string",
+    },
+    "FullRefName": {
+      "description": "A fully qualified ref, "refs/heads/<branch>" or "refs/tags/<tag>", where the name after the prefix follows the same rules as a branch name.",
+      "examples": [
+        "refs/heads/main",
+        "refs/tags/v1.0.0",
+      ],
+      "maxLength": 266,
+      "minLength": 11,
+      "pattern": "^refs\\/(?:heads|tags)\\/(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+      "title": "Full ref name",
+      "type": "string",
+    },
+    "IdempotencyKey": {
+      "description": "Caller-chosen key that makes a commit idempotent: 1–128 characters of letters, digits, ".", "_", ":" and "-", starting with a letter or digit. Recorded as a "Gateway-Idempotency-Key:" trailer; a retried commit carrying a key already in the branch's recent history returns that commit instead of writing another.",
+      "examples": [
+        "cms:publish:2f9c1e",
+        "6f1d2c3b-9a8e-4f7d-b6c5-a4e3d2c1b0a9",
+      ],
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Idempotency key",
+      "type": "string",
+    },
+    "Identity": {
+      "additionalProperties": false,
+      "description": "The name and email a commit is attributed to, as an author or a committer.",
+      "examples": [
+        {
+          "email": "ada@example.com",
+          "name": "Ada Lovelace",
+        },
+      ],
+      "properties": {
+        "email": {
+          "description": "Email address, at most 255 characters.",
+          "format": "email",
+          "maxLength": 255,
+          "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+          "type": "string",
+        },
+        "name": {
+          "description": "Display name, 1–255 characters, without "<", ">", newlines or NUL (git cannot store them).",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^<>\\n\\0]+$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+        "email",
+      ],
+      "title": "Identity",
+      "type": "object",
+    },
+    "MoveAction": {
+      "additionalProperties": false,
+      "description": "Moves a file, keeping its executable bit and, unless \`content\` is given, its content. Fails with path_not_found if \`previousPath\` is not a file, path_exists if \`path\` exists, and path_conflict if a parent of \`path\` is a file.",
+      "examples": [
+        {
+          "action": "move",
+          "encoding": "text",
+          "path": "content/new.md",
+          "previousPath": "content/old.md",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "move",
+          "description": "Move a file from \`previousPath\` to \`path\`.",
+          "type": "string",
+        },
+        "content": {
+          "$ref": "#/$defs/FileContent",
+          "description": "New content for the moved file, encoded as \`encoding\` says. Absent: the content is kept.",
+        },
+        "encoding": {
+          "$ref": "#/$defs/ContentEncoding",
+          "default": "text",
+          "description": "How \`content\` is encoded; defaults to "text".",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Destination path; it must not exist and no parent of it may be a file.",
+        },
+        "previousPath": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the existing file to move.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "previousPath",
+      ],
+      "title": "Move action",
+      "type": "object",
+    },
+    "PushEvent": {
+      "additionalProperties": false,
+      "description": "A push the gateway accepted (through the smart-HTTP proxy or an RPC write), delivered to onPush hooks directly or through a Queue. Carries ref ids only: no content, no credential, no principal secret.",
+      "examples": [
+        {
+          "pushedAt": "2026-11-20T09:30:00.000Z",
+          "repo": "acme-raw-content",
+          "updates": [
+            {
+              "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+              "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+              "ref": "refs/heads/main",
+            },
+          ],
+        },
+      ],
+      "properties": {
+        "pushedAt": {
+          "$ref": "#/$defs/Timestamp",
+          "description": "When the storage host accepted the push.",
+        },
+        "repo": {
+          "$ref": "#/$defs/RepoName",
+          "description": "Repository that was pushed to.",
+        },
+        "updates": {
+          "description": "Every ref the push moved, in the order the push named them; 1–1000. A created ref has an all-zero oldSha, a deleted ref an all-zero newSha.",
+          "items": {
+            "$ref": "#/$defs/RefUpdate",
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "type": "array",
+        },
+      },
+      "required": [
+        "repo",
+        "updates",
+        "pushedAt",
+      ],
+      "title": "Push event",
+      "type": "object",
+    },
+    "ReadTokenClaims": {
+      "additionalProperties": false,
+      "description": "What a read token from mintReadToken() asserts: read access to one repository until \`exp\`. Signed with HMAC-SHA256; carries no storage-host credential.",
+      "examples": [
+        {
+          "exp": 1795003600,
+          "iat": 1795000000,
+          "jti": "00000000000000000000000000000000",
+          "repo": "acme-raw-content",
+          "v": 1,
+        },
+      ],
+      "properties": {
+        "exp": {
+          "description": "When the token stops working, in whole seconds since the Unix epoch; after \`iat\`.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "iat": {
+          "description": "When the token was issued, in whole seconds since the Unix epoch.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "jti": {
+          "description": "Random token id, 32 lowercase hex digits, so two tokens issued together differ.",
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string",
+        },
+        "repo": {
+          "$ref": "#/$defs/RepoName",
+          "description": "The one repository the token may clone and fetch.",
+        },
+        "v": {
+          "const": 1,
+          "description": "Token format version; always 1.",
+          "type": "number",
+        },
+      },
+      "required": [
+        "v",
+        "repo",
+        "iat",
+        "exp",
+        "jti",
+      ],
+      "title": "Read-token claims",
+      "type": "object",
+    },
+    "ReadTokenSecret": {
+      "description": "The HMAC-SHA256 key that signs and verifies read tokens: 32–4096 characters of high-entropy secret, set as a Worker secret. Rotating it invalidates every token issued.",
+      "examples": [
+        "0123456789abcdef0123456789abcdef",
+      ],
+      "maxLength": 4096,
+      "minLength": 32,
+      "title": "Read-token secret",
+      "type": "string",
+    },
+    "RefUpdate": {
+      "additionalProperties": false,
+      "description": "One ref moved by a write, in receive-pack command form: the ref, the id it named before and the id it names after. Creation and deletion use the all-zero id on the missing side.",
+      "examples": [
+        {
+          "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "ref": "refs/heads/main",
+        },
+      ],
+      "properties": {
+        "newSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the ref points at after the update; the all-zero id when the update deleted the ref.",
+        },
+        "oldSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the ref pointed at before the update; the all-zero id when the update created the ref.",
+        },
+        "ref": {
+          "$ref": "#/$defs/FullRefName",
+          "description": "The ref that moved, fully qualified (refs/heads/<branch>).",
+        },
+      },
+      "required": [
+        "ref",
+        "oldSha",
+        "newSha",
+      ],
+      "title": "Ref update",
+      "type": "object",
+    },
+    "RepoName": {
+      "description": "Name of a repository behind the gateway: 1–100 characters of letters, digits, ".", "_" and "-", starting with a letter or digit and not ending in ".git". Served at /<name>.git.",
+      "examples": [
+        "acme-raw-content",
+        "site.example",
+      ],
+      "maxLength": 100,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+      "title": "Repository name",
+      "type": "string",
+    },
+    "Sha": {
+      "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
+      "examples": [
+        "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+      ],
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Object id",
+      "type": "string",
+    },
+    "SyncBranchWorkflowParams": {
+      "additionalProperties": false,
+      "description": "The params a SyncBranchWorkflow instance is started with by an onPush sync rule: sync \`into\` with \`from\` after a push moved \`from\` to \`fromHead\`. The sync merges whatever \`from\` holds when it runs.",
+      "examples": [
+        {
+          "from": "main",
+          "fromHead": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "into": "staging",
+          "repo": "acme-raw-content",
+        },
+      ],
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/BranchName",
+          "description": "Branch whose commits are brought into \`into\`, e.g. main.",
+        },
+        "fromHead": {
+          "$ref": "#/$defs/Sha",
+          "description": "Head of \`from\` the push left; identifies the instance, so one push starts at most one sync.",
+        },
+        "into": {
+          "$ref": "#/$defs/BranchName",
+          "description": "Branch brought up to date, e.g. staging; only fast-forwarded or merged into.",
+        },
+        "repo": {
+          "$ref": "#/$defs/RepoName",
+          "description": "Repository holding both branches.",
+        },
+      },
+      "required": [
+        "repo",
+        "from",
+        "into",
+        "fromHead",
+      ],
+      "title": "SyncBranchWorkflow params",
+      "type": "object",
+    },
+    "SyncStepConflict": {
+      "additionalProperties": false,
+      "description": "The SyncBranchWorkflow's sync step could not merge; the instance completes with this result so the conflict can be reported and resolved by hand.",
+      "examples": [
+        {
+          "base": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+          "fromHead": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "intoHead": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "paths": [
+            "content/about.md",
+          ],
+          "status": "conflict",
+        },
+      ],
+      "properties": {
+        "base": {
+          "$ref": "#/$defs/Sha",
+          "description": "The merge base used.",
+        },
+        "fromHead": {
+          "$ref": "#/$defs/Sha",
+          "description": "The head of \`from\` merged.",
+        },
+        "intoHead": {
+          "$ref": "#/$defs/Sha",
+          "description": "The head of \`into\`, unchanged.",
+        },
+        "paths": {
+          "description": "Every conflicting path, sorted in byte order (paths only, never content).",
+          "items": {
+            "$ref": "#/$defs/FilePath",
+            "description": "A conflicting path.",
+          },
+          "minItems": 1,
+          "type": "array",
+        },
+        "status": {
+          "const": "conflict",
+          "description": "Some paths changed differently on both sides; nothing was written and retrying cannot help.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "paths",
+        "base",
+        "fromHead",
+        "intoHead",
+      ],
+      "title": "sync step: conflict",
+      "type": "object",
+    },
+    "SyncStepFastForward": {
+      "additionalProperties": false,
+      "description": "The SyncBranchWorkflow's sync step fast-forwarded \`into\`.",
+      "examples": [
+        {
+          "head": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "status": "fast_forward",
+        },
+      ],
+      "properties": {
+        "head": {
+          "$ref": "#/$defs/Sha",
+          "description": "New head of \`into\`, the head of \`from\`.",
+        },
+        "status": {
+          "const": "fast_forward",
+          "description": "\`into\` had no commits of its own and was fast-forwarded.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "head",
+      ],
+      "title": "sync step: fast-forward",
+      "type": "object",
+    },
+    "SyncStepMerged": {
+      "additionalProperties": false,
+      "description": "The SyncBranchWorkflow's sync step wrote a merge commit to \`into\`.",
+      "examples": [
+        {
+          "head": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "status": "merged",
+        },
+      ],
+      "properties": {
+        "head": {
+          "$ref": "#/$defs/Sha",
+          "description": "New head of \`into\`, the merge commit.",
+        },
+        "status": {
+          "const": "merged",
+          "description": "Both branches had commits; a file-level merge commit was written.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "head",
+      ],
+      "title": "sync step: merged",
+      "type": "object",
+    },
+    "SyncStepResult": {
+      "description": "What the SyncBranchWorkflow's sync step stores and the instance returns, discriminated by \`status\`: commit ids and conflicting paths only.",
+      "examples": [
+        {
+          "head": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "status": "merged",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SyncStepUpToDate",
+        },
+        {
+          "$ref": "#/$defs/SyncStepFastForward",
+        },
+        {
+          "$ref": "#/$defs/SyncStepMerged",
+        },
+        {
+          "$ref": "#/$defs/SyncStepConflict",
+        },
+      ],
+      "title": "SyncBranchWorkflow result",
+    },
+    "SyncStepUpToDate": {
+      "additionalProperties": false,
+      "description": "The SyncBranchWorkflow's sync step found nothing to do.",
+      "examples": [
+        {
+          "head": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "status": "up_to_date",
+        },
+      ],
+      "properties": {
+        "head": {
+          "$ref": "#/$defs/Sha",
+          "description": "Head of \`into\`, unchanged.",
+        },
+        "status": {
+          "const": "up_to_date",
+          "description": "\`into\` already contained \`from\` (possibly because an earlier run of the step merged it).",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "head",
+      ],
+      "title": "sync step: up to date",
+      "type": "object",
+    },
+    "Timestamp": {
+      "description": "A point in time as an ISO 8601 UTC timestamp ending in "Z", with optional fractional seconds (e.g. 2026-11-20T09:30:00.000Z).",
+      "examples": [
+        "2026-11-20T09:30:00.000Z",
+      ],
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+      "title": "Timestamp",
+      "type": "string",
+    },
+    "UpdateAction": {
+      "additionalProperties": false,
+      "description": "Replaces the content of an existing file, keeping its executable bit. Fails with path_not_found if the path is not a file.",
+      "examples": [
+        {
+          "action": "update",
+          "content": "# About us
+",
+          "encoding": "text",
+          "path": "content/about.md",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "update",
+          "description": "Replace an existing file. Fails with path_not_found if it is absent.",
+          "type": "string",
+        },
+        "content": {
+          "$ref": "#/$defs/FileContent",
+          "description": "New content of the file, encoded as \`encoding\` says.",
+        },
+        "encoding": {
+          "$ref": "#/$defs/ContentEncoding",
+          "default": "text",
+          "description": "How \`content\` is encoded; defaults to "text".",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the existing file to replace.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "content",
+      ],
+      "title": "Update action",
+      "type": "object",
+    },
+    "UpsertAction": {
+      "additionalProperties": false,
+      "description": "Creates the file, or replaces it (keeping its executable bit) if it exists. Fails with path_exists if the path is a directory and path_conflict if a parent is a file. Not part of the GitLab Commits API.",
+      "examples": [
+        {
+          "action": "upsert",
+          "content": "iVBORw0KGgo=",
+          "encoding": "base64",
+          "path": "assets/logo.png",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "upsert",
+          "description": "Create the file, or replace it if it exists.",
+          "type": "string",
+        },
+        "content": {
+          "$ref": "#/$defs/FileContent",
+          "description": "Content of the file, encoded as \`encoding\` says.",
+        },
+        "encoding": {
+          "$ref": "#/$defs/ContentEncoding",
+          "default": "text",
+          "description": "How \`content\` is encoded; defaults to "text".",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the file to create or replace.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "content",
+      ],
+      "title": "Upsert action",
+      "type": "object",
+    },
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 }
 `;
 
 exports[`schema documentation > generates the JSON Schema for what the schemas produce 1`] = `
 {
-  "$defs": {},
+  "$defs": {
+    "BranchName": {
+      "description": "A short branch name, 1–255 characters, valid under git check-ref-format (no "..", "@{", "//", spaces, control characters or ~ ^ : ? * [ or backslash; no component starting with "." or ending with ".lock"; not starting with "-" or "refs/"; not "HEAD"; not 40 lowercase hex characters, which a Revision always reads as a commit id). The gateway stores it as refs/heads/<name>.",
+      "examples": [
+        "main",
+        "staging",
+        "feature/new-page",
+      ],
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^(?!refs\\/)(?!HEAD$)(?![0-9a-f]{40}$)(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+      "title": "Branch name",
+      "type": "string",
+    },
+    "ChmodAction": {
+      "additionalProperties": false,
+      "description": "Sets (true) or clears (false) the executable bit of an existing file. Fails with path_not_found if the path is not a file. Setting the bit it already has changes nothing.",
+      "examples": [
+        {
+          "action": "chmod",
+          "executeFilemode": true,
+          "path": "scripts/build.sh",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "chmod",
+          "description": "Set or clear the executable bit of an existing file.",
+          "type": "string",
+        },
+        "executeFilemode": {
+          "description": "true: mode 100755 (executable); false: mode 100644 (not executable).",
+          "type": "boolean",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the existing file.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "executeFilemode",
+      ],
+      "title": "Chmod action",
+      "type": "object",
+    },
+    "CommitAction": {
+      "description": "One change in a commit, discriminated by \`action\`. Actions apply in order, each to the result of the one before, with the GitLab Commits API semantics (plus upsert).",
+      "examples": [
+        {
+          "action": "create",
+          "content": "# About
+",
+          "encoding": "text",
+          "path": "content/about.md",
+        },
+        {
+          "action": "delete",
+          "path": "content/old.md",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CreateAction",
+        },
+        {
+          "$ref": "#/$defs/UpdateAction",
+        },
+        {
+          "$ref": "#/$defs/UpsertAction",
+        },
+        {
+          "$ref": "#/$defs/DeleteAction",
+        },
+        {
+          "$ref": "#/$defs/MoveAction",
+        },
+        {
+          "$ref": "#/$defs/ChmodAction",
+        },
+      ],
+      "title": "Commit action",
+    },
+    "CommitInput": {
+      "additionalProperties": false,
+      "description": "Input of commit(): a multi-file commit to one branch, built without a clone. Checked in this order: idempotency replay, then stale head, then the actions.",
+      "examples": [
+        {
+          "actions": [
+            {
+              "action": "update",
+              "content": "# About us
+",
+              "encoding": "text",
+              "path": "content/about.md",
+            },
+          ],
+          "author": {
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+          "branch": "staging",
+          "expectedHead": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "idempotencyKey": "cms:publish:2f9c1e",
+          "message": "Update about page",
+          "repo": "acme-raw-content",
+        },
+      ],
+      "properties": {
+        "actions": {
+          "description": "Changes to apply, in order, each to the result of the previous; 1–1000 actions.",
+          "items": {
+            "$ref": "#/$defs/CommitAction",
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "type": "array",
+        },
+        "author": {
+          "$ref": "#/$defs/Identity",
+          "description": "Who wrote the change.",
+        },
+        "branch": {
+          "$ref": "#/$defs/BranchName",
+          "description": "Branch to commit to. If it does not exist it is created: from \`startBranch\` when given, or as a root commit when the repository has no branches at all; otherwise the call fails with ref_not_found.",
+        },
+        "committer": {
+          "$ref": "#/$defs/Identity",
+          "description": "Who records the commit. Absent: the author.",
+        },
+        "expectedHead": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "Head the caller based its change on. When given and the branch head differs, the call fails with stale_head; null expects the branch not to exist yet. Absent: commit onto whatever the head is.",
+        },
+        "idempotencyKey": {
+          "$ref": "#/$defs/IdempotencyKey",
+          "description": "Makes the call safe to retry: if a commit with this key is in the branch's recent history, it is returned (status "replayed") and nothing is written.",
+        },
+        "message": {
+          "description": "Commit message, 1–65536 characters and not blank. The gateway appends the idempotency trailer.",
+          "maxLength": 65536,
+          "minLength": 1,
+          "type": "string",
+        },
+        "repo": {
+          "$ref": "#/$defs/RepoName",
+          "description": "Repository to commit to.",
+        },
+        "startBranch": {
+          "$ref": "#/$defs/BranchName",
+          "description": "Branch to start \`branch\` from when \`branch\` does not exist yet; ignored when it does. Absent: no start branch.",
+        },
+      },
+      "required": [
+        "repo",
+        "branch",
+        "message",
+        "author",
+        "actions",
+        "idempotencyKey",
+      ],
+      "title": "commit input",
+      "type": "object",
+    },
+    "CommitStepCommitted": {
+      "additionalProperties": false,
+      "description": "The CommitWorkflow's commit step wrote the commit. Carries the commit id only.",
+      "examples": [
+        {
+          "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "status": "committed",
+        },
+      ],
+      "properties": {
+        "sha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the commit written.",
+        },
+        "status": {
+          "const": "committed",
+          "description": "The workflow wrote a new commit and moved the branch to it.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "sha",
+      ],
+      "title": "commit step: committed",
+      "type": "object",
+    },
+    "CommitStepNoop": {
+      "additionalProperties": false,
+      "description": "The CommitWorkflow's commit step applied the actions to the head and nothing changed.",
+      "examples": [
+        {
+          "head": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "status": "noop",
+        },
+      ],
+      "properties": {
+        "head": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "The branch head, unchanged; null when the branch does not exist.",
+        },
+        "status": {
+          "const": "noop",
+          "description": "The actions left the tree unchanged; nothing was written.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "head",
+      ],
+      "title": "commit step: no-op",
+      "type": "object",
+    },
+    "CommitStepReplayed": {
+      "additionalProperties": false,
+      "description": "The CommitWorkflow's commit step found the commit already written, so a replayed step never commits twice.",
+      "examples": [
+        {
+          "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "status": "replayed",
+        },
+      ],
+      "properties": {
+        "sha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id of the earlier commit carrying the key.",
+        },
+        "status": {
+          "const": "replayed",
+          "description": "A commit carrying the same idempotency key was already in the branch history (an earlier attempt, or a step that ran before a crash); nothing was written.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "sha",
+      ],
+      "title": "commit step: replayed",
+      "type": "object",
+    },
+    "CommitStepResult": {
+      "description": "What the CommitWorkflow's commit step stores and the instance returns, discriminated by \`status\`: commit ids only, never file content or a credential.",
+      "examples": [
+        {
+          "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "status": "committed",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CommitStepCommitted",
+        },
+        {
+          "$ref": "#/$defs/CommitStepReplayed",
+        },
+        {
+          "$ref": "#/$defs/CommitStepNoop",
+        },
+      ],
+      "title": "CommitWorkflow result",
+    },
+    "CommitWorkflowParams": {
+      "$ref": "#/$defs/CommitInput",
+      "description": "The params a CommitWorkflow instance is started with: exactly the commit() input whose inline retries ran out, idempotency key included, so the workflow writes the same commit at most once. Params may carry file content; step results never do.",
+      "examples": [
+        {
+          "actions": [
+            {
+              "action": "update",
+              "content": "# About us
+",
+              "encoding": "text",
+              "path": "content/about.md",
+            },
+          ],
+          "author": {
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+          "branch": "staging",
+          "idempotencyKey": "cms:publish:2f9c1e",
+          "message": "Update about page",
+          "repo": "acme-raw-content",
+        },
+      ],
+      "title": "CommitWorkflow params",
+    },
+    "ContentEncoding": {
+      "description": "How file content is carried in a JSON string.",
+      "enum": [
+        "text",
+        "base64",
+      ],
+      "enumDescriptions": {
+        "base64": "The string is standard base64 (RFC 4648, with padding) of the raw file bytes; use for binary files.",
+        "text": "The string is the file content itself, stored as UTF-8 bytes.",
+      },
+      "examples": [
+        "text",
+        "base64",
+      ],
+      "title": "Content encoding",
+      "type": "string",
+    },
+    "CreateAction": {
+      "additionalProperties": false,
+      "description": "Creates a file that does not exist yet. Fails with path_exists if the path is a file or a directory, and with path_conflict if a parent is a file. The new file is not executable.",
+      "examples": [
+        {
+          "action": "create",
+          "content": "# About
+",
+          "encoding": "text",
+          "path": "content/about.md",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "create",
+          "description": "Create a new file. Fails with path_exists if the path exists.",
+          "type": "string",
+        },
+        "content": {
+          "$ref": "#/$defs/FileContent",
+          "description": "Content of the new file, encoded as \`encoding\` says.",
+        },
+        "encoding": {
+          "$ref": "#/$defs/ContentEncoding",
+          "default": "text",
+          "description": "How \`content\` is encoded; defaults to "text".",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the file to create; it and every parent must not already be a file.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "content",
+        "encoding",
+      ],
+      "title": "Create action",
+      "type": "object",
+    },
+    "DeleteAction": {
+      "additionalProperties": false,
+      "description": "Deletes an existing file. Fails with path_not_found if the path is not a file (a directory cannot be deleted in one action).",
+      "examples": [
+        {
+          "action": "delete",
+          "path": "content/old.md",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "delete",
+          "description": "Delete an existing file. Fails with path_not_found if it is absent.",
+          "type": "string",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the file to delete. Directories left empty disappear with it.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+      ],
+      "title": "Delete action",
+      "type": "object",
+    },
+    "FileContent": {
+      "description": "File content as a string, interpreted according to the accompanying encoding: UTF-8 text, or base64 of the raw bytes. At most 48 MiB of characters (32 MiB of bytes as base64). An empty string is an empty file.",
+      "examples": [
+        "# Hello
+",
+        "iVBORw0KGgo=",
+      ],
+      "maxLength": 50331648,
+      "title": "File content",
+      "type": "string",
+    },
+    "FilePath": {
+      "description": "A path inside the repository relative to its root, 1–4096 characters, "/"-separated into segments of 1–255 characters: no leading or trailing "/", no empty, "." or ".." segment, no ".git" segment (any case), no backslash and no control character (U+0000–U+001F, U+007F). Case-sensitive; unicode allowed.",
+      "examples": [
+        "content/index.md",
+        "templates/layouts/page.hbs",
+      ],
+      "maxLength": 4096,
+      "minLength": 1,
+      "pattern": "^(?!\\/)(?!.*\\/\\/)(?!.*\\/$)(?!(?:.*\\/)?[^/]{256})(?!(?:.*\\/)?\\.\\.?(?:\\/|$))(?!(?:.*\\/)?\\.[gG][iI][tT](?:\\/|$))[^\\x00-\\x1f\\x7f\\\\]+$",
+      "title": "File path",
+      "type": "string",
+    },
+    "FullRefName": {
+      "description": "A fully qualified ref, "refs/heads/<branch>" or "refs/tags/<tag>", where the name after the prefix follows the same rules as a branch name.",
+      "examples": [
+        "refs/heads/main",
+        "refs/tags/v1.0.0",
+      ],
+      "maxLength": 266,
+      "minLength": 11,
+      "pattern": "^refs\\/(?:heads|tags)\\/(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+      "title": "Full ref name",
+      "type": "string",
+    },
+    "IdempotencyKey": {
+      "description": "Caller-chosen key that makes a commit idempotent: 1–128 characters of letters, digits, ".", "_", ":" and "-", starting with a letter or digit. Recorded as a "Gateway-Idempotency-Key:" trailer; a retried commit carrying a key already in the branch's recent history returns that commit instead of writing another.",
+      "examples": [
+        "cms:publish:2f9c1e",
+        "6f1d2c3b-9a8e-4f7d-b6c5-a4e3d2c1b0a9",
+      ],
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Idempotency key",
+      "type": "string",
+    },
+    "Identity": {
+      "additionalProperties": false,
+      "description": "The name and email a commit is attributed to, as an author or a committer.",
+      "examples": [
+        {
+          "email": "ada@example.com",
+          "name": "Ada Lovelace",
+        },
+      ],
+      "properties": {
+        "email": {
+          "description": "Email address, at most 255 characters.",
+          "format": "email",
+          "maxLength": 255,
+          "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+          "type": "string",
+        },
+        "name": {
+          "description": "Display name, 1–255 characters, without "<", ">", newlines or NUL (git cannot store them).",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^<>\\n\\0]+$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "name",
+        "email",
+      ],
+      "title": "Identity",
+      "type": "object",
+    },
+    "MoveAction": {
+      "additionalProperties": false,
+      "description": "Moves a file, keeping its executable bit and, unless \`content\` is given, its content. Fails with path_not_found if \`previousPath\` is not a file, path_exists if \`path\` exists, and path_conflict if a parent of \`path\` is a file.",
+      "examples": [
+        {
+          "action": "move",
+          "encoding": "text",
+          "path": "content/new.md",
+          "previousPath": "content/old.md",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "move",
+          "description": "Move a file from \`previousPath\` to \`path\`.",
+          "type": "string",
+        },
+        "content": {
+          "$ref": "#/$defs/FileContent",
+          "description": "New content for the moved file, encoded as \`encoding\` says. Absent: the content is kept.",
+        },
+        "encoding": {
+          "$ref": "#/$defs/ContentEncoding",
+          "default": "text",
+          "description": "How \`content\` is encoded; defaults to "text".",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Destination path; it must not exist and no parent of it may be a file.",
+        },
+        "previousPath": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the existing file to move.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "previousPath",
+        "encoding",
+      ],
+      "title": "Move action",
+      "type": "object",
+    },
+    "PushEvent": {
+      "additionalProperties": false,
+      "description": "A push the gateway accepted (through the smart-HTTP proxy or an RPC write), delivered to onPush hooks directly or through a Queue. Carries ref ids only: no content, no credential, no principal secret.",
+      "examples": [
+        {
+          "pushedAt": "2026-11-20T09:30:00.000Z",
+          "repo": "acme-raw-content",
+          "updates": [
+            {
+              "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+              "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+              "ref": "refs/heads/main",
+            },
+          ],
+        },
+      ],
+      "properties": {
+        "pushedAt": {
+          "$ref": "#/$defs/Timestamp",
+          "description": "When the storage host accepted the push.",
+        },
+        "repo": {
+          "$ref": "#/$defs/RepoName",
+          "description": "Repository that was pushed to.",
+        },
+        "updates": {
+          "description": "Every ref the push moved, in the order the push named them; 1–1000. A created ref has an all-zero oldSha, a deleted ref an all-zero newSha.",
+          "items": {
+            "$ref": "#/$defs/RefUpdate",
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "type": "array",
+        },
+      },
+      "required": [
+        "repo",
+        "updates",
+        "pushedAt",
+      ],
+      "title": "Push event",
+      "type": "object",
+    },
+    "ReadTokenClaims": {
+      "additionalProperties": false,
+      "description": "What a read token from mintReadToken() asserts: read access to one repository until \`exp\`. Signed with HMAC-SHA256; carries no storage-host credential.",
+      "examples": [
+        {
+          "exp": 1795003600,
+          "iat": 1795000000,
+          "jti": "00000000000000000000000000000000",
+          "repo": "acme-raw-content",
+          "v": 1,
+        },
+      ],
+      "properties": {
+        "exp": {
+          "description": "When the token stops working, in whole seconds since the Unix epoch; after \`iat\`.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "iat": {
+          "description": "When the token was issued, in whole seconds since the Unix epoch.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "jti": {
+          "description": "Random token id, 32 lowercase hex digits, so two tokens issued together differ.",
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string",
+        },
+        "repo": {
+          "$ref": "#/$defs/RepoName",
+          "description": "The one repository the token may clone and fetch.",
+        },
+        "v": {
+          "const": 1,
+          "description": "Token format version; always 1.",
+          "type": "number",
+        },
+      },
+      "required": [
+        "v",
+        "repo",
+        "iat",
+        "exp",
+        "jti",
+      ],
+      "title": "Read-token claims",
+      "type": "object",
+    },
+    "ReadTokenSecret": {
+      "description": "The HMAC-SHA256 key that signs and verifies read tokens: 32–4096 characters of high-entropy secret, set as a Worker secret. Rotating it invalidates every token issued.",
+      "examples": [
+        "0123456789abcdef0123456789abcdef",
+      ],
+      "maxLength": 4096,
+      "minLength": 32,
+      "title": "Read-token secret",
+      "type": "string",
+    },
+    "RefUpdate": {
+      "additionalProperties": false,
+      "description": "One ref moved by a write, in receive-pack command form: the ref, the id it named before and the id it names after. Creation and deletion use the all-zero id on the missing side.",
+      "examples": [
+        {
+          "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "ref": "refs/heads/main",
+        },
+      ],
+      "properties": {
+        "newSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the ref points at after the update; the all-zero id when the update deleted the ref.",
+        },
+        "oldSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the ref pointed at before the update; the all-zero id when the update created the ref.",
+        },
+        "ref": {
+          "$ref": "#/$defs/FullRefName",
+          "description": "The ref that moved, fully qualified (refs/heads/<branch>).",
+        },
+      },
+      "required": [
+        "ref",
+        "oldSha",
+        "newSha",
+      ],
+      "title": "Ref update",
+      "type": "object",
+    },
+    "RepoName": {
+      "description": "Name of a repository behind the gateway: 1–100 characters of letters, digits, ".", "_" and "-", starting with a letter or digit and not ending in ".git". Served at /<name>.git.",
+      "examples": [
+        "acme-raw-content",
+        "site.example",
+      ],
+      "maxLength": 100,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+      "title": "Repository name",
+      "type": "string",
+    },
+    "Sha": {
+      "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
+      "examples": [
+        "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+      ],
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Object id",
+      "type": "string",
+    },
+    "SyncBranchWorkflowParams": {
+      "additionalProperties": false,
+      "description": "The params a SyncBranchWorkflow instance is started with by an onPush sync rule: sync \`into\` with \`from\` after a push moved \`from\` to \`fromHead\`. The sync merges whatever \`from\` holds when it runs.",
+      "examples": [
+        {
+          "from": "main",
+          "fromHead": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "into": "staging",
+          "repo": "acme-raw-content",
+        },
+      ],
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/BranchName",
+          "description": "Branch whose commits are brought into \`into\`, e.g. main.",
+        },
+        "fromHead": {
+          "$ref": "#/$defs/Sha",
+          "description": "Head of \`from\` the push left; identifies the instance, so one push starts at most one sync.",
+        },
+        "into": {
+          "$ref": "#/$defs/BranchName",
+          "description": "Branch brought up to date, e.g. staging; only fast-forwarded or merged into.",
+        },
+        "repo": {
+          "$ref": "#/$defs/RepoName",
+          "description": "Repository holding both branches.",
+        },
+      },
+      "required": [
+        "repo",
+        "from",
+        "into",
+        "fromHead",
+      ],
+      "title": "SyncBranchWorkflow params",
+      "type": "object",
+    },
+    "SyncStepConflict": {
+      "additionalProperties": false,
+      "description": "The SyncBranchWorkflow's sync step could not merge; the instance completes with this result so the conflict can be reported and resolved by hand.",
+      "examples": [
+        {
+          "base": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+          "fromHead": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "intoHead": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "paths": [
+            "content/about.md",
+          ],
+          "status": "conflict",
+        },
+      ],
+      "properties": {
+        "base": {
+          "$ref": "#/$defs/Sha",
+          "description": "The merge base used.",
+        },
+        "fromHead": {
+          "$ref": "#/$defs/Sha",
+          "description": "The head of \`from\` merged.",
+        },
+        "intoHead": {
+          "$ref": "#/$defs/Sha",
+          "description": "The head of \`into\`, unchanged.",
+        },
+        "paths": {
+          "description": "Every conflicting path, sorted in byte order (paths only, never content).",
+          "items": {
+            "$ref": "#/$defs/FilePath",
+            "description": "A conflicting path.",
+          },
+          "minItems": 1,
+          "type": "array",
+        },
+        "status": {
+          "const": "conflict",
+          "description": "Some paths changed differently on both sides; nothing was written and retrying cannot help.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "paths",
+        "base",
+        "fromHead",
+        "intoHead",
+      ],
+      "title": "sync step: conflict",
+      "type": "object",
+    },
+    "SyncStepFastForward": {
+      "additionalProperties": false,
+      "description": "The SyncBranchWorkflow's sync step fast-forwarded \`into\`.",
+      "examples": [
+        {
+          "head": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "status": "fast_forward",
+        },
+      ],
+      "properties": {
+        "head": {
+          "$ref": "#/$defs/Sha",
+          "description": "New head of \`into\`, the head of \`from\`.",
+        },
+        "status": {
+          "const": "fast_forward",
+          "description": "\`into\` had no commits of its own and was fast-forwarded.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "head",
+      ],
+      "title": "sync step: fast-forward",
+      "type": "object",
+    },
+    "SyncStepMerged": {
+      "additionalProperties": false,
+      "description": "The SyncBranchWorkflow's sync step wrote a merge commit to \`into\`.",
+      "examples": [
+        {
+          "head": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "status": "merged",
+        },
+      ],
+      "properties": {
+        "head": {
+          "$ref": "#/$defs/Sha",
+          "description": "New head of \`into\`, the merge commit.",
+        },
+        "status": {
+          "const": "merged",
+          "description": "Both branches had commits; a file-level merge commit was written.",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "head",
+      ],
+      "title": "sync step: merged",
+      "type": "object",
+    },
+    "SyncStepResult": {
+      "description": "What the SyncBranchWorkflow's sync step stores and the instance returns, discriminated by \`status\`: commit ids and conflicting paths only.",
+      "examples": [
+        {
+          "head": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "status": "merged",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SyncStepUpToDate",
+        },
+        {
+          "$ref": "#/$defs/SyncStepFastForward",
+        },
+        {
+          "$ref": "#/$defs/SyncStepMerged",
+        },
+        {
+          "$ref": "#/$defs/SyncStepConflict",
+        },
+      ],
+      "title": "SyncBranchWorkflow result",
+    },
+    "SyncStepUpToDate": {
+      "additionalProperties": false,
+      "description": "The SyncBranchWorkflow's sync step found nothing to do.",
+      "examples": [
+        {
+          "head": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "status": "up_to_date",
+        },
+      ],
+      "properties": {
+        "head": {
+          "$ref": "#/$defs/Sha",
+          "description": "Head of \`into\`, unchanged.",
+        },
+        "status": {
+          "const": "up_to_date",
+          "description": "\`into\` already contained \`from\` (possibly because an earlier run of the step merged it).",
+          "type": "string",
+        },
+      },
+      "required": [
+        "status",
+        "head",
+      ],
+      "title": "sync step: up to date",
+      "type": "object",
+    },
+    "Timestamp": {
+      "description": "A point in time as an ISO 8601 UTC timestamp ending in "Z", with optional fractional seconds (e.g. 2026-11-20T09:30:00.000Z).",
+      "examples": [
+        "2026-11-20T09:30:00.000Z",
+      ],
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+      "title": "Timestamp",
+      "type": "string",
+    },
+    "UpdateAction": {
+      "additionalProperties": false,
+      "description": "Replaces the content of an existing file, keeping its executable bit. Fails with path_not_found if the path is not a file.",
+      "examples": [
+        {
+          "action": "update",
+          "content": "# About us
+",
+          "encoding": "text",
+          "path": "content/about.md",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "update",
+          "description": "Replace an existing file. Fails with path_not_found if it is absent.",
+          "type": "string",
+        },
+        "content": {
+          "$ref": "#/$defs/FileContent",
+          "description": "New content of the file, encoded as \`encoding\` says.",
+        },
+        "encoding": {
+          "$ref": "#/$defs/ContentEncoding",
+          "default": "text",
+          "description": "How \`content\` is encoded; defaults to "text".",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the existing file to replace.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "content",
+        "encoding",
+      ],
+      "title": "Update action",
+      "type": "object",
+    },
+    "UpsertAction": {
+      "additionalProperties": false,
+      "description": "Creates the file, or replaces it (keeping its executable bit) if it exists. Fails with path_exists if the path is a directory and path_conflict if a parent is a file. Not part of the GitLab Commits API.",
+      "examples": [
+        {
+          "action": "upsert",
+          "content": "iVBORw0KGgo=",
+          "encoding": "base64",
+          "path": "assets/logo.png",
+        },
+      ],
+      "properties": {
+        "action": {
+          "const": "upsert",
+          "description": "Create the file, or replace it if it exists.",
+          "type": "string",
+        },
+        "content": {
+          "$ref": "#/$defs/FileContent",
+          "description": "Content of the file, encoded as \`encoding\` says.",
+        },
+        "encoding": {
+          "$ref": "#/$defs/ContentEncoding",
+          "default": "text",
+          "description": "How \`content\` is encoded; defaults to "text".",
+        },
+        "path": {
+          "$ref": "#/$defs/FilePath",
+          "description": "Path of the file to create or replace.",
+        },
+      },
+      "required": [
+        "action",
+        "path",
+        "content",
+        "encoding",
+      ],
+      "title": "Upsert action",
+      "type": "object",
+    },
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 }
 `;
