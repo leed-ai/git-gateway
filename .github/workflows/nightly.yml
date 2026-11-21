@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: Apache-2.0
+# Nightly: the whole suite against the lowest version in each peer range (zod, hono, cloudflare),
+# the whole suite against the latest, ignoring the Turbo cache, and Stryker mutation testing on core.
+name: nightly
+
+on:
+  schedule:
+    - cron: '7 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  peers:
+    name: peers (${{ matrix.peers }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        peers: [lowest, latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-toolchain
+        with:
+          cache-key: nightly-${{ matrix.peers }}
+
+      # Rewrites devDependencies to e.g. zod 4.0.0, hono 4.0.0, cloudflare 5.0.0 for this run only.
+      - name: Install the lowest supported peers
+        if: matrix.peers == 'lowest'
+        run: |
+          bun tooling/repo/src/cli/use-lowest-peers.ts
+          bun install
+
+      # The lockfile pins the peers; resolve the newest release inside each peer range instead.
+      - name: Install the latest peers
+        if: matrix.peers == 'latest'
+        run: bun update zod hono cloudflare
+
+      - name: Build and test everything
+        run: bunx turbo run build test --force
+
+  mutation:
+    name: mutation (core)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-toolchain
+        with:
+          cache-key: nightly-mutation
+
+      # Stryker mutates core's source in place (restoring it afterwards) and reruns the tests that
+      # cover each mutant, conformance tests against the runner's git included. Upstream packages are
+      # built first because core's tests import them through their published entry points.
+      - name: Mutation testing (Stryker) on core
+        run: |
+          bunx turbo run build --filter=@leed-ai/git-gateway-core^...
+          bun run --cwd packages/core test:mutation

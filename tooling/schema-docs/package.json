@@ -1,0 +1,27 @@
+{
+  "name": "@leed-ai/git-gateway-schema-docs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Test harness that walks exported Zod schemas, fails on undocumented nodes and generates JSON Schema documents.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    "./check": "./src/check.ts",
+    "./collect": "./src/collect.ts",
+    "./json-schema": "./src/json-schema.ts",
+    "./suite": "./src/suite.ts"
+  },
+  "scripts": {
+    "check": "vp check",
+    "test": "vp test"
+  },
+  "devDependencies": {
+    "fast-check": "^4.10.3",
+    "vite-plus": "^1.7.0",
+    "zod": "^4.6.7"
+  },
+  "peerDependencies": {
+    "vite-plus": "^1",
+    "zod": "^4"
+  }
+}

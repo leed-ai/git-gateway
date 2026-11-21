@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: Apache-2.0
+name: Set up git
+description: Builds one git release from kernel.org source (cached per version) and exports GIT_BINARY and GIT_EXPECTED_VERSION for the conformance harness. "system" uses the runner's git.
+
+inputs:
+  version:
+    description: A git release such as "2.43.7", or "system" for the git already on the runner.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Restore the git build
+      if: inputs.version != 'system'
+      id: cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/git-builds/${{ inputs.version }}
+        key: git-build-${{ runner.os }}-${{ runner.arch }}-${{ inputs.version }}
+
+    - name: Build git ${{ inputs.version }}
+      if: inputs.version != 'system' && steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        GIT_RELEASE: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        [[ "$GIT_RELEASE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::invalid git version $GIT_RELEASE"; exit 1; }
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq libcurl4-openssl-dev libexpat1-dev libssl-dev zlib1g-dev
+        work="$(mktemp -d)"
+        curl -fsSL "https://mirrors.edge.kernel.org/pub/software/scm/git/git-${GIT_RELEASE}.tar.xz" | tar -xJ -C "$work"
+        make -C "$work/git-${GIT_RELEASE}" -j"$(nproc)" prefix="$HOME/.cache/git-builds/${GIT_RELEASE}" \
+          NO_TCLTK=YesPlease NO_GETTEXT=YesPlease NO_PERL=YesPlease NO_PYTHON=YesPlease install >/dev/null
+
+    - name: Export the git binary
+      shell: bash
+      env:
+        GIT_RELEASE: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        if [[ "$GIT_RELEASE" == system ]]; then
+          echo "GIT_BINARY=$(command -v git)" >> "$GITHUB_ENV"
+        else
+          echo "GIT_BINARY=$HOME/.cache/git-builds/${GIT_RELEASE}/bin/git" >> "$GITHUB_ENV"
+          echo "GIT_EXPECTED_VERSION=${GIT_RELEASE}" >> "$GITHUB_ENV"
+          echo "$HOME/.cache/git-builds/${GIT_RELEASE}/bin" >> "$GITHUB_PATH"
+        fi

@@ -1,0 +1,67 @@
+# SPDX-License-Identifier: Apache-2.0
+# Static checks and builds. Runs on every PR, forks included; uses no secrets.
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-toolchain
+        with:
+          cache-key: check
+
+      # One Vite+ pass over the whole repository: Oxfmt, Oxlint (type-aware) and type checking.
+      - name: Format, lint and type-check
+        run: bunx vp check
+
+      - name: Dependency policy (zod, hono, cloudflare are peers by major range; no exact pins)
+        run: bun tooling/repo/src/cli/check-dependency-policy.ts
+
+      - name: SPDX headers
+        run: bun tooling/repo/src/cli/check-spdx.ts
+
+      - name: Workflow policy (pinned actions, no secret-bearing job reachable from a pull request)
+        run: bun tooling/repo/src/cli/check-workflows.ts
+
+      - name: Lint workflows
+        uses: docker://rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+        with:
+          args: -color
+
+  build:
+    name: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-toolchain
+        with:
+          cache-key: build
+
+      # On a PR only packages the change affects (and their dependents) build; main builds everything.
+      # The example Worker builds with `wrangler deploy --dry-run`; nothing is deployed.
+      - name: Build
+        run: bunx turbo run build ${{ github.event_name == 'pull_request' && '--affected' || '' }}

@@ -1,0 +1,24 @@
+{
+  "name": "@leed-ai/git-gateway-gateway-conformance",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Real-git conformance tests for the gateway: drives the git binary through createGatewayApp with JWT auth and branch policy over a streaming server.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "check": "vp check",
+    "test:conformance": "vp test conformance"
+  },
+  "devDependencies": {
+    "@leed-ai/git-gateway-auth-jwt": "workspace:*",
+    "@leed-ai/git-gateway-contract": "workspace:*",
+    "@leed-ai/git-gateway-repo-tools": "workspace:*",
+    "@leed-ai/git-gateway-testkit": "workspace:*",
+    "@leed-ai/git-gateway-worker": "workspace:*",
+    "@types/node": "^24.19.2",
+    "hono": "^4.13.19",
+    "typescript": "^7.0.2",
+    "vite-plus": "^1.7.0",
+    "zod": "^4.6.7"
+  }
+}

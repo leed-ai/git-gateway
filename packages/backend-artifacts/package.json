@@ -1,0 +1,108 @@
+{
+  "name": "@leed-ai/git-gateway-backend-artifacts",
+  "version": "0.0.0",
+  "description": "git-gateway storage backend over Cloudflare Artifacts.",
+  "keywords": [
+    "cloudflare-artifacts",
+    "cloudflare-workers",
+    "git",
+    "git-gateway",
+    "storage-backend"
+  ],
+  "homepage": "https://github.com/leed-ai/git-gateway/tree/main/packages/backend-artifacts#readme",
+  "bugs": {
+    "url": "https://github.com/leed-ai/git-gateway/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leed-ai/git-gateway.git",
+    "directory": "packages/backend-artifacts"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./artifacts-backend": {
+      "source": "./src/artifacts-backend.ts",
+      "types": "./dist/artifacts-backend.d.ts",
+      "default": "./dist/artifacts-backend.js"
+    },
+    "./artifacts-binding": {
+      "source": "./src/artifacts-binding.ts",
+      "types": "./dist/artifacts-binding.d.ts",
+      "default": "./dist/artifacts-binding.js"
+    },
+    "./artifacts-errors": {
+      "source": "./src/artifacts-errors.ts",
+      "types": "./dist/artifacts-errors.d.ts",
+      "default": "./dist/artifacts-errors.js"
+    },
+    "./artifacts-mapping": {
+      "source": "./src/artifacts-mapping.ts",
+      "types": "./dist/artifacts-mapping.d.ts",
+      "default": "./dist/artifacts-mapping.js"
+    },
+    "./artifacts-rest": {
+      "source": "./src/artifacts-rest.ts",
+      "types": "./dist/artifacts-rest.d.ts",
+      "default": "./dist/artifacts-rest.js"
+    },
+    "./package-name": {
+      "source": "./src/package-name.ts",
+      "types": "./dist/package-name.d.ts",
+      "default": "./dist/package-name.js"
+    },
+    "./schemas/artifacts-binding-results": {
+      "source": "./src/schemas/artifacts-binding-results.ts",
+      "types": "./dist/schemas/artifacts-binding-results.d.ts",
+      "default": "./dist/schemas/artifacts-binding-results.js"
+    },
+    "./schemas/artifacts-rest-results": {
+      "source": "./src/schemas/artifacts-rest-results.ts",
+      "types": "./dist/schemas/artifacts-rest-results.d.ts",
+      "default": "./dist/schemas/artifacts-rest-results.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "vp pack",
+    "check": "vp check",
+    "test": "vp test",
+    "test:contract": "vp test test/contract/"
+  },
+  "dependencies": {
+    "@leed-ai/git-gateway-contract": "workspace:*",
+    "@leed-ai/git-gateway-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.8.5",
+    "@cloudflare/workers-types": "^5.20261120.1",
+    "@leed-ai/git-gateway-repo-tools": "workspace:*",
+    "@leed-ai/git-gateway-schema-docs": "workspace:*",
+    "@leed-ai/git-gateway-testkit": "workspace:*",
+    "cloudflare": "^5.2.0",
+    "typescript": "^7.0.2",
+    "vite-plus": "^1.7.0",
+    "zod": "^4.6.7"
+  },
+  "peerDependencies": {
+    "cloudflare": "^5",
+    "zod": "^4"
+  },
+  "peerDependenciesMeta": {
+    "cloudflare": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}

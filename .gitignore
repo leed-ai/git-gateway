@@ -1,0 +1,29 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+*.tgz
+
+# tool caches and reports
+.turbo/
+.vitest/
+.wrangler/
+coverage/
+.stryker-tmp/
+reports/
+
+# local environment
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+
+# git worktrees for parallel branches
+.worktrees/
+
+# editors and OS
+.DS_Store
+.idea/
+*.log

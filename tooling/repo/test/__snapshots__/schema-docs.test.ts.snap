@@ -1,0 +1,240 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`schema documentation > generates the JSON Schema for what the schemas accept 1`] = `
+{
+  "$defs": {
+    "PackageManifest": {
+      "additionalProperties": {},
+      "description": "The fields of a package.json read by the dependency policy, SPDX and release tools.",
+      "examples": [
+        {
+          "name": "@leed-ai/git-gateway-core",
+          "peerDependencies": {
+            "zod": "^4",
+          },
+          "version": "0.0.0",
+        },
+      ],
+      "properties": {
+        "dependencies": {
+          "additionalProperties": {
+            "description": "What to install: a semver range ("^4"), an exact version, a dist-tag, or a protocol spec ("workspace:*").",
+            "type": "string",
+          },
+          "description": "Runtime dependencies installed with the package.",
+          "propertyNames": {
+            "description": "npm package name, e.g. "zod" or "@leed-ai/git-gateway-core".",
+            "minLength": 1,
+            "type": "string",
+          },
+          "type": "object",
+        },
+        "devDependencies": {
+          "additionalProperties": {
+            "description": "What to install: a semver range ("^4"), an exact version, a dist-tag, or a protocol spec ("workspace:*").",
+            "type": "string",
+          },
+          "description": "Dependencies for building and testing; never installed by consumers.",
+          "propertyNames": {
+            "description": "npm package name, e.g. "zod" or "@leed-ai/git-gateway-core".",
+            "minLength": 1,
+            "type": "string",
+          },
+          "type": "object",
+        },
+        "name": {
+          "description": "npm package name; absent only on a nameless root manifest.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "optionalDependencies": {
+          "additionalProperties": {
+            "description": "What to install: a semver range ("^4"), an exact version, a dist-tag, or a protocol spec ("workspace:*").",
+            "type": "string",
+          },
+          "description": "Runtime dependencies whose install may fail without failing the package.",
+          "propertyNames": {
+            "description": "npm package name, e.g. "zod" or "@leed-ai/git-gateway-core".",
+            "minLength": 1,
+            "type": "string",
+          },
+          "type": "object",
+        },
+        "peerDependencies": {
+          "additionalProperties": {
+            "description": "What to install: a semver range ("^4"), an exact version, a dist-tag, or a protocol spec ("workspace:*").",
+            "type": "string",
+          },
+          "description": "Dependencies the host application supplies, one shared copy.",
+          "propertyNames": {
+            "description": "npm package name, e.g. "zod" or "@leed-ai/git-gateway-core".",
+            "minLength": 1,
+            "type": "string",
+          },
+          "type": "object",
+        },
+        "peerDependenciesMeta": {
+          "additionalProperties": {
+            "description": "Settings for one peer dependency.",
+            "properties": {
+              "optional": {
+                "description": "true when only part of the package needs the peer; absent means required.",
+                "type": "boolean",
+              },
+            },
+            "type": "object",
+          },
+          "description": "Per-peer settings, keyed by peer name.",
+          "propertyNames": {
+            "description": "Name of a declared peer dependency.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "type": "object",
+        },
+        "private": {
+          "description": "true for a package that is never published (the root, tooling, examples); absent means public.",
+          "type": "boolean",
+        },
+        "version": {
+          "description": "Semver version of the package; required for a public package.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "workspaces": {
+          "description": "Workspace globs, on the root manifest only.",
+          "items": {
+            "description": "A glob of workspace package directories, e.g. "packages/*".",
+            "minLength": 1,
+            "type": "string",
+          },
+          "type": "array",
+        },
+      },
+      "title": "Package manifest",
+      "type": "object",
+    },
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+}
+`;
+
+exports[`schema documentation > generates the JSON Schema for what the schemas produce 1`] = `
+{
+  "$defs": {
+    "PackageManifest": {
+      "additionalProperties": {},
+      "description": "The fields of a package.json read by the dependency policy, SPDX and release tools.",
+      "examples": [
+        {
+          "name": "@leed-ai/git-gateway-core",
+          "peerDependencies": {
+            "zod": "^4",
+          },
+          "version": "0.0.0",
+        },
+      ],
+      "properties": {
+        "dependencies": {
+          "additionalProperties": {
+            "description": "What to install: a semver range ("^4"), an exact version, a dist-tag, or a protocol spec ("workspace:*").",
+            "type": "string",
+          },
+          "description": "Runtime dependencies installed with the package.",
+          "propertyNames": {
+            "description": "npm package name, e.g. "zod" or "@leed-ai/git-gateway-core".",
+            "minLength": 1,
+            "type": "string",
+          },
+          "type": "object",
+        },
+        "devDependencies": {
+          "additionalProperties": {
+            "description": "What to install: a semver range ("^4"), an exact version, a dist-tag, or a protocol spec ("workspace:*").",
+            "type": "string",
+          },
+          "description": "Dependencies for building and testing; never installed by consumers.",
+          "propertyNames": {
+            "description": "npm package name, e.g. "zod" or "@leed-ai/git-gateway-core".",
+            "minLength": 1,
+            "type": "string",
+          },
+          "type": "object",
+        },
+        "name": {
+          "description": "npm package name; absent only on a nameless root manifest.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "optionalDependencies": {
+          "additionalProperties": {
+            "description": "What to install: a semver range ("^4"), an exact version, a dist-tag, or a protocol spec ("workspace:*").",
+            "type": "string",
+          },
+          "description": "Runtime dependencies whose install may fail without failing the package.",
+          "propertyNames": {
+            "description": "npm package name, e.g. "zod" or "@leed-ai/git-gateway-core".",
+            "minLength": 1,
+            "type": "string",
+          },
+          "type": "object",
+        },
+        "peerDependencies": {
+          "additionalProperties": {
+            "description": "What to install: a semver range ("^4"), an exact version, a dist-tag, or a protocol spec ("workspace:*").",
+            "type": "string",
+          },
+          "description": "Dependencies the host application supplies, one shared copy.",
+          "propertyNames": {
+            "description": "npm package name, e.g. "zod" or "@leed-ai/git-gateway-core".",
+            "minLength": 1,
+            "type": "string",
+          },
+          "type": "object",
+        },
+        "peerDependenciesMeta": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "description": "Settings for one peer dependency.",
+            "properties": {
+              "optional": {
+                "description": "true when only part of the package needs the peer; absent means required.",
+                "type": "boolean",
+              },
+            },
+            "type": "object",
+          },
+          "description": "Per-peer settings, keyed by peer name.",
+          "propertyNames": {
+            "description": "Name of a declared peer dependency.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "type": "object",
+        },
+        "private": {
+          "description": "true for a package that is never published (the root, tooling, examples); absent means public.",
+          "type": "boolean",
+        },
+        "version": {
+          "description": "Semver version of the package; required for a public package.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "workspaces": {
+          "description": "Workspace globs, on the root manifest only.",
+          "items": {
+            "description": "A glob of workspace package directories, e.g. "packages/*".",
+            "minLength": 1,
+            "type": "string",
+          },
+          "type": "array",
+        },
+      },
+      "title": "Package manifest",
+      "type": "object",
+    },
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+}
+`;

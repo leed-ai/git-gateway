@@ -1,0 +1,49 @@
+{
+  "name": "@leed-ai/git-gateway-monorepo",
+  "private": true,
+  "description": "git-gateway monorepo: a git-over-HTTPS gateway for Cloudflare Workers.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leed-ai/git-gateway.git"
+  },
+  "workspaces": [
+    "packages/*",
+    "examples/*",
+    "tooling/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "turbo run build",
+    "changeset": "changeset",
+    "check": "vp check && bun run policy",
+    "check:fix": "vp check --fix",
+    "policy": "bun tooling/repo/src/cli/check-dependency-policy.ts && bun tooling/repo/src/cli/check-spdx.ts && bun tooling/repo/src/cli/check-workflows.ts",
+    "release:publish": "bun tooling/repo/src/cli/publish-packages.ts --tag latest",
+    "release:snapshot": "bun tooling/repo/src/cli/publish-packages.ts --tag next",
+    "test": "turbo run test",
+    "test:conformance": "turbo run test:conformance",
+    "test:contract": "bun tooling/repo/src/cli/run-required-task.ts test:contract",
+    "verify": "vp check && turbo run test build && bun run policy",
+    "version-packages": "changeset version && bun install --lockfile-only"
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "^1.0.1",
+    "@changesets/cli": "^3.0.3",
+    "@cloudflare/vitest-plugin": "^1.8.5",
+    "@cloudflare/workers-types": "^5.20261120.1",
+    "@types/node": "^24.19.2",
+    "cloudflare": "^5.2.0",
+    "fast-check": "^4.10.3",
+    "hono": "^4.13.19",
+    "turbo": "^2.11.13",
+    "typescript": "^7.0.2",
+    "vite-plus": "^1.7.0",
+    "wrangler": "^4.165.0",
+    "zod": "^4.6.7"
+  },
+  "engines": {
+    "node": "^24.11.0 || >=26.0.0"
+  },
+  "packageManager": "bun@1.4.3"
+}

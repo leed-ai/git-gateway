@@ -1,0 +1,84 @@
+# SPDX-License-Identifier: Apache-2.0
+# Unit, property and Worker tests. Runs on every PR, forks included; uses no secrets.
+name: test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  unit:
+    name: unit (shard ${{ matrix.shard }}/${{ strategy.job-total }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3] # The shard count: add or remove numbers on this line; the suite splits across them.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-toolchain
+        with:
+          cache-key: test-${{ matrix.shard }}
+
+      # On a PR Turbo runs only the affected packages' tests; each package's Vitest files are split
+      # across the shards. A package with fewer files than shards leaves the later shards empty.
+      - name: Test
+        run: >-
+          bunx turbo run test ${{ github.event_name == 'pull_request' && '--affected' || '' }}
+          -- --shard=${{ matrix.shard }}/${{ strategy.job-total }} --passWithNoTests
+
+      # The repository tools' tests read workflows, turbo.json and every package.json, files that
+      # --affected never maps to that package, so a PR always runs them. Their turbo.json hashes
+      # those files, so this is a cache hit whenever the step above already ran them.
+      - name: Repository tool tests
+        if: github.event_name == 'pull_request'
+        run: >-
+          bunx turbo run test --filter=@leed-ai/git-gateway-repo-tools
+          -- --shard=${{ matrix.shard }}/${{ strategy.job-total }} --passWithNoTests
+
+  # Coverage gates need the whole suite in one run: a shard sees only part of it.
+  coverage:
+    name: coverage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-toolchain
+        with:
+          cache-key: test-coverage
+
+      - name: Packages with a coverage gate
+        run: bunx turbo run test --filter=@leed-ai/git-gateway-core
+
+  # A single required check for branch protection that does not change when the shard count does.
+  tests-passed:
+    name: tests passed
+    if: always()
+    needs: [unit, coverage]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Every shard and the coverage gate passed
+        env:
+          UNIT: ${{ needs.unit.result }}
+          COVERAGE: ${{ needs.coverage.result }}
+        run: |
+          echo "unit shards: $UNIT, coverage: $COVERAGE"
+          [[ "$UNIT" == success && "$COVERAGE" == success ]]

@@ -1,0 +1,15 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`schema documentation > generates the JSON Schema for what the schemas accept 1`] = `
+{
+  "$defs": {},
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+}
+`;
+
+exports[`schema documentation > generates the JSON Schema for what the schemas produce 1`] = `
+{
+  "$defs": {},
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+}
+`;

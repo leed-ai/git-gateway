@@ -1,0 +1,358 @@
+{
+  "name": "@leed-ai/git-gateway-worker",
+  "version": "0.0.0",
+  "description": "The git-gateway Cloudflare Worker: smart-HTTP proxy, auth and branch-policy pipeline, RPC entrypoint and Workflows.",
+  "keywords": [
+    "cloudflare-workers",
+    "git",
+    "git-gateway",
+    "hono",
+    "smart-http"
+  ],
+  "homepage": "https://github.com/leed-ai/git-gateway/tree/main/packages/worker#readme",
+  "bugs": {
+    "url": "https://github.com/leed-ai/git-gateway/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leed-ai/git-gateway.git",
+    "directory": "packages/worker"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./audit/audit-recorder": {
+      "source": "./src/audit/audit-recorder.ts",
+      "types": "./dist/audit/audit-recorder.d.ts",
+      "default": "./dist/audit/audit-recorder.js"
+    },
+    "./audit/push-report": {
+      "source": "./src/audit/push-report.ts",
+      "types": "./dist/audit/push-report.d.ts",
+      "default": "./dist/audit/push-report.js"
+    },
+    "./auth/authenticate": {
+      "source": "./src/auth/authenticate.ts",
+      "types": "./dist/auth/authenticate.d.ts",
+      "default": "./dist/auth/authenticate.js"
+    },
+    "./auth/authorize": {
+      "source": "./src/auth/authorize.ts",
+      "types": "./dist/auth/authorize.d.ts",
+      "default": "./dist/auth/authorize.js"
+    },
+    "./auth/read-token-auth": {
+      "source": "./src/auth/read-token-auth.ts",
+      "types": "./dist/auth/read-token-auth.d.ts",
+      "default": "./dist/auth/read-token-auth.js"
+    },
+    "./cache/decision-cache": {
+      "source": "./src/cache/decision-cache.ts",
+      "types": "./dist/cache/decision-cache.d.ts",
+      "default": "./dist/cache/decision-cache.js"
+    },
+    "./gateway-app": {
+      "source": "./src/gateway-app.ts",
+      "types": "./dist/gateway-app.d.ts",
+      "default": "./dist/gateway-app.js"
+    },
+    "./gateway-worker": {
+      "source": "./src/gateway-worker.ts",
+      "types": "./dist/gateway-worker.d.ts",
+      "default": "./dist/gateway-worker.js"
+    },
+    "./health": {
+      "source": "./src/health.ts",
+      "types": "./dist/health.d.ts",
+      "default": "./dist/health.js"
+    },
+    "./logging/logger": {
+      "source": "./src/logging/logger.ts",
+      "types": "./dist/logging/logger.d.ts",
+      "default": "./dist/logging/logger.js"
+    },
+    "./policy/branch-policy": {
+      "source": "./src/policy/branch-policy.ts",
+      "types": "./dist/policy/branch-policy.d.ts",
+      "default": "./dist/policy/branch-policy.js"
+    },
+    "./policy/enforce-branch-policy": {
+      "source": "./src/policy/enforce-branch-policy.ts",
+      "types": "./dist/policy/enforce-branch-policy.d.ts",
+      "default": "./dist/policy/enforce-branch-policy.js"
+    },
+    "./policy/fast-forward": {
+      "source": "./src/policy/fast-forward.ts",
+      "types": "./dist/policy/fast-forward.d.ts",
+      "default": "./dist/policy/fast-forward.js"
+    },
+    "./policy/ref-pattern": {
+      "source": "./src/policy/ref-pattern.ts",
+      "types": "./dist/policy/ref-pattern.d.ts",
+      "default": "./dist/policy/ref-pattern.js"
+    },
+    "./policy/rule-branch-policy": {
+      "source": "./src/policy/rule-branch-policy.ts",
+      "types": "./dist/policy/rule-branch-policy.d.ts",
+      "default": "./dist/policy/rule-branch-policy.js"
+    },
+    "./proxy/defer": {
+      "source": "./src/proxy/defer.ts",
+      "types": "./dist/proxy/defer.d.ts",
+      "default": "./dist/proxy/defer.js"
+    },
+    "./proxy/forward-read": {
+      "source": "./src/proxy/forward-read.ts",
+      "types": "./dist/proxy/forward-read.d.ts",
+      "default": "./dist/proxy/forward-read.js"
+    },
+    "./proxy/gateway-deps": {
+      "source": "./src/proxy/gateway-deps.ts",
+      "types": "./dist/proxy/gateway-deps.d.ts",
+      "default": "./dist/proxy/gateway-deps.js"
+    },
+    "./proxy/gateway-env": {
+      "source": "./src/proxy/gateway-env.ts",
+      "types": "./dist/proxy/gateway-env.d.ts",
+      "default": "./dist/proxy/gateway-env.js"
+    },
+    "./proxy/git-responses": {
+      "source": "./src/proxy/git-responses.ts",
+      "types": "./dist/proxy/git-responses.d.ts",
+      "default": "./dist/proxy/git-responses.js"
+    },
+    "./proxy/git-route": {
+      "source": "./src/proxy/git-route.ts",
+      "types": "./dist/proxy/git-route.d.ts",
+      "default": "./dist/proxy/git-route.js"
+    },
+    "./proxy/push-events": {
+      "source": "./src/proxy/push-events.ts",
+      "types": "./dist/proxy/push-events.d.ts",
+      "default": "./dist/proxy/push-events.js"
+    },
+    "./proxy/push-guard": {
+      "source": "./src/proxy/push-guard.ts",
+      "types": "./dist/proxy/push-guard.d.ts",
+      "default": "./dist/proxy/push-guard.js"
+    },
+    "./proxy/push-options": {
+      "source": "./src/proxy/push-options.ts",
+      "types": "./dist/proxy/push-options.d.ts",
+      "default": "./dist/proxy/push-options.js"
+    },
+    "./proxy/receive-pack": {
+      "source": "./src/proxy/receive-pack.ts",
+      "types": "./dist/proxy/receive-pack.d.ts",
+      "default": "./dist/proxy/receive-pack.js"
+    },
+    "./proxy/request-log": {
+      "source": "./src/proxy/request-log.ts",
+      "types": "./dist/proxy/request-log.d.ts",
+      "default": "./dist/proxy/request-log.js"
+    },
+    "./proxy/resolve-route": {
+      "source": "./src/proxy/resolve-route.ts",
+      "types": "./dist/proxy/resolve-route.d.ts",
+      "default": "./dist/proxy/resolve-route.js"
+    },
+    "./proxy/upstream": {
+      "source": "./src/proxy/upstream.ts",
+      "types": "./dist/proxy/upstream.d.ts",
+      "default": "./dist/proxy/upstream.js"
+    },
+    "./proxy/upstream-call": {
+      "source": "./src/proxy/upstream-call.ts",
+      "types": "./dist/proxy/upstream-call.d.ts",
+      "default": "./dist/proxy/upstream-call.js"
+    },
+    "./rpc/branch-methods": {
+      "source": "./src/rpc/branch-methods.ts",
+      "types": "./dist/rpc/branch-methods.d.ts",
+      "default": "./dist/rpc/branch-methods.js"
+    },
+    "./rpc/commit-attempt": {
+      "source": "./src/rpc/commit-attempt.ts",
+      "types": "./dist/rpc/commit-attempt.d.ts",
+      "default": "./dist/rpc/commit-attempt.js"
+    },
+    "./rpc/commit-graph": {
+      "source": "./src/rpc/commit-graph.ts",
+      "types": "./dist/rpc/commit-graph.d.ts",
+      "default": "./dist/rpc/commit-graph.js"
+    },
+    "./rpc/commit-method": {
+      "source": "./src/rpc/commit-method.ts",
+      "types": "./dist/rpc/commit-method.d.ts",
+      "default": "./dist/rpc/commit-method.js"
+    },
+    "./rpc/commit-source": {
+      "source": "./src/rpc/commit-source.ts",
+      "types": "./dist/rpc/commit-source.d.ts",
+      "default": "./dist/rpc/commit-source.js"
+    },
+    "./rpc/gateway-context": {
+      "source": "./src/rpc/gateway-context.ts",
+      "types": "./dist/rpc/gateway-context.d.ts",
+      "default": "./dist/rpc/gateway-context.js"
+    },
+    "./rpc/gateway-rpc": {
+      "source": "./src/rpc/gateway-rpc.ts",
+      "types": "./dist/rpc/gateway-rpc.d.ts",
+      "default": "./dist/rpc/gateway-rpc.js"
+    },
+    "./rpc/gateway-service": {
+      "source": "./src/rpc/gateway-service.ts",
+      "types": "./dist/rpc/gateway-service.d.ts",
+      "default": "./dist/rpc/gateway-service.js"
+    },
+    "./rpc/history-page": {
+      "source": "./src/rpc/history-page.ts",
+      "types": "./dist/rpc/history-page.d.ts",
+      "default": "./dist/rpc/history-page.js"
+    },
+    "./rpc/lifecycle-methods": {
+      "source": "./src/rpc/lifecycle-methods.ts",
+      "types": "./dist/rpc/lifecycle-methods.d.ts",
+      "default": "./dist/rpc/lifecycle-methods.js"
+    },
+    "./rpc/paint-down": {
+      "source": "./src/rpc/paint-down.ts",
+      "types": "./dist/rpc/paint-down.d.ts",
+      "default": "./dist/rpc/paint-down.js"
+    },
+    "./rpc/promote-attempt": {
+      "source": "./src/rpc/promote-attempt.ts",
+      "types": "./dist/rpc/promote-attempt.d.ts",
+      "default": "./dist/rpc/promote-attempt.js"
+    },
+    "./rpc/push-ref": {
+      "source": "./src/rpc/push-ref.ts",
+      "types": "./dist/rpc/push-ref.d.ts",
+      "default": "./dist/rpc/push-ref.js"
+    },
+    "./rpc/read-methods": {
+      "source": "./src/rpc/read-methods.ts",
+      "types": "./dist/rpc/read-methods.d.ts",
+      "default": "./dist/rpc/read-methods.js"
+    },
+    "./rpc/read-token": {
+      "source": "./src/rpc/read-token.ts",
+      "types": "./dist/rpc/read-token.d.ts",
+      "default": "./dist/rpc/read-token.js"
+    },
+    "./rpc/repo-access": {
+      "source": "./src/rpc/repo-access.ts",
+      "types": "./dist/rpc/repo-access.d.ts",
+      "default": "./dist/rpc/repo-access.js"
+    },
+    "./rpc/sync-attempt": {
+      "source": "./src/rpc/sync-attempt.ts",
+      "types": "./dist/rpc/sync-attempt.d.ts",
+      "default": "./dist/rpc/sync-attempt.js"
+    },
+    "./workflows/commit-workflow": {
+      "source": "./src/workflows/commit-workflow.ts",
+      "types": "./dist/workflows/commit-workflow.d.ts",
+      "default": "./dist/workflows/commit-workflow.js"
+    },
+    "./workflows/commit-workflow-schemas": {
+      "source": "./src/workflows/commit-workflow-schemas.ts",
+      "types": "./dist/workflows/commit-workflow-schemas.d.ts",
+      "default": "./dist/workflows/commit-workflow-schemas.js"
+    },
+    "./workflows/on-push": {
+      "source": "./src/workflows/on-push.ts",
+      "types": "./dist/workflows/on-push.d.ts",
+      "default": "./dist/workflows/on-push.js"
+    },
+    "./workflows/push-event": {
+      "source": "./src/workflows/push-event.ts",
+      "types": "./dist/workflows/push-event.d.ts",
+      "default": "./dist/workflows/push-event.js"
+    },
+    "./workflows/run-commit-workflow": {
+      "source": "./src/workflows/run-commit-workflow.ts",
+      "types": "./dist/workflows/run-commit-workflow.d.ts",
+      "default": "./dist/workflows/run-commit-workflow.js"
+    },
+    "./workflows/run-sync-workflow": {
+      "source": "./src/workflows/run-sync-workflow.ts",
+      "types": "./dist/workflows/run-sync-workflow.d.ts",
+      "default": "./dist/workflows/run-sync-workflow.js"
+    },
+    "./workflows/step-errors": {
+      "source": "./src/workflows/step-errors.ts",
+      "types": "./dist/workflows/step-errors.d.ts",
+      "default": "./dist/workflows/step-errors.js"
+    },
+    "./workflows/step-runner": {
+      "source": "./src/workflows/step-runner.ts",
+      "types": "./dist/workflows/step-runner.d.ts",
+      "default": "./dist/workflows/step-runner.js"
+    },
+    "./workflows/sync-branch-workflow": {
+      "source": "./src/workflows/sync-branch-workflow.ts",
+      "types": "./dist/workflows/sync-branch-workflow.d.ts",
+      "default": "./dist/workflows/sync-branch-workflow.js"
+    },
+    "./workflows/sync-workflow-schemas": {
+      "source": "./src/workflows/sync-workflow-schemas.ts",
+      "types": "./dist/workflows/sync-workflow-schemas.d.ts",
+      "default": "./dist/workflows/sync-workflow-schemas.js"
+    },
+    "./workflows/workflow-instance-id": {
+      "source": "./src/workflows/workflow-instance-id.ts",
+      "types": "./dist/workflows/workflow-instance-id.d.ts",
+      "default": "./dist/workflows/workflow-instance-id.js"
+    },
+    "./workflows/workflow-runtime": {
+      "source": "./src/workflows/workflow-runtime.ts",
+      "types": "./dist/workflows/workflow-runtime.d.ts",
+      "default": "./dist/workflows/workflow-runtime.js"
+    },
+    "./workflows/workflow-starter": {
+      "source": "./src/workflows/workflow-starter.ts",
+      "types": "./dist/workflows/workflow-starter.d.ts",
+      "default": "./dist/workflows/workflow-starter.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "vp pack",
+    "check": "vp check",
+    "test": "vp test"
+  },
+  "dependencies": {
+    "@leed-ai/git-gateway-contract": "workspace:*",
+    "@leed-ai/git-gateway-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.8.5",
+    "@cloudflare/workers-types": "^5.20261120.1",
+    "@leed-ai/git-gateway-repo-tools": "workspace:*",
+    "@leed-ai/git-gateway-schema-docs": "workspace:*",
+    "@leed-ai/git-gateway-testkit": "workspace:*",
+    "fast-check": "^4.10.3",
+    "hono": "^4.13.19",
+    "typescript": "^7.0.2",
+    "vite-plus": "^1.7.0",
+    "zod": "^4.6.7"
+  },
+  "peerDependencies": {
+    "hono": "^4",
+    "zod": "^4"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}

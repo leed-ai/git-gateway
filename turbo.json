@@ -1,0 +1,38 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "ui": "stream",
+  "globalDependencies": ["tsconfig.base.json", "vite.config.ts", ".node-version"],
+  "globalPassThroughEnv": ["CI", "GITHUB_ACTIONS"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!test/**", "!**/*.test.ts", "!README.md"],
+      "outputs": ["dist/**"]
+    },
+    "check": {
+      "dependsOn": [],
+      "inputs": ["$TURBO_DEFAULT$"],
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!README.md"],
+      "outputs": []
+    },
+    "test:conformance": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!README.md"],
+      "env": ["GIT_BINARY", "GIT_EXPECTED_VERSION"],
+      "outputs": [],
+      "cache": false
+    },
+    "test:contract": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!README.md"],
+      "env": ["CONTRACT_BACKEND"],
+      "passThroughEnv": ["GITLAB_*", "CLOUDFLARE_*", "ARTIFACTS_*"],
+      "outputs": [],
+      "cache": false
+    }
+  }
+}

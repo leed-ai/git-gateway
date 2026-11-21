@@ -1,0 +1,858 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`schema documentation > generates the JSON Schema for what the schemas accept 1`] = `
+{
+  "$defs": {
+    "Jwk": {
+      "additionalProperties": {},
+      "description": "One public signing key from a JWK Set (RFC 7517). Members the authenticator does not use are kept but ignored.",
+      "examples": [
+        {
+          "alg": "ES256",
+          "crv": "P-256",
+          "kid": "key-1",
+          "kty": "EC",
+          "use": "sig",
+          "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
+          "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0",
+        },
+      ],
+      "properties": {
+        "alg": {
+          "description": "The algorithm the key is for; when present a token must use it.",
+          "maxLength": 20,
+          "minLength": 1,
+          "type": "string",
+        },
+        "crv": {
+          "description": "Curve: P-256 or P-384 for EC, Ed25519 for OKP.",
+          "maxLength": 20,
+          "minLength": 1,
+          "type": "string",
+        },
+        "e": {
+          "description": "RSA public exponent, base64url.",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "type": "string",
+        },
+        "kid": {
+          "description": "Key id, matched against a token header's "kid"; absent on single-key sets.",
+          "maxLength": 255,
+          "minLength": 1,
+          "type": "string",
+        },
+        "kty": {
+          "description": "Key type.",
+          "enum": [
+            "RSA",
+            "EC",
+            "OKP",
+          ],
+          "enumDescriptions": {
+            "EC": "An elliptic-curve public key (crv, x, y).",
+            "OKP": "An Ed25519 public key (crv, x).",
+            "RSA": "An RSA public key (n, e).",
+          },
+          "type": "string",
+        },
+        "n": {
+          "description": "RSA modulus, base64url.",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "type": "string",
+        },
+        "use": {
+          "description": "Intended use; keys whose use is not "sig" are ignored. Absent means any.",
+          "maxLength": 20,
+          "minLength": 1,
+          "type": "string",
+        },
+        "x": {
+          "description": "Curve point x coordinate (EC) or public key (OKP), base64url.",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "type": "string",
+        },
+        "y": {
+          "description": "Curve point y coordinate (EC), base64url.",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "kty",
+      ],
+      "title": "JSON Web Key",
+      "type": "object",
+    },
+    "JwkSet": {
+      "additionalProperties": {},
+      "description": "The document at an issuer's jwks_uri (RFC 7517 §5): its public signing keys.",
+      "examples": [
+        {
+          "keys": [
+            {
+              "e": "AQAB",
+              "kid": "rsa-1",
+              "kty": "RSA",
+              "n": "sXchDaQebHnPiGvyDOAT4saGEUetSyo9MKLOoWFsueri",
+            },
+          ],
+        },
+      ],
+      "properties": {
+        "keys": {
+          "description": "The issuer's public keys, at most 100.",
+          "items": {
+            "$ref": "#/$defs/Jwk",
+          },
+          "maxItems": 100,
+          "type": "array",
+        },
+      },
+      "required": [
+        "keys",
+      ],
+      "title": "JWK Set",
+      "type": "object",
+    },
+    "JwtAlgorithm": {
+      "description": "A JWS "alg" the JWT authenticator verifies with Web Crypto. Symmetric algorithms (HS*) and "none" are never accepted.",
+      "enum": [
+        "RS256",
+        "RS384",
+        "RS512",
+        "PS256",
+        "PS384",
+        "PS512",
+        "ES256",
+        "ES384",
+        "EdDSA",
+        "Ed25519",
+      ],
+      "enumDescriptions": {
+        "ES256": "ECDSA on P-256 with SHA-256 (EC key).",
+        "ES384": "ECDSA on P-384 with SHA-384 (EC key).",
+        "Ed25519": "Ed25519, the fully-specified name of EdDSA on Ed25519 (RFC 9864); same keys as EdDSA.",
+        "EdDSA": "EdDSA with an Ed25519 key (OKP key, crv Ed25519).",
+        "PS256": "RSASSA-PSS with SHA-256 (RSA key).",
+        "PS384": "RSASSA-PSS with SHA-384 (RSA key).",
+        "PS512": "RSASSA-PSS with SHA-512 (RSA key).",
+        "RS256": "RSASSA-PKCS1-v1_5 with SHA-256 (RSA key).",
+        "RS384": "RSASSA-PKCS1-v1_5 with SHA-384 (RSA key).",
+        "RS512": "RSASSA-PKCS1-v1_5 with SHA-512 (RSA key).",
+      },
+      "examples": [
+        "RS256",
+        "ES256",
+      ],
+      "title": "JWT algorithm",
+      "type": "string",
+    },
+    "JwtAuthenticatorConfig": {
+      "additionalProperties": false,
+      "description": "Configuration of the reference JWT authenticator: tokens (as a Bearer header or the HTTP Basic password git sends) are verified against the issuer's JWKS, and must carry the issuer, an accepted audience and an unexpired "exp".",
+      "examples": [
+        {
+          "algorithms": [
+            "RS256",
+            "ES256",
+          ],
+          "audience": [
+            "git.example.com",
+          ],
+          "claims": {
+            "email": "email",
+            "name": "name",
+            "roles": "roles",
+            "subject": "sub",
+          },
+          "clockToleranceSeconds": 60,
+          "issuer": "https://auth.example.com",
+          "jwksCacheSeconds": 600,
+          "jwksUrl": null,
+        },
+      ],
+      "properties": {
+        "algorithms": {
+          "default": [
+            "RS256",
+            "ES256",
+          ],
+          "description": "Signature algorithms accepted; a token signed otherwise is refused. Default ["RS256", "ES256"].",
+          "items": {
+            "$ref": "#/$defs/JwtAlgorithm",
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "type": "array",
+        },
+        "audience": {
+          "description": "Accepted "aud" values: a token is accepted when its audience (a string or an array) contains any of them.",
+          "items": {
+            "description": "One accepted audience value.",
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string",
+          },
+          "maxItems": 20,
+          "minItems": 1,
+          "type": "array",
+        },
+        "claims": {
+          "$ref": "#/$defs/JwtClaimMapping",
+          "default": {
+            "email": "email",
+            "name": "name",
+            "roles": "roles",
+            "subject": "sub",
+          },
+          "description": "Which claims fill which Principal fields; defaults to sub, name, email and roles.",
+        },
+        "clockToleranceSeconds": {
+          "default": 60,
+          "description": "Seconds of clock skew allowed when checking "exp" and "nbf"; the principal expires this long after "exp" too. 0–300, default 60.",
+          "maximum": 300,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "issuer": {
+          "description": "The required "iss" claim, compared exactly; also the base of OIDC discovery when \`jwksUrl\` is null.",
+          "format": "uri",
+          "type": "string",
+        },
+        "jwksCacheSeconds": {
+          "default": 600,
+          "description": "Seconds fetched keys are reused before being fetched again; a token naming an unknown "kid" refetches sooner. The issuer is asked at most every 10 seconds, and when a refetch fails the last keys fetched keep being used. 10–86400, default 600.",
+          "maximum": 86400,
+          "minimum": 10,
+          "type": "integer",
+        },
+        "jwksUrl": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "default": null,
+          "description": "Where the signing keys (a JWK Set) are fetched; null (the default) discovers them from <issuer>/.well-known/openid-configuration ("jwks_uri").",
+        },
+      },
+      "required": [
+        "issuer",
+        "audience",
+      ],
+      "title": "JWT authenticator configuration",
+      "type": "object",
+    },
+    "JwtClaimMapping": {
+      "additionalProperties": false,
+      "description": "Which claims of a verified JWT fill which Principal fields.",
+      "examples": [
+        {
+          "email": "email",
+          "name": "name",
+          "roles": "roles",
+          "subject": "sub",
+        },
+      ],
+      "properties": {
+        "email": {
+          "default": "email",
+          "description": "Name of the claim holding the email address (optional; ignored unless a valid address); default "email".",
+          "maxLength": 100,
+          "minLength": 1,
+          "type": "string",
+        },
+        "name": {
+          "default": "name",
+          "description": "Name of the claim holding the display name (optional; ignored unless a non-empty single-line string); default "name".",
+          "maxLength": 100,
+          "minLength": 1,
+          "type": "string",
+        },
+        "roles": {
+          "default": "roles",
+          "description": "Name of the claim holding the roles: an array of strings, or one string of space- or comma-separated names (optional; names with whitespace are dropped); default "roles".",
+          "maxLength": 100,
+          "minLength": 1,
+          "type": "string",
+        },
+        "subject": {
+          "default": "sub",
+          "description": "Name of the claim holding the principal subject (a non-empty string; required in every token); default "sub".",
+          "maxLength": 100,
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "title": "JWT claim mapping",
+      "type": "object",
+    },
+    "JwtClaims": {
+      "additionalProperties": {},
+      "description": "The payload of a JWT: the registered claims the authenticator checks (iss, aud, exp, nbf), plus any others, from which the principal is mapped.",
+      "examples": [
+        {
+          "aud": "git.example.com",
+          "exp": 1795000000,
+          "iss": "https://auth.example.com",
+          "roles": [
+            "maintainer",
+          ],
+          "sub": "user:42",
+        },
+      ],
+      "properties": {
+        "aud": {
+          "anyOf": [
+            {
+              "description": "A single audience.",
+              "minLength": 1,
+              "type": "string",
+            },
+            {
+              "description": "Several audiences.",
+              "items": {
+                "description": "One audience.",
+                "minLength": 1,
+                "type": "string",
+              },
+              "minItems": 1,
+              "type": "array",
+            },
+          ],
+          "description": "Audience; must contain one of the configured audiences.",
+        },
+        "exp": {
+          "description": "Expiry; required, and must be in the future (with clock tolerance), as seconds since the epoch (a JSON number).",
+          "minimum": 0,
+          "type": "number",
+        },
+        "iat": {
+          "description": "Issued at; informational, as seconds since the epoch (a JSON number).",
+          "minimum": 0,
+          "type": "number",
+        },
+        "iss": {
+          "description": "Issuer; must equal the configured issuer.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "nbf": {
+          "description": "Not before; when present, must not be in the future (with clock tolerance), as seconds since the epoch (a JSON number).",
+          "minimum": 0,
+          "type": "number",
+        },
+      },
+      "required": [
+        "iss",
+        "aud",
+        "exp",
+      ],
+      "title": "JWT claims",
+      "type": "object",
+    },
+    "JwtHeader": {
+      "additionalProperties": {},
+      "description": "The protected header of a signed JWT (RFC 7515 §4). Other members are allowed and ignored.",
+      "examples": [
+        {
+          "alg": "RS256",
+          "kid": "rsa-1",
+          "typ": "JWT",
+        },
+      ],
+      "properties": {
+        "alg": {
+          "description": "Signature algorithm; must be one the authenticator accepts.",
+          "maxLength": 20,
+          "minLength": 1,
+          "type": "string",
+        },
+        "kid": {
+          "description": "Id of the signing key in the issuer's JWK Set; absent when the set has one key.",
+          "maxLength": 255,
+          "minLength": 1,
+          "type": "string",
+        },
+        "typ": {
+          "description": "Media type, usually "JWT"; not checked.",
+          "maxLength": 50,
+          "type": "string",
+        },
+      },
+      "required": [
+        "alg",
+      ],
+      "title": "JWT header",
+      "type": "object",
+    },
+    "OidcDiscovery": {
+      "additionalProperties": {},
+      "description": "The fields of <issuer>/.well-known/openid-configuration (OpenID Connect Discovery 1.0) the authenticator uses.",
+      "examples": [
+        {
+          "issuer": "https://auth.example.com",
+          "jwks_uri": "https://auth.example.com/.well-known/jwks.json",
+        },
+      ],
+      "properties": {
+        "issuer": {
+          "description": "The provider's issuer identifier; must equal the configured issuer.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "jwks_uri": {
+          "description": "Where the provider publishes its JWK Set.",
+          "format": "uri",
+          "type": "string",
+        },
+      },
+      "required": [
+        "issuer",
+        "jwks_uri",
+      ],
+      "title": "OIDC discovery document",
+      "type": "object",
+    },
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+}
+`;
+
+exports[`schema documentation > generates the JSON Schema for what the schemas produce 1`] = `
+{
+  "$defs": {
+    "Jwk": {
+      "additionalProperties": {},
+      "description": "One public signing key from a JWK Set (RFC 7517). Members the authenticator does not use are kept but ignored.",
+      "examples": [
+        {
+          "alg": "ES256",
+          "crv": "P-256",
+          "kid": "key-1",
+          "kty": "EC",
+          "use": "sig",
+          "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
+          "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0",
+        },
+      ],
+      "properties": {
+        "alg": {
+          "description": "The algorithm the key is for; when present a token must use it.",
+          "maxLength": 20,
+          "minLength": 1,
+          "type": "string",
+        },
+        "crv": {
+          "description": "Curve: P-256 or P-384 for EC, Ed25519 for OKP.",
+          "maxLength": 20,
+          "minLength": 1,
+          "type": "string",
+        },
+        "e": {
+          "description": "RSA public exponent, base64url.",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "type": "string",
+        },
+        "kid": {
+          "description": "Key id, matched against a token header's "kid"; absent on single-key sets.",
+          "maxLength": 255,
+          "minLength": 1,
+          "type": "string",
+        },
+        "kty": {
+          "description": "Key type.",
+          "enum": [
+            "RSA",
+            "EC",
+            "OKP",
+          ],
+          "enumDescriptions": {
+            "EC": "An elliptic-curve public key (crv, x, y).",
+            "OKP": "An Ed25519 public key (crv, x).",
+            "RSA": "An RSA public key (n, e).",
+          },
+          "type": "string",
+        },
+        "n": {
+          "description": "RSA modulus, base64url.",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "type": "string",
+        },
+        "use": {
+          "description": "Intended use; keys whose use is not "sig" are ignored. Absent means any.",
+          "maxLength": 20,
+          "minLength": 1,
+          "type": "string",
+        },
+        "x": {
+          "description": "Curve point x coordinate (EC) or public key (OKP), base64url.",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "type": "string",
+        },
+        "y": {
+          "description": "Curve point y coordinate (EC), base64url.",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "kty",
+      ],
+      "title": "JSON Web Key",
+      "type": "object",
+    },
+    "JwkSet": {
+      "additionalProperties": {},
+      "description": "The document at an issuer's jwks_uri (RFC 7517 §5): its public signing keys.",
+      "examples": [
+        {
+          "keys": [
+            {
+              "e": "AQAB",
+              "kid": "rsa-1",
+              "kty": "RSA",
+              "n": "sXchDaQebHnPiGvyDOAT4saGEUetSyo9MKLOoWFsueri",
+            },
+          ],
+        },
+      ],
+      "properties": {
+        "keys": {
+          "description": "The issuer's public keys, at most 100.",
+          "items": {
+            "$ref": "#/$defs/Jwk",
+          },
+          "maxItems": 100,
+          "type": "array",
+        },
+      },
+      "required": [
+        "keys",
+      ],
+      "title": "JWK Set",
+      "type": "object",
+    },
+    "JwtAlgorithm": {
+      "description": "A JWS "alg" the JWT authenticator verifies with Web Crypto. Symmetric algorithms (HS*) and "none" are never accepted.",
+      "enum": [
+        "RS256",
+        "RS384",
+        "RS512",
+        "PS256",
+        "PS384",
+        "PS512",
+        "ES256",
+        "ES384",
+        "EdDSA",
+        "Ed25519",
+      ],
+      "enumDescriptions": {
+        "ES256": "ECDSA on P-256 with SHA-256 (EC key).",
+        "ES384": "ECDSA on P-384 with SHA-384 (EC key).",
+        "Ed25519": "Ed25519, the fully-specified name of EdDSA on Ed25519 (RFC 9864); same keys as EdDSA.",
+        "EdDSA": "EdDSA with an Ed25519 key (OKP key, crv Ed25519).",
+        "PS256": "RSASSA-PSS with SHA-256 (RSA key).",
+        "PS384": "RSASSA-PSS with SHA-384 (RSA key).",
+        "PS512": "RSASSA-PSS with SHA-512 (RSA key).",
+        "RS256": "RSASSA-PKCS1-v1_5 with SHA-256 (RSA key).",
+        "RS384": "RSASSA-PKCS1-v1_5 with SHA-384 (RSA key).",
+        "RS512": "RSASSA-PKCS1-v1_5 with SHA-512 (RSA key).",
+      },
+      "examples": [
+        "RS256",
+        "ES256",
+      ],
+      "title": "JWT algorithm",
+      "type": "string",
+    },
+    "JwtAuthenticatorConfig": {
+      "additionalProperties": false,
+      "description": "Configuration of the reference JWT authenticator: tokens (as a Bearer header or the HTTP Basic password git sends) are verified against the issuer's JWKS, and must carry the issuer, an accepted audience and an unexpired "exp".",
+      "examples": [
+        {
+          "algorithms": [
+            "RS256",
+            "ES256",
+          ],
+          "audience": [
+            "git.example.com",
+          ],
+          "claims": {
+            "email": "email",
+            "name": "name",
+            "roles": "roles",
+            "subject": "sub",
+          },
+          "clockToleranceSeconds": 60,
+          "issuer": "https://auth.example.com",
+          "jwksCacheSeconds": 600,
+          "jwksUrl": null,
+        },
+      ],
+      "properties": {
+        "algorithms": {
+          "default": [
+            "RS256",
+            "ES256",
+          ],
+          "description": "Signature algorithms accepted; a token signed otherwise is refused. Default ["RS256", "ES256"].",
+          "items": {
+            "$ref": "#/$defs/JwtAlgorithm",
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "type": "array",
+        },
+        "audience": {
+          "description": "Accepted "aud" values: a token is accepted when its audience (a string or an array) contains any of them.",
+          "items": {
+            "description": "One accepted audience value.",
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string",
+          },
+          "maxItems": 20,
+          "minItems": 1,
+          "type": "array",
+        },
+        "claims": {
+          "$ref": "#/$defs/JwtClaimMapping",
+          "default": {
+            "email": "email",
+            "name": "name",
+            "roles": "roles",
+            "subject": "sub",
+          },
+          "description": "Which claims fill which Principal fields; defaults to sub, name, email and roles.",
+        },
+        "clockToleranceSeconds": {
+          "default": 60,
+          "description": "Seconds of clock skew allowed when checking "exp" and "nbf"; the principal expires this long after "exp" too. 0–300, default 60.",
+          "maximum": 300,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "issuer": {
+          "description": "The required "iss" claim, compared exactly; also the base of OIDC discovery when \`jwksUrl\` is null.",
+          "format": "uri",
+          "type": "string",
+        },
+        "jwksCacheSeconds": {
+          "default": 600,
+          "description": "Seconds fetched keys are reused before being fetched again; a token naming an unknown "kid" refetches sooner. The issuer is asked at most every 10 seconds, and when a refetch fails the last keys fetched keep being used. 10–86400, default 600.",
+          "maximum": 86400,
+          "minimum": 10,
+          "type": "integer",
+        },
+        "jwksUrl": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "default": null,
+          "description": "Where the signing keys (a JWK Set) are fetched; null (the default) discovers them from <issuer>/.well-known/openid-configuration ("jwks_uri").",
+        },
+      },
+      "required": [
+        "issuer",
+        "audience",
+        "jwksUrl",
+        "algorithms",
+        "clockToleranceSeconds",
+        "jwksCacheSeconds",
+        "claims",
+      ],
+      "title": "JWT authenticator configuration",
+      "type": "object",
+    },
+    "JwtClaimMapping": {
+      "additionalProperties": false,
+      "description": "Which claims of a verified JWT fill which Principal fields.",
+      "examples": [
+        {
+          "email": "email",
+          "name": "name",
+          "roles": "roles",
+          "subject": "sub",
+        },
+      ],
+      "properties": {
+        "email": {
+          "default": "email",
+          "description": "Name of the claim holding the email address (optional; ignored unless a valid address); default "email".",
+          "maxLength": 100,
+          "minLength": 1,
+          "type": "string",
+        },
+        "name": {
+          "default": "name",
+          "description": "Name of the claim holding the display name (optional; ignored unless a non-empty single-line string); default "name".",
+          "maxLength": 100,
+          "minLength": 1,
+          "type": "string",
+        },
+        "roles": {
+          "default": "roles",
+          "description": "Name of the claim holding the roles: an array of strings, or one string of space- or comma-separated names (optional; names with whitespace are dropped); default "roles".",
+          "maxLength": 100,
+          "minLength": 1,
+          "type": "string",
+        },
+        "subject": {
+          "default": "sub",
+          "description": "Name of the claim holding the principal subject (a non-empty string; required in every token); default "sub".",
+          "maxLength": 100,
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "subject",
+        "name",
+        "email",
+        "roles",
+      ],
+      "title": "JWT claim mapping",
+      "type": "object",
+    },
+    "JwtClaims": {
+      "additionalProperties": {},
+      "description": "The payload of a JWT: the registered claims the authenticator checks (iss, aud, exp, nbf), plus any others, from which the principal is mapped.",
+      "examples": [
+        {
+          "aud": "git.example.com",
+          "exp": 1795000000,
+          "iss": "https://auth.example.com",
+          "roles": [
+            "maintainer",
+          ],
+          "sub": "user:42",
+        },
+      ],
+      "properties": {
+        "aud": {
+          "anyOf": [
+            {
+              "description": "A single audience.",
+              "minLength": 1,
+              "type": "string",
+            },
+            {
+              "description": "Several audiences.",
+              "items": {
+                "description": "One audience.",
+                "minLength": 1,
+                "type": "string",
+              },
+              "minItems": 1,
+              "type": "array",
+            },
+          ],
+          "description": "Audience; must contain one of the configured audiences.",
+        },
+        "exp": {
+          "description": "Expiry; required, and must be in the future (with clock tolerance), as seconds since the epoch (a JSON number).",
+          "minimum": 0,
+          "type": "number",
+        },
+        "iat": {
+          "description": "Issued at; informational, as seconds since the epoch (a JSON number).",
+          "minimum": 0,
+          "type": "number",
+        },
+        "iss": {
+          "description": "Issuer; must equal the configured issuer.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "nbf": {
+          "description": "Not before; when present, must not be in the future (with clock tolerance), as seconds since the epoch (a JSON number).",
+          "minimum": 0,
+          "type": "number",
+        },
+      },
+      "required": [
+        "iss",
+        "aud",
+        "exp",
+      ],
+      "title": "JWT claims",
+      "type": "object",
+    },
+    "JwtHeader": {
+      "additionalProperties": {},
+      "description": "The protected header of a signed JWT (RFC 7515 §4). Other members are allowed and ignored.",
+      "examples": [
+        {
+          "alg": "RS256",
+          "kid": "rsa-1",
+          "typ": "JWT",
+        },
+      ],
+      "properties": {
+        "alg": {
+          "description": "Signature algorithm; must be one the authenticator accepts.",
+          "maxLength": 20,
+          "minLength": 1,
+          "type": "string",
+        },
+        "kid": {
+          "description": "Id of the signing key in the issuer's JWK Set; absent when the set has one key.",
+          "maxLength": 255,
+          "minLength": 1,
+          "type": "string",
+        },
+        "typ": {
+          "description": "Media type, usually "JWT"; not checked.",
+          "maxLength": 50,
+          "type": "string",
+        },
+      },
+      "required": [
+        "alg",
+      ],
+      "title": "JWT header",
+      "type": "object",
+    },
+    "OidcDiscovery": {
+      "additionalProperties": {},
+      "description": "The fields of <issuer>/.well-known/openid-configuration (OpenID Connect Discovery 1.0) the authenticator uses.",
+      "examples": [
+        {
+          "issuer": "https://auth.example.com",
+          "jwks_uri": "https://auth.example.com/.well-known/jwks.json",
+        },
+      ],
+      "properties": {
+        "issuer": {
+          "description": "The provider's issuer identifier; must equal the configured issuer.",
+          "minLength": 1,
+          "type": "string",
+        },
+        "jwks_uri": {
+          "description": "Where the provider publishes its JWK Set.",
+          "format": "uri",
+          "type": "string",
+        },
+      },
+      "required": [
+        "issuer",
+        "jwks_uri",
+      ],
+      "title": "OIDC discovery document",
+      "type": "object",
+    },
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+}
+`;

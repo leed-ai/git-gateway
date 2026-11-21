@@ -1,0 +1,3034 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`RPC contract > commit has a stable JSON Schema 1`] = `
+{
+  "input": {
+    "$defs": {
+      "BranchName": {
+        "description": "A short branch name, 1–255 characters, valid under git check-ref-format (no "..", "@{", "//", spaces, control characters or ~ ^ : ? * [ or backslash; no component starting with "." or ending with ".lock"; not starting with "-" or "refs/"; not "HEAD"; not 40 lowercase hex characters, which a Revision always reads as a commit id). The gateway stores it as refs/heads/<name>.",
+        "examples": [
+          "main",
+          "staging",
+          "feature/new-page",
+        ],
+        "maxLength": 255,
+        "minLength": 1,
+        "pattern": "^(?!refs\\/)(?!HEAD$)(?![0-9a-f]{40}$)(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+        "title": "Branch name",
+        "type": "string",
+      },
+      "ChmodAction": {
+        "additionalProperties": false,
+        "description": "Sets (true) or clears (false) the executable bit of an existing file. Fails with path_not_found if the path is not a file. Setting the bit it already has changes nothing.",
+        "examples": [
+          {
+            "action": "chmod",
+            "executeFilemode": true,
+            "path": "scripts/build.sh",
+          },
+        ],
+        "properties": {
+          "action": {
+            "const": "chmod",
+            "description": "Set or clear the executable bit of an existing file.",
+            "type": "string",
+          },
+          "executeFilemode": {
+            "description": "true: mode 100755 (executable); false: mode 100644 (not executable).",
+            "type": "boolean",
+          },
+          "path": {
+            "$ref": "#/$defs/FilePath",
+            "description": "Path of the existing file.",
+          },
+        },
+        "required": [
+          "action",
+          "path",
+          "executeFilemode",
+        ],
+        "title": "Chmod action",
+        "type": "object",
+      },
+      "CommitAction": {
+        "description": "One change in a commit, discriminated by \`action\`. Actions apply in order, each to the result of the one before, with the GitLab Commits API semantics (plus upsert).",
+        "examples": [
+          {
+            "action": "create",
+            "content": "# About
+",
+            "encoding": "text",
+            "path": "content/about.md",
+          },
+          {
+            "action": "delete",
+            "path": "content/old.md",
+          },
+        ],
+        "oneOf": [
+          {
+            "$ref": "#/$defs/CreateAction",
+          },
+          {
+            "$ref": "#/$defs/UpdateAction",
+          },
+          {
+            "$ref": "#/$defs/UpsertAction",
+          },
+          {
+            "$ref": "#/$defs/DeleteAction",
+          },
+          {
+            "$ref": "#/$defs/MoveAction",
+          },
+          {
+            "$ref": "#/$defs/ChmodAction",
+          },
+        ],
+        "title": "Commit action",
+      },
+      "CommitInput": {
+        "additionalProperties": false,
+        "description": "Input of commit(): a multi-file commit to one branch, built without a clone. Checked in this order: idempotency replay, then stale head, then the actions.",
+        "examples": [
+          {
+            "actions": [
+              {
+                "action": "update",
+                "content": "# About us
+",
+                "encoding": "text",
+                "path": "content/about.md",
+              },
+            ],
+            "author": {
+              "email": "ada@example.com",
+              "name": "Ada Lovelace",
+            },
+            "branch": "staging",
+            "expectedHead": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            "idempotencyKey": "cms:publish:2f9c1e",
+            "message": "Update about page",
+            "repo": "acme-raw-content",
+          },
+        ],
+        "properties": {
+          "actions": {
+            "description": "Changes to apply, in order, each to the result of the previous; 1–1000 actions.",
+            "items": {
+              "$ref": "#/$defs/CommitAction",
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "type": "array",
+          },
+          "author": {
+            "$ref": "#/$defs/Identity",
+            "description": "Who wrote the change.",
+          },
+          "branch": {
+            "$ref": "#/$defs/BranchName",
+            "description": "Branch to commit to. If it does not exist it is created: from \`startBranch\` when given, or as a root commit when the repository has no branches at all; otherwise the call fails with ref_not_found.",
+          },
+          "committer": {
+            "$ref": "#/$defs/Identity",
+            "description": "Who records the commit. Absent: the author.",
+          },
+          "expectedHead": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Sha",
+              },
+              {
+                "type": "null",
+              },
+            ],
+            "description": "Head the caller based its change on. When given and the branch head differs, the call fails with stale_head; null expects the branch not to exist yet. Absent: commit onto whatever the head is.",
+          },
+          "idempotencyKey": {
+            "$ref": "#/$defs/IdempotencyKey",
+            "description": "Makes the call safe to retry: if a commit with this key is in the branch's recent history, it is returned (status "replayed") and nothing is written.",
+          },
+          "message": {
+            "description": "Commit message, 1–65536 characters and not blank. The gateway appends the idempotency trailer.",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+          },
+          "repo": {
+            "$ref": "#/$defs/RepoName",
+            "description": "Repository to commit to.",
+          },
+          "startBranch": {
+            "$ref": "#/$defs/BranchName",
+            "description": "Branch to start \`branch\` from when \`branch\` does not exist yet; ignored when it does. Absent: no start branch.",
+          },
+        },
+        "required": [
+          "repo",
+          "branch",
+          "message",
+          "author",
+          "actions",
+          "idempotencyKey",
+        ],
+        "title": "commit input",
+        "type": "object",
+      },
+      "ContentEncoding": {
+        "description": "How file content is carried in a JSON string.",
+        "enum": [
+          "text",
+          "base64",
+        ],
+        "enumDescriptions": {
+          "base64": "The string is standard base64 (RFC 4648, with padding) of the raw file bytes; use for binary files.",
+          "text": "The string is the file content itself, stored as UTF-8 bytes.",
+        },
+        "examples": [
+          "text",
+          "base64",
+        ],
+        "title": "Content encoding",
+        "type": "string",
+      },
+      "CreateAction": {
+        "additionalProperties": false,
+        "description": "Creates a file that does not exist yet. Fails with path_exists if the path is a file or a directory, and with path_conflict if a parent is a file. The new file is not executable.",
+        "examples": [
+          {
+            "action": "create",
+            "content": "# About
+",
+            "encoding": "text",
+            "path": "content/about.md",
+          },
+        ],
+        "properties": {
+          "action": {
+            "const": "create",
+            "description": "Create a new file. Fails with path_exists if the path exists.",
+            "type": "string",
+          },
+          "content": {
+            "$ref": "#/$defs/FileContent",
+            "description": "Content of the new file, encoded as \`encoding\` says.",
+          },
+          "encoding": {
+            "$ref": "#/$defs/ContentEncoding",
+            "default": "text",
+            "description": "How \`content\` is encoded; defaults to "text".",
+          },
+          "path": {
+            "$ref": "#/$defs/FilePath",
+            "description": "Path of the file to create; it and every parent must not already be a file.",
+          },
+        },
+        "required": [
+          "action",
+          "path",
+          "content",
+        ],
+        "title": "Create action",
+        "type": "object",
+      },
+      "DeleteAction": {
+        "additionalProperties": false,
+        "description": "Deletes an existing file. Fails with path_not_found if the path is not a file (a directory cannot be deleted in one action).",
+        "examples": [
+          {
+            "action": "delete",
+            "path": "content/old.md",
+          },
+        ],
+        "properties": {
+          "action": {
+            "const": "delete",
+            "description": "Delete an existing file. Fails with path_not_found if it is absent.",
+            "type": "string",
+          },
+          "path": {
+            "$ref": "#/$defs/FilePath",
+            "description": "Path of the file to delete. Directories left empty disappear with it.",
+          },
+        },
+        "required": [
+          "action",
+          "path",
+        ],
+        "title": "Delete action",
+        "type": "object",
+      },
+      "FileContent": {
+        "description": "File content as a string, interpreted according to the accompanying encoding: UTF-8 text, or base64 of the raw bytes. At most 48 MiB of characters (32 MiB of bytes as base64). An empty string is an empty file.",
+        "examples": [
+          "# Hello
+",
+          "iVBORw0KGgo=",
+        ],
+        "maxLength": 50331648,
+        "title": "File content",
+        "type": "string",
+      },
+      "FilePath": {
+        "description": "A path inside the repository relative to its root, 1–4096 characters, "/"-separated into segments of 1–255 characters: no leading or trailing "/", no empty, "." or ".." segment, no ".git" segment (any case), no backslash and no control character (U+0000–U+001F, U+007F). Case-sensitive; unicode allowed.",
+        "examples": [
+          "content/index.md",
+          "templates/layouts/page.hbs",
+        ],
+        "maxLength": 4096,
+        "minLength": 1,
+        "pattern": "^(?!\\/)(?!.*\\/\\/)(?!.*\\/$)(?!(?:.*\\/)?[^/]{256})(?!(?:.*\\/)?\\.\\.?(?:\\/|$))(?!(?:.*\\/)?\\.[gG][iI][tT](?:\\/|$))[^\\x00-\\x1f\\x7f\\\\]+$",
+        "title": "File path",
+        "type": "string",
+      },
+      "IdempotencyKey": {
+        "description": "Caller-chosen key that makes a commit idempotent: 1–128 characters of letters, digits, ".", "_", ":" and "-", starting with a letter or digit. Recorded as a "Gateway-Idempotency-Key:" trailer; a retried commit carrying a key already in the branch's recent history returns that commit instead of writing another.",
+        "examples": [
+          "cms:publish:2f9c1e",
+          "6f1d2c3b-9a8e-4f7d-b6c5-a4e3d2c1b0a9",
+        ],
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+        "title": "Idempotency key",
+        "type": "string",
+      },
+      "Identity": {
+        "additionalProperties": false,
+        "description": "The name and email a commit is attributed to, as an author or a committer.",
+        "examples": [
+          {
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+        ],
+        "properties": {
+          "email": {
+            "description": "Email address, at most 255 characters.",
+            "format": "email",
+            "maxLength": 255,
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "type": "string",
+          },
+          "name": {
+            "description": "Display name, 1–255 characters, without "<", ">", newlines or NUL (git cannot store them).",
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[^<>\\n\\0]+$",
+            "type": "string",
+          },
+        },
+        "required": [
+          "name",
+          "email",
+        ],
+        "title": "Identity",
+        "type": "object",
+      },
+      "MoveAction": {
+        "additionalProperties": false,
+        "description": "Moves a file, keeping its executable bit and, unless \`content\` is given, its content. Fails with path_not_found if \`previousPath\` is not a file, path_exists if \`path\` exists, and path_conflict if a parent of \`path\` is a file.",
+        "examples": [
+          {
+            "action": "move",
+            "encoding": "text",
+            "path": "content/new.md",
+            "previousPath": "content/old.md",
+          },
+        ],
+        "properties": {
+          "action": {
+            "const": "move",
+            "description": "Move a file from \`previousPath\` to \`path\`.",
+            "type": "string",
+          },
+          "content": {
+            "$ref": "#/$defs/FileContent",
+            "description": "New content for the moved file, encoded as \`encoding\` says. Absent: the content is kept.",
+          },
+          "encoding": {
+            "$ref": "#/$defs/ContentEncoding",
+            "default": "text",
+            "description": "How \`content\` is encoded; defaults to "text".",
+          },
+          "path": {
+            "$ref": "#/$defs/FilePath",
+            "description": "Destination path; it must not exist and no parent of it may be a file.",
+          },
+          "previousPath": {
+            "$ref": "#/$defs/FilePath",
+            "description": "Path of the existing file to move.",
+          },
+        },
+        "required": [
+          "action",
+          "path",
+          "previousPath",
+        ],
+        "title": "Move action",
+        "type": "object",
+      },
+      "RepoName": {
+        "description": "Name of a repository behind the gateway: 1–100 characters of letters, digits, ".", "_" and "-", starting with a letter or digit and not ending in ".git". Served at /<name>.git.",
+        "examples": [
+          "acme-raw-content",
+          "site.example",
+        ],
+        "maxLength": 100,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+        "title": "Repository name",
+        "type": "string",
+      },
+      "Sha": {
+        "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
+        "examples": [
+          "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        ],
+        "pattern": "^[0-9a-f]{40}$",
+        "title": "Object id",
+        "type": "string",
+      },
+      "UpdateAction": {
+        "additionalProperties": false,
+        "description": "Replaces the content of an existing file, keeping its executable bit. Fails with path_not_found if the path is not a file.",
+        "examples": [
+          {
+            "action": "update",
+            "content": "# About us
+",
+            "encoding": "text",
+            "path": "content/about.md",
+          },
+        ],
+        "properties": {
+          "action": {
+            "const": "update",
+            "description": "Replace an existing file. Fails with path_not_found if it is absent.",
+            "type": "string",
+          },
+          "content": {
+            "$ref": "#/$defs/FileContent",
+            "description": "New content of the file, encoded as \`encoding\` says.",
+          },
+          "encoding": {
+            "$ref": "#/$defs/ContentEncoding",
+            "default": "text",
+            "description": "How \`content\` is encoded; defaults to "text".",
+          },
+          "path": {
+            "$ref": "#/$defs/FilePath",
+            "description": "Path of the existing file to replace.",
+          },
+        },
+        "required": [
+          "action",
+          "path",
+          "content",
+        ],
+        "title": "Update action",
+        "type": "object",
+      },
+      "UpsertAction": {
+        "additionalProperties": false,
+        "description": "Creates the file, or replaces it (keeping its executable bit) if it exists. Fails with path_exists if the path is a directory and path_conflict if a parent is a file. Not part of the GitLab Commits API.",
+        "examples": [
+          {
+            "action": "upsert",
+            "content": "iVBORw0KGgo=",
+            "encoding": "base64",
+            "path": "assets/logo.png",
+          },
+        ],
+        "properties": {
+          "action": {
+            "const": "upsert",
+            "description": "Create the file, or replace it if it exists.",
+            "type": "string",
+          },
+          "content": {
+            "$ref": "#/$defs/FileContent",
+            "description": "Content of the file, encoded as \`encoding\` says.",
+          },
+          "encoding": {
+            "$ref": "#/$defs/ContentEncoding",
+            "default": "text",
+            "description": "How \`content\` is encoded; defaults to "text".",
+          },
+          "path": {
+            "$ref": "#/$defs/FilePath",
+            "description": "Path of the file to create or replace.",
+          },
+        },
+        "required": [
+          "action",
+          "path",
+          "content",
+        ],
+        "title": "Upsert action",
+        "type": "object",
+      },
+    },
+    "$ref": "#/$defs/CommitInput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+  "output": {
+    "$defs": {
+      "Commit": {
+        "additionalProperties": false,
+        "description": "A commit as stored in a repository, with its message trailer parsed out.",
+        "examples": [
+          {
+            "author": {
+              "date": "2026-11-20T09:30:00.000Z",
+              "email": "ada@example.com",
+              "name": "Ada Lovelace",
+            },
+            "committer": {
+              "date": "2026-11-20T09:30:00.000Z",
+              "email": "ada@example.com",
+              "name": "Ada Lovelace",
+            },
+            "idempotencyKey": "cms:publish:2f9c1e",
+            "message": "Update about page
+
+Gateway-Idempotency-Key: cms:publish:2f9c1e
+",
+            "parents": [
+              "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            ],
+            "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+          },
+        ],
+        "properties": {
+          "author": {
+            "$ref": "#/$defs/Signature",
+            "description": "Who wrote the change, and when.",
+          },
+          "committer": {
+            "$ref": "#/$defs/Signature",
+            "description": "Who recorded the commit, and when; equals the author unless one was given.",
+          },
+          "idempotencyKey": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/IdempotencyKey",
+              },
+              {
+                "type": "null",
+              },
+            ],
+            "description": "The key from the message's "Gateway-Idempotency-Key:" trailer, or null when the commit has none.",
+          },
+          "message": {
+            "description": "Full commit message as stored, including any "Gateway-Idempotency-Key:" trailer the gateway appended.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "parents": {
+            "description": "Parent commit ids in order: empty for a root commit, one for an ordinary commit, two for a merge (the branch merged into first).",
+            "items": {
+              "$ref": "#/$defs/Sha",
+              "description": "Id of a parent commit.",
+            },
+            "maxItems": 2,
+            "type": "array",
+          },
+          "sha": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id of this commit.",
+          },
+          "tree": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id of the root tree this commit records.",
+          },
+        },
+        "required": [
+          "sha",
+          "tree",
+          "parents",
+          "author",
+          "committer",
+          "message",
+          "idempotencyKey",
+        ],
+        "title": "Commit",
+        "type": "object",
+      },
+      "CommitCommitted": {
+        "additionalProperties": false,
+        "description": "commit() wrote a new commit and moved the branch to it.",
+        "examples": [
+          {
+            "commit": {
+              "author": {
+                "date": "2026-11-20T09:30:00.000Z",
+                "email": "ada@example.com",
+                "name": "Ada Lovelace",
+              },
+              "committer": {
+                "date": "2026-11-20T09:30:00.000Z",
+                "email": "ada@example.com",
+                "name": "Ada Lovelace",
+              },
+              "idempotencyKey": "cms:publish:2f9c1e",
+              "message": "Update about page
+
+Gateway-Idempotency-Key: cms:publish:2f9c1e
+",
+              "parents": [
+                "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+              ],
+              "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+              "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+            },
+            "refUpdate": {
+              "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+              "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+              "ref": "refs/heads/staging",
+            },
+            "status": "committed",
+          },
+        ],
+        "properties": {
+          "commit": {
+            "$ref": "#/$defs/Commit",
+            "description": "The commit written.",
+          },
+          "refUpdate": {
+            "$ref": "#/$defs/RefUpdate",
+            "description": "How the branch moved; oldSha is all zeros when the commit created it.",
+          },
+          "status": {
+            "const": "committed",
+            "description": "A new commit was written and the branch moved to it.",
+            "type": "string",
+          },
+        },
+        "required": [
+          "status",
+          "commit",
+          "refUpdate",
+        ],
+        "title": "commit: committed",
+        "type": "object",
+      },
+      "CommitNoop": {
+        "additionalProperties": false,
+        "description": "commit() applied the actions and the resulting tree equals the head's, so nothing was written.",
+        "examples": [
+          {
+            "head": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            "status": "noop",
+          },
+        ],
+        "properties": {
+          "head": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Sha",
+              },
+              {
+                "type": "null",
+              },
+            ],
+            "description": "The branch head, unchanged; null when the branch does not exist.",
+          },
+          "status": {
+            "const": "noop",
+            "description": "The actions left the tree unchanged; nothing was written or pushed.",
+            "type": "string",
+          },
+        },
+        "required": [
+          "status",
+          "head",
+        ],
+        "title": "commit: no-op",
+        "type": "object",
+      },
+      "CommitOutput": {
+        "description": "Output of commit(), discriminated by \`status\`.",
+        "examples": [
+          {
+            "head": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            "status": "noop",
+          },
+        ],
+        "oneOf": [
+          {
+            "$ref": "#/$defs/CommitCommitted",
+          },
+          {
+            "$ref": "#/$defs/CommitReplayed",
+          },
+          {
+            "$ref": "#/$defs/CommitNoop",
+          },
+          {
+            "$ref": "#/$defs/CommitQueued",
+          },
+        ],
+        "title": "commit output",
+      },
+      "CommitQueued": {
+        "additionalProperties": false,
+        "description": "commit() hit stale-head refusals more times than the inline retry budget and handed the commit to a CommitWorkflow with the same idempotency key. The in-memory reference never returns this.",
+        "examples": [
+          {
+            "status": "queued",
+            "workflowInstanceId": "commit-cms-publish-2f9c1e",
+          },
+        ],
+        "properties": {
+          "status": {
+            "const": "queued",
+            "description": "Inline retries ran out; a CommitWorkflow finishes the commit.",
+            "type": "string",
+          },
+          "workflowInstanceId": {
+            "description": "Id of the CommitWorkflow instance carrying the same idempotency key.",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+          },
+        },
+        "required": [
+          "status",
+          "workflowInstanceId",
+        ],
+        "title": "commit: queued",
+        "type": "object",
+      },
+      "CommitReplayed": {
+        "additionalProperties": false,
+        "description": "commit() found a commit with the same idempotency key in the branch's recent history and returned it without writing.",
+        "examples": [
+          {
+            "commit": {
+              "author": {
+                "date": "2026-11-20T09:30:00.000Z",
+                "email": "ada@example.com",
+                "name": "Ada Lovelace",
+              },
+              "committer": {
+                "date": "2026-11-20T09:30:00.000Z",
+                "email": "ada@example.com",
+                "name": "Ada Lovelace",
+              },
+              "idempotencyKey": "cms:publish:2f9c1e",
+              "message": "Update about page
+
+Gateway-Idempotency-Key: cms:publish:2f9c1e
+",
+              "parents": [
+                "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+              ],
+              "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+              "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+            },
+            "status": "replayed",
+          },
+        ],
+        "properties": {
+          "commit": {
+            "$ref": "#/$defs/Commit",
+            "description": "The earlier commit carrying the same idempotency key.",
+          },
+          "status": {
+            "const": "replayed",
+            "description": "A commit with the same idempotency key already exists; nothing was written.",
+            "type": "string",
+          },
+        },
+        "required": [
+          "status",
+          "commit",
+        ],
+        "title": "commit: replayed",
+        "type": "object",
+      },
+      "FullRefName": {
+        "description": "A fully qualified ref, "refs/heads/<branch>" or "refs/tags/<tag>", where the name after the prefix follows the same rules as a branch name.",
+        "examples": [
+          "refs/heads/main",
+          "refs/tags/v1.0.0",
+        ],
+        "maxLength": 266,
+        "minLength": 11,
+        "pattern": "^refs\\/(?:heads|tags)\\/(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+        "title": "Full ref name",
+        "type": "string",
+      },
+      "IdempotencyKey": {
+        "description": "Caller-chosen key that makes a commit idempotent: 1–128 characters of letters, digits, ".", "_", ":" and "-", starting with a letter or digit. Recorded as a "Gateway-Idempotency-Key:" trailer; a retried commit carrying a key already in the branch's recent history returns that commit instead of writing another.",
+        "examples": [
+          "cms:publish:2f9c1e",
+          "6f1d2c3b-9a8e-4f7d-b6c5-a4e3d2c1b0a9",
+        ],
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+        "title": "Idempotency key",
+        "type": "string",
+      },
+      "RefUpdate": {
+        "additionalProperties": false,
+        "description": "One ref moved by a write, in receive-pack command form: the ref, the id it named before and the id it names after. Creation and deletion use the all-zero id on the missing side.",
+        "examples": [
+          {
+            "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            "ref": "refs/heads/main",
+          },
+        ],
+        "properties": {
+          "newSha": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id the ref points at after the update; the all-zero id when the update deleted the ref.",
+          },
+          "oldSha": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id the ref pointed at before the update; the all-zero id when the update created the ref.",
+          },
+          "ref": {
+            "$ref": "#/$defs/FullRefName",
+            "description": "The ref that moved, fully qualified (refs/heads/<branch>).",
+          },
+        },
+        "required": [
+          "ref",
+          "oldSha",
+          "newSha",
+        ],
+        "title": "Ref update",
+        "type": "object",
+      },
+      "Sha": {
+        "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
+        "examples": [
+          "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        ],
+        "pattern": "^[0-9a-f]{40}$",
+        "title": "Object id",
+        "type": "string",
+      },
+      "Signature": {
+        "additionalProperties": false,
+        "description": "An identity together with the time it authored or committed a commit, as stored in the commit.",
+        "examples": [
+          {
+            "date": "2026-11-20T09:30:00.000Z",
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+        ],
+        "properties": {
+          "date": {
+            "$ref": "#/$defs/Timestamp",
+            "description": "When this person authored or committed the change, as an ISO 8601 UTC timestamp.",
+          },
+          "email": {
+            "description": "Email address, at most 255 characters.",
+            "format": "email",
+            "maxLength": 255,
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "type": "string",
+          },
+          "name": {
+            "description": "Display name, 1–255 characters, without "<", ">", newlines or NUL (git cannot store them).",
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[^<>\\n\\0]+$",
+            "type": "string",
+          },
+        },
+        "required": [
+          "name",
+          "email",
+          "date",
+        ],
+        "title": "Signature",
+        "type": "object",
+      },
+      "Timestamp": {
+        "description": "A point in time as an ISO 8601 UTC timestamp ending in "Z", with optional fractional seconds (e.g. 2026-11-20T09:30:00.000Z).",
+        "examples": [
+          "2026-11-20T09:30:00.000Z",
+        ],
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+        "title": "Timestamp",
+        "type": "string",
+      },
+    },
+    "$ref": "#/$defs/CommitOutput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+}
+`;
+
+exports[`RPC contract > commitExists has a stable JSON Schema 1`] = `
+{
+  "input": {
+    "$defs": {
+      "BranchName": {
+        "description": "A short branch name, 1–255 characters, valid under git check-ref-format (no "..", "@{", "//", spaces, control characters or ~ ^ : ? * [ or backslash; no component starting with "." or ending with ".lock"; not starting with "-" or "refs/"; not "HEAD"; not 40 lowercase hex characters, which a Revision always reads as a commit id). The gateway stores it as refs/heads/<name>.",
+        "examples": [
+          "main",
+          "staging",
+          "feature/new-page",
+        ],
+        "maxLength": 255,
+        "minLength": 1,
+        "pattern": "^(?!refs\\/)(?!HEAD$)(?![0-9a-f]{40}$)(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+        "title": "Branch name",
+        "type": "string",
+      },
+      "CommitExistsInput": {
+        "additionalProperties": false,
+        "description": "Input of commitExists(): is this commit in the repository, optionally on a branch?",
+        "examples": [
+          {
+            "branch": "main",
+            "repo": "acme-raw-content",
+            "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          },
+        ],
+        "properties": {
+          "branch": {
+            "$ref": "#/$defs/BranchName",
+            "description": "When given, the commit must also be reachable from this branch's head (the head itself or an ancestor). Absent: any commit in the repository counts.",
+          },
+          "repo": {
+            "$ref": "#/$defs/RepoName",
+            "description": "Repository to look in.",
+          },
+          "sha": {
+            "$ref": "#/$defs/Sha",
+            "description": "Commit id to look for.",
+          },
+        },
+        "required": [
+          "repo",
+          "sha",
+        ],
+        "title": "commitExists input",
+        "type": "object",
+      },
+      "RepoName": {
+        "description": "Name of a repository behind the gateway: 1–100 characters of letters, digits, ".", "_" and "-", starting with a letter or digit and not ending in ".git". Served at /<name>.git.",
+        "examples": [
+          "acme-raw-content",
+          "site.example",
+        ],
+        "maxLength": 100,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+        "title": "Repository name",
+        "type": "string",
+      },
+      "Sha": {
+        "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
+        "examples": [
+          "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        ],
+        "pattern": "^[0-9a-f]{40}$",
+        "title": "Object id",
+        "type": "string",
+      },
+    },
+    "$ref": "#/$defs/CommitExistsInput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+  "output": {
+    "$defs": {
+      "CommitExistsOutput": {
+        "additionalProperties": false,
+        "description": "Output of commitExists().",
+        "examples": [
+          {
+            "exists": true,
+          },
+        ],
+        "properties": {
+          "exists": {
+            "description": "true when the commit exists (and is reachable from \`branch\` when one was named); false otherwise, including when the branch does not exist.",
+            "type": "boolean",
+          },
+        },
+        "required": [
+          "exists",
+        ],
+        "title": "commitExists output",
+        "type": "object",
+      },
+    },
+    "$ref": "#/$defs/CommitExistsOutput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+}
+`;
+
+exports[`RPC contract > createRepo has a stable JSON Schema 1`] = `
+{
+  "input": {
+    "$defs": {
+      "BranchName": {
+        "description": "A short branch name, 1–255 characters, valid under git check-ref-format (no "..", "@{", "//", spaces, control characters or ~ ^ : ? * [ or backslash; no component starting with "." or ending with ".lock"; not starting with "-" or "refs/"; not "HEAD"; not 40 lowercase hex characters, which a Revision always reads as a commit id). The gateway stores it as refs/heads/<name>.",
+        "examples": [
+          "main",
+          "staging",
+          "feature/new-page",
+        ],
+        "maxLength": 255,
+        "minLength": 1,
+        "pattern": "^(?!refs\\/)(?!HEAD$)(?![0-9a-f]{40}$)(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+        "title": "Branch name",
+        "type": "string",
+      },
+      "CreateRepoInput": {
+        "additionalProperties": false,
+        "description": "Input of createRepo(): create an empty repository. Fails with repo_exists if the name is taken.",
+        "examples": [
+          {
+            "defaultBranch": "main",
+            "repo": "acme-raw-content",
+          },
+        ],
+        "properties": {
+          "defaultBranch": {
+            "$ref": "#/$defs/BranchName",
+            "default": "main",
+            "description": "Branch HEAD names; it comes into being with the first commit to it. Default "main".",
+          },
+          "repo": {
+            "$ref": "#/$defs/RepoName",
+            "description": "Name of the repository to create.",
+          },
+        },
+        "required": [
+          "repo",
+        ],
+        "title": "createRepo input",
+        "type": "object",
+      },
+      "RepoName": {
+        "description": "Name of a repository behind the gateway: 1–100 characters of letters, digits, ".", "_" and "-", starting with a letter or digit and not ending in ".git". Served at /<name>.git.",
+        "examples": [
+          "acme-raw-content",
+          "site.example",
+        ],
+        "maxLength": 100,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+        "title": "Repository name",
+        "type": "string",
+      },
+    },
+    "$ref": "#/$defs/CreateRepoInput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+  "output": {
+    "$defs": {
+      "BranchName": {
+        "description": "A short branch name, 1–255 characters, valid under git check-ref-format (no "..", "@{", "//", spaces, control characters or ~ ^ : ? * [ or backslash; no component starting with "." or ending with ".lock"; not starting with "-" or "refs/"; not "HEAD"; not 40 lowercase hex characters, which a Revision always reads as a commit id). The gateway stores it as refs/heads/<name>.",
+        "examples": [
+          "main",
+          "staging",
+          "feature/new-page",
+        ],
+        "maxLength": 255,
+        "minLength": 1,
+        "pattern": "^(?!refs\\/)(?!HEAD$)(?![0-9a-f]{40}$)(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+        "title": "Branch name",
+        "type": "string",
+      },
+      "CreateRepoOutput": {
+        "$ref": "#/$defs/RepoInfo",
+        "description": "Output of createRepo(): the repository created, empty (no branches until the first commit).",
+        "title": "createRepo output",
+      },
+      "RepoInfo": {
+        "additionalProperties": false,
+        "description": "A repository behind the gateway.",
+        "examples": [
+          {
+            "createdAt": "2026-11-20T09:30:00.000Z",
+            "defaultBranch": "main",
+            "name": "acme-raw-content",
+            "remoteUrl": "https://git.example.com/acme-raw-content.git",
+          },
+        ],
+        "properties": {
+          "createdAt": {
+            "$ref": "#/$defs/Timestamp",
+            "description": "When the repository was created.",
+          },
+          "defaultBranch": {
+            "$ref": "#/$defs/BranchName",
+            "description": "The branch HEAD names.",
+          },
+          "name": {
+            "$ref": "#/$defs/RepoName",
+            "description": "The repository name.",
+          },
+          "remoteUrl": {
+            "description": "Clone URL of the repository on the gateway: <publicBaseUrl>/<name>.git.",
+            "format": "uri",
+            "type": "string",
+          },
+        },
+        "required": [
+          "name",
+          "defaultBranch",
+          "createdAt",
+          "remoteUrl",
+        ],
+        "title": "Repository",
+        "type": "object",
+      },
+      "RepoName": {
+        "description": "Name of a repository behind the gateway: 1–100 characters of letters, digits, ".", "_" and "-", starting with a letter or digit and not ending in ".git". Served at /<name>.git.",
+        "examples": [
+          "acme-raw-content",
+          "site.example",
+        ],
+        "maxLength": 100,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+        "title": "Repository name",
+        "type": "string",
+      },
+      "Timestamp": {
+        "description": "A point in time as an ISO 8601 UTC timestamp ending in "Z", with optional fractional seconds (e.g. 2026-11-20T09:30:00.000Z).",
+        "examples": [
+          "2026-11-20T09:30:00.000Z",
+        ],
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+        "title": "Timestamp",
+        "type": "string",
+      },
+    },
+    "$ref": "#/$defs/CreateRepoOutput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+}
+`;
+
+exports[`RPC contract > deleteRepo has a stable JSON Schema 1`] = `
+{
+  "input": {
+    "$defs": {
+      "DeleteRepoInput": {
+        "additionalProperties": false,
+        "description": "Input of deleteRepo(): permanently delete a repository. Deleting a missing repository is not an error.",
+        "examples": [
+          {
+            "repo": "acme-raw-content",
+          },
+        ],
+        "properties": {
+          "repo": {
+            "$ref": "#/$defs/RepoName",
+            "description": "Name of the repository to delete, with all its branches and history.",
+          },
+        },
+        "required": [
+          "repo",
+        ],
+        "title": "deleteRepo input",
+        "type": "object",
+      },
+      "RepoName": {
+        "description": "Name of a repository behind the gateway: 1–100 characters of letters, digits, ".", "_" and "-", starting with a letter or digit and not ending in ".git". Served at /<name>.git.",
+        "examples": [
+          "acme-raw-content",
+          "site.example",
+        ],
+        "maxLength": 100,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+        "title": "Repository name",
+        "type": "string",
+      },
+    },
+    "$ref": "#/$defs/DeleteRepoInput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+  "output": {
+    "$defs": {
+      "DeleteRepoOutput": {
+        "additionalProperties": false,
+        "description": "Output of deleteRepo().",
+        "examples": [
+          {
+            "deleted": true,
+          },
+        ],
+        "properties": {
+          "deleted": {
+            "description": "true when a repository was deleted; false when none had that name.",
+            "type": "boolean",
+          },
+        },
+        "required": [
+          "deleted",
+        ],
+        "title": "deleteRepo output",
+        "type": "object",
+      },
+    },
+    "$ref": "#/$defs/DeleteRepoOutput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+}
+`;
+
+exports[`RPC contract > listTree has a stable JSON Schema 1`] = `
+{
+  "input": {
+    "$defs": {
+      "BranchName": {
+        "description": "A short branch name, 1–255 characters, valid under git check-ref-format (no "..", "@{", "//", spaces, control characters or ~ ^ : ? * [ or backslash; no component starting with "." or ending with ".lock"; not starting with "-" or "refs/"; not "HEAD"; not 40 lowercase hex characters, which a Revision always reads as a commit id). The gateway stores it as refs/heads/<name>.",
+        "examples": [
+          "main",
+          "staging",
+          "feature/new-page",
+        ],
+        "maxLength": 255,
+        "minLength": 1,
+        "pattern": "^(?!refs\\/)(?!HEAD$)(?![0-9a-f]{40}$)(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+        "title": "Branch name",
+        "type": "string",
+      },
+      "FilePath": {
+        "description": "A path inside the repository relative to its root, 1–4096 characters, "/"-separated into segments of 1–255 characters: no leading or trailing "/", no empty, "." or ".." segment, no ".git" segment (any case), no backslash and no control character (U+0000–U+001F, U+007F). Case-sensitive; unicode allowed.",
+        "examples": [
+          "content/index.md",
+          "templates/layouts/page.hbs",
+        ],
+        "maxLength": 4096,
+        "minLength": 1,
+        "pattern": "^(?!\\/)(?!.*\\/\\/)(?!.*\\/$)(?!(?:.*\\/)?[^/]{256})(?!(?:.*\\/)?\\.\\.?(?:\\/|$))(?!(?:.*\\/)?\\.[gG][iI][tT](?:\\/|$))[^\\x00-\\x1f\\x7f\\\\]+$",
+        "title": "File path",
+        "type": "string",
+      },
+      "ListTreeInput": {
+        "additionalProperties": false,
+        "description": "Input of listTree(): a directory listing at a branch or commit. Fails with ref_not_found if the ref is missing.",
+        "examples": [
+          {
+            "path": "content",
+            "recursive": false,
+            "ref": "main",
+            "repo": "acme-raw-content",
+          },
+        ],
+        "properties": {
+          "path": {
+            "$ref": "#/$defs/FilePath",
+            "description": "Directory to list. Absent: the repository root.",
+          },
+          "recursive": {
+            "default": false,
+            "description": "true lists every entry beneath the directory (directories included); false (default) one level.",
+            "type": "boolean",
+          },
+          "ref": {
+            "$ref": "#/$defs/Revision",
+            "description": "Branch name or commit id to list at.",
+          },
+          "repo": {
+            "$ref": "#/$defs/RepoName",
+            "description": "Repository to read from.",
+          },
+        },
+        "required": [
+          "repo",
+          "ref",
+        ],
+        "title": "listTree input",
+        "type": "object",
+      },
+      "RepoName": {
+        "description": "Name of a repository behind the gateway: 1–100 characters of letters, digits, ".", "_" and "-", starting with a letter or digit and not ending in ".git". Served at /<name>.git.",
+        "examples": [
+          "acme-raw-content",
+          "site.example",
+        ],
+        "maxLength": 100,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+        "title": "Repository name",
+        "type": "string",
+      },
+      "Revision": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/Sha",
+            "description": "A commit id. Any 40-character lowercase hex string is read as a commit id, never a branch.",
+          },
+          {
+            "$ref": "#/$defs/BranchName",
+            "description": "A branch name, resolved to the branch head at the time of the call.",
+          },
+        ],
+        "description": "What a read is made against: a 40-character lowercase hex commit id, or a short branch name resolved to its current head.",
+        "examples": [
+          "main",
+          "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        ],
+        "title": "Revision",
+      },
+      "Sha": {
+        "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
+        "examples": [
+          "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        ],
+        "pattern": "^[0-9a-f]{40}$",
+        "title": "Object id",
+        "type": "string",
+      },
+    },
+    "$ref": "#/$defs/ListTreeInput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+  "output": {
+    "$defs": {
+      "FileMode": {
+        "description": "The git mode of a tree entry, as the six-digit octal string git records.",
+        "enum": [
+          "100644",
+          "100755",
+          "120000",
+          "160000",
+          "040000",
+        ],
+        "enumDescriptions": {
+          "040000": "A directory (a subtree).",
+          "100644": "A regular file, not executable.",
+          "100755": "A regular file with the executable bit set.",
+          "120000": "A symbolic link; the blob holds the link target.",
+          "160000": "A submodule; the id names a commit in another repository.",
+        },
+        "examples": [
+          "100644",
+          "040000",
+        ],
+        "title": "File mode",
+        "type": "string",
+      },
+      "FilePath": {
+        "description": "A path inside the repository relative to its root, 1–4096 characters, "/"-separated into segments of 1–255 characters: no leading or trailing "/", no empty, "." or ".." segment, no ".git" segment (any case), no backslash and no control character (U+0000–U+001F, U+007F). Case-sensitive; unicode allowed.",
+        "examples": [
+          "content/index.md",
+          "templates/layouts/page.hbs",
+        ],
+        "maxLength": 4096,
+        "minLength": 1,
+        "pattern": "^(?!\\/)(?!.*\\/\\/)(?!.*\\/$)(?!(?:.*\\/)?[^/]{256})(?!(?:.*\\/)?\\.\\.?(?:\\/|$))(?!(?:.*\\/)?\\.[gG][iI][tT](?:\\/|$))[^\\x00-\\x1f\\x7f\\\\]+$",
+        "title": "File path",
+        "type": "string",
+      },
+      "ListTreeOutput": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/TreeListing",
+          },
+          {
+            "type": "null",
+          },
+        ],
+        "description": "Output of listTree(): the listing, or null when the path is not a directory at that ref (absent or a file).",
+        "examples": [
+          null,
+        ],
+        "title": "listTree output",
+      },
+      "Sha": {
+        "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
+        "examples": [
+          "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        ],
+        "pattern": "^[0-9a-f]{40}$",
+        "title": "Object id",
+        "type": "string",
+      },
+      "TreeEntry": {
+        "additionalProperties": false,
+        "description": "One entry of a directory listing: a file, directory, symbolic link or submodule.",
+        "examples": [
+          {
+            "mode": "100644",
+            "name": "about.md",
+            "path": "content/about.md",
+            "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+            "type": "blob",
+          },
+        ],
+        "properties": {
+          "mode": {
+            "$ref": "#/$defs/FileMode",
+          },
+          "name": {
+            "description": "Last segment of the path: 1–255 characters without "/" or NUL.",
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[^/\\0]+$",
+            "type": "string",
+          },
+          "path": {
+            "$ref": "#/$defs/FilePath",
+            "description": "Full path of the entry from the repository root.",
+          },
+          "sha": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id of the blob, tree or submodule commit the entry names.",
+          },
+          "type": {
+            "$ref": "#/$defs/TreeEntryType",
+          },
+        },
+        "required": [
+          "path",
+          "name",
+          "type",
+          "mode",
+          "sha",
+        ],
+        "title": "Tree entry",
+        "type": "object",
+      },
+      "TreeEntryType": {
+        "description": "The kind of object a tree entry names.",
+        "enum": [
+          "blob",
+          "tree",
+          "commit",
+        ],
+        "enumDescriptions": {
+          "blob": "A file or symbolic link (modes 100644, 100755, 120000).",
+          "commit": "A submodule commit in another repository (mode 160000).",
+          "tree": "A directory (mode 040000).",
+        },
+        "examples": [
+          "blob",
+          "tree",
+        ],
+        "title": "Tree entry type",
+        "type": "string",
+      },
+      "TreeListing": {
+        "additionalProperties": false,
+        "description": "A directory listing at a commit.",
+        "examples": [
+          {
+            "commit": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            "entries": [
+              {
+                "mode": "100644",
+                "name": "about.md",
+                "path": "content/about.md",
+                "sha": "f2a5b0a7d1d3d1f1c1c3e7e5d2b9b7e1a3c5d7e9",
+                "type": "blob",
+              },
+            ],
+            "path": "content",
+          },
+        ],
+        "properties": {
+          "commit": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id of the commit listed (the ref resolved).",
+          },
+          "entries": {
+            "description": "Entries sorted by full path in byte order; empty for a repository root with no files.",
+            "items": {
+              "$ref": "#/$defs/TreeEntry",
+            },
+            "type": "array",
+          },
+          "path": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/FilePath",
+              },
+              {
+                "type": "null",
+              },
+            ],
+            "description": "The directory listed; null for the repository root.",
+          },
+        },
+        "required": [
+          "commit",
+          "path",
+          "entries",
+        ],
+        "title": "Tree listing",
+        "type": "object",
+      },
+    },
+    "$ref": "#/$defs/ListTreeOutput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+}
+`;
+
+exports[`RPC contract > log has a stable JSON Schema 1`] = `
+{
+  "input": {
+    "$defs": {
+      "BranchName": {
+        "description": "A short branch name, 1–255 characters, valid under git check-ref-format (no "..", "@{", "//", spaces, control characters or ~ ^ : ? * [ or backslash; no component starting with "." or ending with ".lock"; not starting with "-" or "refs/"; not "HEAD"; not 40 lowercase hex characters, which a Revision always reads as a commit id). The gateway stores it as refs/heads/<name>.",
+        "examples": [
+          "main",
+          "staging",
+          "feature/new-page",
+        ],
+        "maxLength": 255,
+        "minLength": 1,
+        "pattern": "^(?!refs\\/)(?!HEAD$)(?![0-9a-f]{40}$)(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+        "title": "Branch name",
+        "type": "string",
+      },
+      "LogInput": {
+        "additionalProperties": false,
+        "description": "Input of log(): the history reachable from a branch or commit, newest committer date first (children always before their parents). Fails with ref_not_found if the ref is missing.",
+        "examples": [
+          {
+            "limit": 20,
+            "offset": 0,
+            "ref": "main",
+            "repo": "acme-raw-content",
+            "since": "2026-11-01T00:00:00.000Z",
+          },
+        ],
+        "properties": {
+          "limit": {
+            "default": 50,
+            "description": "Most commits returned; 1–500, default 50.",
+            "maximum": 500,
+            "minimum": 1,
+            "type": "integer",
+          },
+          "offset": {
+            "default": 0,
+            "description": "Commits skipped from the newest before listing; default 0.",
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer",
+          },
+          "ref": {
+            "$ref": "#/$defs/Revision",
+            "description": "Branch name or commit id whose history is listed, starting at that commit.",
+          },
+          "repo": {
+            "$ref": "#/$defs/RepoName",
+            "description": "Repository to read from.",
+          },
+          "since": {
+            "$ref": "#/$defs/Timestamp",
+            "description": "When given, only commits whose committer date is at or after this time are listed. Absent: no lower bound.",
+          },
+        },
+        "required": [
+          "repo",
+          "ref",
+        ],
+        "title": "log input",
+        "type": "object",
+      },
+      "RepoName": {
+        "description": "Name of a repository behind the gateway: 1–100 characters of letters, digits, ".", "_" and "-", starting with a letter or digit and not ending in ".git". Served at /<name>.git.",
+        "examples": [
+          "acme-raw-content",
+          "site.example",
+        ],
+        "maxLength": 100,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+        "title": "Repository name",
+        "type": "string",
+      },
+      "Revision": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/Sha",
+            "description": "A commit id. Any 40-character lowercase hex string is read as a commit id, never a branch.",
+          },
+          {
+            "$ref": "#/$defs/BranchName",
+            "description": "A branch name, resolved to the branch head at the time of the call.",
+          },
+        ],
+        "description": "What a read is made against: a 40-character lowercase hex commit id, or a short branch name resolved to its current head.",
+        "examples": [
+          "main",
+          "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        ],
+        "title": "Revision",
+      },
+      "Sha": {
+        "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
+        "examples": [
+          "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        ],
+        "pattern": "^[0-9a-f]{40}$",
+        "title": "Object id",
+        "type": "string",
+      },
+      "Timestamp": {
+        "description": "A point in time as an ISO 8601 UTC timestamp ending in "Z", with optional fractional seconds (e.g. 2026-11-20T09:30:00.000Z).",
+        "examples": [
+          "2026-11-20T09:30:00.000Z",
+        ],
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+        "title": "Timestamp",
+        "type": "string",
+      },
+    },
+    "$ref": "#/$defs/LogInput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+  "output": {
+    "$defs": {
+      "Commit": {
+        "additionalProperties": false,
+        "description": "A commit as stored in a repository, with its message trailer parsed out.",
+        "examples": [
+          {
+            "author": {
+              "date": "2026-11-20T09:30:00.000Z",
+              "email": "ada@example.com",
+              "name": "Ada Lovelace",
+            },
+            "committer": {
+              "date": "2026-11-20T09:30:00.000Z",
+              "email": "ada@example.com",
+              "name": "Ada Lovelace",
+            },
+            "idempotencyKey": "cms:publish:2f9c1e",
+            "message": "Update about page
+
+Gateway-Idempotency-Key: cms:publish:2f9c1e
+",
+            "parents": [
+              "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            ],
+            "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+          },
+        ],
+        "properties": {
+          "author": {
+            "$ref": "#/$defs/Signature",
+            "description": "Who wrote the change, and when.",
+          },
+          "committer": {
+            "$ref": "#/$defs/Signature",
+            "description": "Who recorded the commit, and when; equals the author unless one was given.",
+          },
+          "idempotencyKey": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/IdempotencyKey",
+              },
+              {
+                "type": "null",
+              },
+            ],
+            "description": "The key from the message's "Gateway-Idempotency-Key:" trailer, or null when the commit has none.",
+          },
+          "message": {
+            "description": "Full commit message as stored, including any "Gateway-Idempotency-Key:" trailer the gateway appended.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "parents": {
+            "description": "Parent commit ids in order: empty for a root commit, one for an ordinary commit, two for a merge (the branch merged into first).",
+            "items": {
+              "$ref": "#/$defs/Sha",
+              "description": "Id of a parent commit.",
+            },
+            "maxItems": 2,
+            "type": "array",
+          },
+          "sha": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id of this commit.",
+          },
+          "tree": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id of the root tree this commit records.",
+          },
+        },
+        "required": [
+          "sha",
+          "tree",
+          "parents",
+          "author",
+          "committer",
+          "message",
+          "idempotencyKey",
+        ],
+        "title": "Commit",
+        "type": "object",
+      },
+      "IdempotencyKey": {
+        "description": "Caller-chosen key that makes a commit idempotent: 1–128 characters of letters, digits, ".", "_", ":" and "-", starting with a letter or digit. Recorded as a "Gateway-Idempotency-Key:" trailer; a retried commit carrying a key already in the branch's recent history returns that commit instead of writing another.",
+        "examples": [
+          "cms:publish:2f9c1e",
+          "6f1d2c3b-9a8e-4f7d-b6c5-a4e3d2c1b0a9",
+        ],
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+        "title": "Idempotency key",
+        "type": "string",
+      },
+      "LogOutput": {
+        "additionalProperties": false,
+        "description": "Output of log(): one page of history.",
+        "examples": [
+          {
+            "commits": [
+              {
+                "author": {
+                  "date": "2026-11-20T09:30:00.000Z",
+                  "email": "ada@example.com",
+                  "name": "Ada Lovelace",
+                },
+                "committer": {
+                  "date": "2026-11-20T09:30:00.000Z",
+                  "email": "ada@example.com",
+                  "name": "Ada Lovelace",
+                },
+                "idempotencyKey": "cms:publish:2f9c1e",
+                "message": "Update about page
+
+Gateway-Idempotency-Key: cms:publish:2f9c1e
+",
+                "parents": [
+                  "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+                ],
+                "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+                "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+              },
+            ],
+            "hasMore": false,
+          },
+        ],
+        "properties": {
+          "commits": {
+            "description": "The page of history, newest committer date first; empty when nothing matches.",
+            "items": {
+              "$ref": "#/$defs/Commit",
+            },
+            "type": "array",
+          },
+          "hasMore": {
+            "description": "true when further matching commits exist beyond this page.",
+            "type": "boolean",
+          },
+        },
+        "required": [
+          "commits",
+          "hasMore",
+        ],
+        "title": "log output",
+        "type": "object",
+      },
+      "Sha": {
+        "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
+        "examples": [
+          "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        ],
+        "pattern": "^[0-9a-f]{40}$",
+        "title": "Object id",
+        "type": "string",
+      },
+      "Signature": {
+        "additionalProperties": false,
+        "description": "An identity together with the time it authored or committed a commit, as stored in the commit.",
+        "examples": [
+          {
+            "date": "2026-11-20T09:30:00.000Z",
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+        ],
+        "properties": {
+          "date": {
+            "$ref": "#/$defs/Timestamp",
+            "description": "When this person authored or committed the change, as an ISO 8601 UTC timestamp.",
+          },
+          "email": {
+            "description": "Email address, at most 255 characters.",
+            "format": "email",
+            "maxLength": 255,
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "type": "string",
+          },
+          "name": {
+            "description": "Display name, 1–255 characters, without "<", ">", newlines or NUL (git cannot store them).",
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[^<>\\n\\0]+$",
+            "type": "string",
+          },
+        },
+        "required": [
+          "name",
+          "email",
+          "date",
+        ],
+        "title": "Signature",
+        "type": "object",
+      },
+      "Timestamp": {
+        "description": "A point in time as an ISO 8601 UTC timestamp ending in "Z", with optional fractional seconds (e.g. 2026-11-20T09:30:00.000Z).",
+        "examples": [
+          "2026-11-20T09:30:00.000Z",
+        ],
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+        "title": "Timestamp",
+        "type": "string",
+      },
+    },
+    "$ref": "#/$defs/LogOutput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+}
+`;
+
+exports[`RPC contract > mintReadToken has a stable JSON Schema 1`] = `
+{
+  "input": {
+    "$defs": {
+      "MintReadTokenInput": {
+        "additionalProperties": false,
+        "description": "Input of mintReadToken(): a short-lived credential that can clone and fetch one repository through the gateway and nothing else. Fails with repo_not_found.",
+        "examples": [
+          {
+            "repo": "acme-raw-content",
+            "ttlSeconds": 900,
+          },
+        ],
+        "properties": {
+          "repo": {
+            "$ref": "#/$defs/RepoName",
+            "description": "Repository the token may read.",
+          },
+          "ttlSeconds": {
+            "default": 3600,
+            "description": "Lifetime of the token in seconds; 60–86400, default 3600.",
+            "maximum": 86400,
+            "minimum": 60,
+            "type": "integer",
+          },
+        },
+        "required": [
+          "repo",
+        ],
+        "title": "mintReadToken input",
+        "type": "object",
+      },
+      "RepoName": {
+        "description": "Name of a repository behind the gateway: 1–100 characters of letters, digits, ".", "_" and "-", starting with a letter or digit and not ending in ".git". Served at /<name>.git.",
+        "examples": [
+          "acme-raw-content",
+          "site.example",
+        ],
+        "maxLength": 100,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+        "title": "Repository name",
+        "type": "string",
+      },
+    },
+    "$ref": "#/$defs/MintReadTokenInput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+  "output": {
+    "$defs": {
+      "MintReadTokenOutput": {
+        "additionalProperties": false,
+        "description": "Output of mintReadToken(): a read-only credential for one repository and where to use it.",
+        "examples": [
+          {
+            "expiresAt": "2026-11-20T09:30:00.000Z",
+            "remoteUrl": "https://git.example.com/acme-raw-content.git",
+            "token": "ggr_0123456789abcdef0123456789abcdef",
+          },
+        ],
+        "properties": {
+          "expiresAt": {
+            "$ref": "#/$defs/Timestamp",
+            "description": "When the token stops working.",
+          },
+          "remoteUrl": {
+            "description": "Clone URL the token is good for: <publicBaseUrl>/<repo>.git.",
+            "format": "uri",
+            "type": "string",
+          },
+          "token": {
+            "description": "The credential: send it as the HTTP Basic password (any username) or as a Bearer token. Secret.",
+            "maxLength": 4096,
+            "minLength": 16,
+            "type": "string",
+          },
+        },
+        "required": [
+          "token",
+          "expiresAt",
+          "remoteUrl",
+        ],
+        "title": "mintReadToken output",
+        "type": "object",
+      },
+      "Timestamp": {
+        "description": "A point in time as an ISO 8601 UTC timestamp ending in "Z", with optional fractional seconds (e.g. 2026-11-20T09:30:00.000Z).",
+        "examples": [
+          "2026-11-20T09:30:00.000Z",
+        ],
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+        "title": "Timestamp",
+        "type": "string",
+      },
+    },
+    "$ref": "#/$defs/MintReadTokenOutput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+}
+`;
+
+exports[`RPC contract > promote has a stable JSON Schema 1`] = `
+{
+  "input": {
+    "$defs": {
+      "BranchName": {
+        "description": "A short branch name, 1–255 characters, valid under git check-ref-format (no "..", "@{", "//", spaces, control characters or ~ ^ : ? * [ or backslash; no component starting with "." or ending with ".lock"; not starting with "-" or "refs/"; not "HEAD"; not 40 lowercase hex characters, which a Revision always reads as a commit id). The gateway stores it as refs/heads/<name>.",
+        "examples": [
+          "main",
+          "staging",
+          "feature/new-page",
+        ],
+        "maxLength": 255,
+        "minLength": 1,
+        "pattern": "^(?!refs\\/)(?!HEAD$)(?![0-9a-f]{40}$)(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+        "title": "Branch name",
+        "type": "string",
+      },
+      "PromoteInput": {
+        "additionalProperties": false,
+        "description": "Input of promote(): fast-forward \`into\` to \`sha\`, only if \`sha\` is the head of \`from\` and contains the head of \`into\`. Never merges, never forces. Refusals: ref_not_found (from missing), not_head_of_source, not_fast_forward.",
+        "examples": [
+          {
+            "from": "staging",
+            "into": "main",
+            "repo": "acme-raw-content",
+            "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          },
+        ],
+        "properties": {
+          "from": {
+            "$ref": "#/$defs/BranchName",
+            "description": "Branch whose head is promoted, e.g. staging.",
+          },
+          "into": {
+            "$ref": "#/$defs/BranchName",
+            "description": "Branch fast-forwarded, e.g. main. Created at \`sha\` if it does not exist.",
+          },
+          "repo": {
+            "$ref": "#/$defs/RepoName",
+            "description": "Repository holding both branches.",
+          },
+          "sha": {
+            "$ref": "#/$defs/Sha",
+            "description": "The commit to promote; must be the current head of \`from\`.",
+          },
+        },
+        "required": [
+          "repo",
+          "from",
+          "into",
+          "sha",
+        ],
+        "title": "promote input",
+        "type": "object",
+      },
+      "RepoName": {
+        "description": "Name of a repository behind the gateway: 1–100 characters of letters, digits, ".", "_" and "-", starting with a letter or digit and not ending in ".git". Served at /<name>.git.",
+        "examples": [
+          "acme-raw-content",
+          "site.example",
+        ],
+        "maxLength": 100,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+        "title": "Repository name",
+        "type": "string",
+      },
+      "Sha": {
+        "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
+        "examples": [
+          "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        ],
+        "pattern": "^[0-9a-f]{40}$",
+        "title": "Object id",
+        "type": "string",
+      },
+    },
+    "$ref": "#/$defs/PromoteInput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+  "output": {
+    "$defs": {
+      "FullRefName": {
+        "description": "A fully qualified ref, "refs/heads/<branch>" or "refs/tags/<tag>", where the name after the prefix follows the same rules as a branch name.",
+        "examples": [
+          "refs/heads/main",
+          "refs/tags/v1.0.0",
+        ],
+        "maxLength": 266,
+        "minLength": 11,
+        "pattern": "^refs\\/(?:heads|tags)\\/(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+        "title": "Full ref name",
+        "type": "string",
+      },
+      "PromoteOutput": {
+        "description": "Output of promote(), discriminated by \`status\`. Refusals are thrown as GatewayErrors.",
+        "examples": [
+          {
+            "head": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            "status": "up_to_date",
+          },
+        ],
+        "oneOf": [
+          {
+            "$ref": "#/$defs/PromotePromoted",
+          },
+          {
+            "$ref": "#/$defs/PromoteUpToDate",
+          },
+        ],
+        "title": "promote output",
+      },
+      "PromotePromoted": {
+        "additionalProperties": false,
+        "description": "promote() fast-forwarded \`into\` to \`sha\`, or created it there.",
+        "examples": [
+          {
+            "refUpdate": {
+              "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+              "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+              "ref": "refs/heads/main",
+            },
+            "status": "promoted",
+          },
+        ],
+        "properties": {
+          "refUpdate": {
+            "$ref": "#/$defs/RefUpdate",
+            "description": "How \`into\` moved; oldSha is all zeros when promote created it.",
+          },
+          "status": {
+            "const": "promoted",
+            "description": "\`into\` now points at \`sha\`.",
+            "type": "string",
+          },
+        },
+        "required": [
+          "status",
+          "refUpdate",
+        ],
+        "title": "promote: promoted",
+        "type": "object",
+      },
+      "PromoteUpToDate": {
+        "additionalProperties": false,
+        "description": "promote() found \`into\` already at \`sha\`.",
+        "examples": [
+          {
+            "head": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            "status": "up_to_date",
+          },
+        ],
+        "properties": {
+          "head": {
+            "$ref": "#/$defs/Sha",
+            "description": "The head of \`into\`, equal to \`sha\`.",
+          },
+          "status": {
+            "const": "up_to_date",
+            "description": "\`into\` already points at \`sha\`; nothing changed.",
+            "type": "string",
+          },
+        },
+        "required": [
+          "status",
+          "head",
+        ],
+        "title": "promote: up to date",
+        "type": "object",
+      },
+      "RefUpdate": {
+        "additionalProperties": false,
+        "description": "One ref moved by a write, in receive-pack command form: the ref, the id it named before and the id it names after. Creation and deletion use the all-zero id on the missing side.",
+        "examples": [
+          {
+            "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            "ref": "refs/heads/main",
+          },
+        ],
+        "properties": {
+          "newSha": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id the ref points at after the update; the all-zero id when the update deleted the ref.",
+          },
+          "oldSha": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id the ref pointed at before the update; the all-zero id when the update created the ref.",
+          },
+          "ref": {
+            "$ref": "#/$defs/FullRefName",
+            "description": "The ref that moved, fully qualified (refs/heads/<branch>).",
+          },
+        },
+        "required": [
+          "ref",
+          "oldSha",
+          "newSha",
+        ],
+        "title": "Ref update",
+        "type": "object",
+      },
+      "Sha": {
+        "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
+        "examples": [
+          "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        ],
+        "pattern": "^[0-9a-f]{40}$",
+        "title": "Object id",
+        "type": "string",
+      },
+    },
+    "$ref": "#/$defs/PromoteOutput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+}
+`;
+
+exports[`RPC contract > readFile has a stable JSON Schema 1`] = `
+{
+  "input": {
+    "$defs": {
+      "BranchName": {
+        "description": "A short branch name, 1–255 characters, valid under git check-ref-format (no "..", "@{", "//", spaces, control characters or ~ ^ : ? * [ or backslash; no component starting with "." or ending with ".lock"; not starting with "-" or "refs/"; not "HEAD"; not 40 lowercase hex characters, which a Revision always reads as a commit id). The gateway stores it as refs/heads/<name>.",
+        "examples": [
+          "main",
+          "staging",
+          "feature/new-page",
+        ],
+        "maxLength": 255,
+        "minLength": 1,
+        "pattern": "^(?!refs\\/)(?!HEAD$)(?![0-9a-f]{40}$)(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+        "title": "Branch name",
+        "type": "string",
+      },
+      "ContentEncoding": {
+        "description": "How file content is carried in a JSON string.",
+        "enum": [
+          "text",
+          "base64",
+        ],
+        "enumDescriptions": {
+          "base64": "The string is standard base64 (RFC 4648, with padding) of the raw file bytes; use for binary files.",
+          "text": "The string is the file content itself, stored as UTF-8 bytes.",
+        },
+        "examples": [
+          "text",
+          "base64",
+        ],
+        "title": "Content encoding",
+        "type": "string",
+      },
+      "FilePath": {
+        "description": "A path inside the repository relative to its root, 1–4096 characters, "/"-separated into segments of 1–255 characters: no leading or trailing "/", no empty, "." or ".." segment, no ".git" segment (any case), no backslash and no control character (U+0000–U+001F, U+007F). Case-sensitive; unicode allowed.",
+        "examples": [
+          "content/index.md",
+          "templates/layouts/page.hbs",
+        ],
+        "maxLength": 4096,
+        "minLength": 1,
+        "pattern": "^(?!\\/)(?!.*\\/\\/)(?!.*\\/$)(?!(?:.*\\/)?[^/]{256})(?!(?:.*\\/)?\\.\\.?(?:\\/|$))(?!(?:.*\\/)?\\.[gG][iI][tT](?:\\/|$))[^\\x00-\\x1f\\x7f\\\\]+$",
+        "title": "File path",
+        "type": "string",
+      },
+      "ReadFileInput": {
+        "additionalProperties": false,
+        "description": "Input of readFile(): one file at a branch or commit. Fails with ref_not_found if the ref is missing.",
+        "examples": [
+          {
+            "encoding": "text",
+            "path": "content/about.md",
+            "ref": "main",
+            "repo": "acme-raw-content",
+          },
+        ],
+        "properties": {
+          "encoding": {
+            "$ref": "#/$defs/ContentEncoding",
+            "default": "text",
+            "description": "Preferred encoding of the returned content. "text" (default) returns text when the bytes are valid UTF-8 and falls back to base64 otherwise; "base64" always returns base64.",
+          },
+          "path": {
+            "$ref": "#/$defs/FilePath",
+            "description": "Path of the file to read.",
+          },
+          "ref": {
+            "$ref": "#/$defs/Revision",
+            "description": "Branch name or commit id to read the file at.",
+          },
+          "repo": {
+            "$ref": "#/$defs/RepoName",
+            "description": "Repository to read from.",
+          },
+        },
+        "required": [
+          "repo",
+          "ref",
+          "path",
+        ],
+        "title": "readFile input",
+        "type": "object",
+      },
+      "RepoName": {
+        "description": "Name of a repository behind the gateway: 1–100 characters of letters, digits, ".", "_" and "-", starting with a letter or digit and not ending in ".git". Served at /<name>.git.",
+        "examples": [
+          "acme-raw-content",
+          "site.example",
+        ],
+        "maxLength": 100,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+        "title": "Repository name",
+        "type": "string",
+      },
+      "Revision": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/Sha",
+            "description": "A commit id. Any 40-character lowercase hex string is read as a commit id, never a branch.",
+          },
+          {
+            "$ref": "#/$defs/BranchName",
+            "description": "A branch name, resolved to the branch head at the time of the call.",
+          },
+        ],
+        "description": "What a read is made against: a 40-character lowercase hex commit id, or a short branch name resolved to its current head.",
+        "examples": [
+          "main",
+          "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        ],
+        "title": "Revision",
+      },
+      "Sha": {
+        "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
+        "examples": [
+          "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        ],
+        "pattern": "^[0-9a-f]{40}$",
+        "title": "Object id",
+        "type": "string",
+      },
+    },
+    "$ref": "#/$defs/ReadFileInput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+  "output": {
+    "$defs": {
+      "ContentEncoding": {
+        "description": "How file content is carried in a JSON string.",
+        "enum": [
+          "text",
+          "base64",
+        ],
+        "enumDescriptions": {
+          "base64": "The string is standard base64 (RFC 4648, with padding) of the raw file bytes; use for binary files.",
+          "text": "The string is the file content itself, stored as UTF-8 bytes.",
+        },
+        "examples": [
+          "text",
+          "base64",
+        ],
+        "title": "Content encoding",
+        "type": "string",
+      },
+      "FilePath": {
+        "description": "A path inside the repository relative to its root, 1–4096 characters, "/"-separated into segments of 1–255 characters: no leading or trailing "/", no empty, "." or ".." segment, no ".git" segment (any case), no backslash and no control character (U+0000–U+001F, U+007F). Case-sensitive; unicode allowed.",
+        "examples": [
+          "content/index.md",
+          "templates/layouts/page.hbs",
+        ],
+        "maxLength": 4096,
+        "minLength": 1,
+        "pattern": "^(?!\\/)(?!.*\\/\\/)(?!.*\\/$)(?!(?:.*\\/)?[^/]{256})(?!(?:.*\\/)?\\.\\.?(?:\\/|$))(?!(?:.*\\/)?\\.[gG][iI][tT](?:\\/|$))[^\\x00-\\x1f\\x7f\\\\]+$",
+        "title": "File path",
+        "type": "string",
+      },
+      "FileRead": {
+        "additionalProperties": false,
+        "description": "A file read from a repository at a commit, with its blob id, size and mode.",
+        "examples": [
+          {
+            "commit": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            "content": "# About us
+",
+            "encoding": "text",
+            "executable": false,
+            "path": "content/about.md",
+            "sha": "f2a5b0a7d1d3d1f1c1c3e7e5d2b9b7e1a3c5d7e9",
+            "size": 11,
+          },
+        ],
+        "properties": {
+          "commit": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id of the commit the file was read at (the ref resolved).",
+          },
+          "content": {
+            "$ref": "#/$defs/ReadContent",
+            "description": "The file's content, encoded as \`encoding\` says.",
+          },
+          "encoding": {
+            "$ref": "#/$defs/ContentEncoding",
+            "description": "How \`content\` is encoded; may be base64 even when text was requested.",
+          },
+          "executable": {
+            "description": "true when the file mode is 100755.",
+            "type": "boolean",
+          },
+          "path": {
+            "$ref": "#/$defs/FilePath",
+            "description": "Path of the file read.",
+          },
+          "sha": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id of the file's blob. Equal content always has an equal id.",
+          },
+          "size": {
+            "description": "Size of the file in bytes.",
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer",
+          },
+        },
+        "required": [
+          "path",
+          "commit",
+          "sha",
+          "size",
+          "executable",
+          "encoding",
+          "content",
+        ],
+        "title": "File read",
+        "type": "object",
+      },
+      "ReadContent": {
+        "description": "File content returned by a read, interpreted according to the accompanying encoding: UTF-8 text, or base64 of the raw bytes. Not length-capped: base64 output is 4/3 the size of the bytes and files can arrive over git push at any size, so a read returns whatever the repository holds. An empty string is an empty file.",
+        "examples": [
+          "# Hello
+",
+          "iVBORw0KGgo=",
+        ],
+        "title": "Read content",
+        "type": "string",
+      },
+      "ReadFileOutput": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/FileRead",
+          },
+          {
+            "type": "null",
+          },
+        ],
+        "description": "Output of readFile(): the file, or null when the path is not a file at that ref (absent or a directory).",
+        "examples": [
+          null,
+        ],
+        "title": "readFile output",
+      },
+      "Sha": {
+        "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
+        "examples": [
+          "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        ],
+        "pattern": "^[0-9a-f]{40}$",
+        "title": "Object id",
+        "type": "string",
+      },
+    },
+    "$ref": "#/$defs/ReadFileOutput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+}
+`;
+
+exports[`RPC contract > resolveRef has a stable JSON Schema 1`] = `
+{
+  "input": {
+    "$defs": {
+      "BranchName": {
+        "description": "A short branch name, 1–255 characters, valid under git check-ref-format (no "..", "@{", "//", spaces, control characters or ~ ^ : ? * [ or backslash; no component starting with "." or ending with ".lock"; not starting with "-" or "refs/"; not "HEAD"; not 40 lowercase hex characters, which a Revision always reads as a commit id). The gateway stores it as refs/heads/<name>.",
+        "examples": [
+          "main",
+          "staging",
+          "feature/new-page",
+        ],
+        "maxLength": 255,
+        "minLength": 1,
+        "pattern": "^(?!refs\\/)(?!HEAD$)(?![0-9a-f]{40}$)(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+        "title": "Branch name",
+        "type": "string",
+      },
+      "RepoName": {
+        "description": "Name of a repository behind the gateway: 1–100 characters of letters, digits, ".", "_" and "-", starting with a letter or digit and not ending in ".git". Served at /<name>.git.",
+        "examples": [
+          "acme-raw-content",
+          "site.example",
+        ],
+        "maxLength": 100,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+        "title": "Repository name",
+        "type": "string",
+      },
+      "ResolveRefInput": {
+        "additionalProperties": false,
+        "description": "Input of resolveRef(): resolve a branch to its head, or confirm a commit id exists.",
+        "examples": [
+          {
+            "ref": "main",
+            "repo": "acme-raw-content",
+          },
+        ],
+        "properties": {
+          "ref": {
+            "$ref": "#/$defs/Revision",
+            "description": "Branch name to resolve, or commit id to check.",
+          },
+          "repo": {
+            "$ref": "#/$defs/RepoName",
+            "description": "Repository to look in.",
+          },
+        },
+        "required": [
+          "repo",
+          "ref",
+        ],
+        "title": "resolveRef input",
+        "type": "object",
+      },
+      "Revision": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/Sha",
+            "description": "A commit id. Any 40-character lowercase hex string is read as a commit id, never a branch.",
+          },
+          {
+            "$ref": "#/$defs/BranchName",
+            "description": "A branch name, resolved to the branch head at the time of the call.",
+          },
+        ],
+        "description": "What a read is made against: a 40-character lowercase hex commit id, or a short branch name resolved to its current head.",
+        "examples": [
+          "main",
+          "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        ],
+        "title": "Revision",
+      },
+      "Sha": {
+        "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
+        "examples": [
+          "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        ],
+        "pattern": "^[0-9a-f]{40}$",
+        "title": "Object id",
+        "type": "string",
+      },
+    },
+    "$ref": "#/$defs/ResolveRefInput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+  "output": {
+    "$defs": {
+      "ResolveRefOutput": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "sha": {
+                "$ref": "#/$defs/Sha",
+                "description": "Id of the commit the ref names.",
+              },
+            },
+            "required": [
+              "sha",
+            ],
+            "type": "object",
+          },
+          {
+            "type": "null",
+          },
+        ],
+        "description": "Output of resolveRef(): the commit id the ref names, or null when the branch or commit does not exist.",
+        "examples": [
+          {
+            "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          },
+          null,
+        ],
+        "title": "resolveRef output",
+      },
+      "Sha": {
+        "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
+        "examples": [
+          "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        ],
+        "pattern": "^[0-9a-f]{40}$",
+        "title": "Object id",
+        "type": "string",
+      },
+    },
+    "$ref": "#/$defs/ResolveRefOutput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+}
+`;
+
+exports[`RPC contract > syncBranch has a stable JSON Schema 1`] = `
+{
+  "input": {
+    "$defs": {
+      "BranchName": {
+        "description": "A short branch name, 1–255 characters, valid under git check-ref-format (no "..", "@{", "//", spaces, control characters or ~ ^ : ? * [ or backslash; no component starting with "." or ending with ".lock"; not starting with "-" or "refs/"; not "HEAD"; not 40 lowercase hex characters, which a Revision always reads as a commit id). The gateway stores it as refs/heads/<name>.",
+        "examples": [
+          "main",
+          "staging",
+          "feature/new-page",
+        ],
+        "maxLength": 255,
+        "minLength": 1,
+        "pattern": "^(?!refs\\/)(?!HEAD$)(?![0-9a-f]{40}$)(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+        "title": "Branch name",
+        "type": "string",
+      },
+      "Identity": {
+        "additionalProperties": false,
+        "description": "The name and email a commit is attributed to, as an author or a committer.",
+        "examples": [
+          {
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+        ],
+        "properties": {
+          "email": {
+            "description": "Email address, at most 255 characters.",
+            "format": "email",
+            "maxLength": 255,
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "type": "string",
+          },
+          "name": {
+            "description": "Display name, 1–255 characters, without "<", ">", newlines or NUL (git cannot store them).",
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[^<>\\n\\0]+$",
+            "type": "string",
+          },
+        },
+        "required": [
+          "name",
+          "email",
+        ],
+        "title": "Identity",
+        "type": "object",
+      },
+      "RepoName": {
+        "description": "Name of a repository behind the gateway: 1–100 characters of letters, digits, ".", "_" and "-", starting with a letter or digit and not ending in ".git". Served at /<name>.git.",
+        "examples": [
+          "acme-raw-content",
+          "site.example",
+        ],
+        "maxLength": 100,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+        "title": "Repository name",
+        "type": "string",
+      },
+      "SyncBranchInput": {
+        "additionalProperties": false,
+        "description": "Input of syncBranch(): bring \`into\` up to date with \`from\` without rewriting \`into\`. Fails with ref_not_found if either branch is missing and unrelated_histories if they share no ancestor.",
+        "examples": [
+          {
+            "from": "main",
+            "into": "staging",
+            "repo": "acme-raw-content",
+          },
+        ],
+        "properties": {
+          "author": {
+            "$ref": "#/$defs/Identity",
+            "description": "Author and committer of a merge commit, if one is needed. Absent: the configured service identity.",
+          },
+          "from": {
+            "$ref": "#/$defs/BranchName",
+            "description": "Branch whose commits are brought into \`into\`.",
+          },
+          "into": {
+            "$ref": "#/$defs/BranchName",
+            "description": "Branch brought up to date; never rewritten, only fast-forwarded or merged into.",
+          },
+          "message": {
+            "description": "Message of a merge commit, if one is needed. Absent: "Merge branch '<from>' into <into>".",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+          },
+          "repo": {
+            "$ref": "#/$defs/RepoName",
+            "description": "Repository holding both branches.",
+          },
+        },
+        "required": [
+          "repo",
+          "from",
+          "into",
+        ],
+        "title": "syncBranch input",
+        "type": "object",
+      },
+    },
+    "$ref": "#/$defs/SyncBranchInput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+  "output": {
+    "$defs": {
+      "Commit": {
+        "additionalProperties": false,
+        "description": "A commit as stored in a repository, with its message trailer parsed out.",
+        "examples": [
+          {
+            "author": {
+              "date": "2026-11-20T09:30:00.000Z",
+              "email": "ada@example.com",
+              "name": "Ada Lovelace",
+            },
+            "committer": {
+              "date": "2026-11-20T09:30:00.000Z",
+              "email": "ada@example.com",
+              "name": "Ada Lovelace",
+            },
+            "idempotencyKey": "cms:publish:2f9c1e",
+            "message": "Update about page
+
+Gateway-Idempotency-Key: cms:publish:2f9c1e
+",
+            "parents": [
+              "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            ],
+            "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+          },
+        ],
+        "properties": {
+          "author": {
+            "$ref": "#/$defs/Signature",
+            "description": "Who wrote the change, and when.",
+          },
+          "committer": {
+            "$ref": "#/$defs/Signature",
+            "description": "Who recorded the commit, and when; equals the author unless one was given.",
+          },
+          "idempotencyKey": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/IdempotencyKey",
+              },
+              {
+                "type": "null",
+              },
+            ],
+            "description": "The key from the message's "Gateway-Idempotency-Key:" trailer, or null when the commit has none.",
+          },
+          "message": {
+            "description": "Full commit message as stored, including any "Gateway-Idempotency-Key:" trailer the gateway appended.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "parents": {
+            "description": "Parent commit ids in order: empty for a root commit, one for an ordinary commit, two for a merge (the branch merged into first).",
+            "items": {
+              "$ref": "#/$defs/Sha",
+              "description": "Id of a parent commit.",
+            },
+            "maxItems": 2,
+            "type": "array",
+          },
+          "sha": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id of this commit.",
+          },
+          "tree": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id of the root tree this commit records.",
+          },
+        },
+        "required": [
+          "sha",
+          "tree",
+          "parents",
+          "author",
+          "committer",
+          "message",
+          "idempotencyKey",
+        ],
+        "title": "Commit",
+        "type": "object",
+      },
+      "FilePath": {
+        "description": "A path inside the repository relative to its root, 1–4096 characters, "/"-separated into segments of 1–255 characters: no leading or trailing "/", no empty, "." or ".." segment, no ".git" segment (any case), no backslash and no control character (U+0000–U+001F, U+007F). Case-sensitive; unicode allowed.",
+        "examples": [
+          "content/index.md",
+          "templates/layouts/page.hbs",
+        ],
+        "maxLength": 4096,
+        "minLength": 1,
+        "pattern": "^(?!\\/)(?!.*\\/\\/)(?!.*\\/$)(?!(?:.*\\/)?[^/]{256})(?!(?:.*\\/)?\\.\\.?(?:\\/|$))(?!(?:.*\\/)?\\.[gG][iI][tT](?:\\/|$))[^\\x00-\\x1f\\x7f\\\\]+$",
+        "title": "File path",
+        "type": "string",
+      },
+      "FullRefName": {
+        "description": "A fully qualified ref, "refs/heads/<branch>" or "refs/tags/<tag>", where the name after the prefix follows the same rules as a branch name.",
+        "examples": [
+          "refs/heads/main",
+          "refs/tags/v1.0.0",
+        ],
+        "maxLength": 266,
+        "minLength": 11,
+        "pattern": "^refs\\/(?:heads|tags)\\/(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
+        "title": "Full ref name",
+        "type": "string",
+      },
+      "IdempotencyKey": {
+        "description": "Caller-chosen key that makes a commit idempotent: 1–128 characters of letters, digits, ".", "_", ":" and "-", starting with a letter or digit. Recorded as a "Gateway-Idempotency-Key:" trailer; a retried commit carrying a key already in the branch's recent history returns that commit instead of writing another.",
+        "examples": [
+          "cms:publish:2f9c1e",
+          "6f1d2c3b-9a8e-4f7d-b6c5-a4e3d2c1b0a9",
+        ],
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+        "title": "Idempotency key",
+        "type": "string",
+      },
+      "RefUpdate": {
+        "additionalProperties": false,
+        "description": "One ref moved by a write, in receive-pack command form: the ref, the id it named before and the id it names after. Creation and deletion use the all-zero id on the missing side.",
+        "examples": [
+          {
+            "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            "ref": "refs/heads/main",
+          },
+        ],
+        "properties": {
+          "newSha": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id the ref points at after the update; the all-zero id when the update deleted the ref.",
+          },
+          "oldSha": {
+            "$ref": "#/$defs/Sha",
+            "description": "Id the ref pointed at before the update; the all-zero id when the update created the ref.",
+          },
+          "ref": {
+            "$ref": "#/$defs/FullRefName",
+            "description": "The ref that moved, fully qualified (refs/heads/<branch>).",
+          },
+        },
+        "required": [
+          "ref",
+          "oldSha",
+          "newSha",
+        ],
+        "title": "Ref update",
+        "type": "object",
+      },
+      "Sha": {
+        "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
+        "examples": [
+          "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        ],
+        "pattern": "^[0-9a-f]{40}$",
+        "title": "Object id",
+        "type": "string",
+      },
+      "Signature": {
+        "additionalProperties": false,
+        "description": "An identity together with the time it authored or committed a commit, as stored in the commit.",
+        "examples": [
+          {
+            "date": "2026-11-20T09:30:00.000Z",
+            "email": "ada@example.com",
+            "name": "Ada Lovelace",
+          },
+        ],
+        "properties": {
+          "date": {
+            "$ref": "#/$defs/Timestamp",
+            "description": "When this person authored or committed the change, as an ISO 8601 UTC timestamp.",
+          },
+          "email": {
+            "description": "Email address, at most 255 characters.",
+            "format": "email",
+            "maxLength": 255,
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "type": "string",
+          },
+          "name": {
+            "description": "Display name, 1–255 characters, without "<", ">", newlines or NUL (git cannot store them).",
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[^<>\\n\\0]+$",
+            "type": "string",
+          },
+        },
+        "required": [
+          "name",
+          "email",
+          "date",
+        ],
+        "title": "Signature",
+        "type": "object",
+      },
+      "SyncBranchOutput": {
+        "description": "Output of syncBranch(), discriminated by \`status\`.",
+        "examples": [
+          {
+            "head": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            "status": "up_to_date",
+          },
+        ],
+        "oneOf": [
+          {
+            "$ref": "#/$defs/SyncUpToDate",
+          },
+          {
+            "$ref": "#/$defs/SyncFastForward",
+          },
+          {
+            "$ref": "#/$defs/SyncMerged",
+          },
+          {
+            "$ref": "#/$defs/SyncConflict",
+          },
+        ],
+        "title": "syncBranch output",
+      },
+      "SyncConflict": {
+        "additionalProperties": false,
+        "description": "syncBranch() could not merge: the listed paths conflict. \`into\` is unchanged.",
+        "examples": [
+          {
+            "base": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+            "fromHead": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+            "intoHead": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            "paths": [
+              "content/about.md",
+            ],
+            "status": "conflict",
+          },
+        ],
+        "properties": {
+          "base": {
+            "$ref": "#/$defs/Sha",
+            "description": "The merge base used.",
+          },
+          "fromHead": {
+            "$ref": "#/$defs/Sha",
+            "description": "The head of \`from\` merged.",
+          },
+          "intoHead": {
+            "$ref": "#/$defs/Sha",
+            "description": "The head of \`into\`, unchanged.",
+          },
+          "paths": {
+            "description": "Every conflicting path, sorted in byte order: changed differently on both sides, or a file on one side where the other has a directory.",
+            "items": {
+              "$ref": "#/$defs/FilePath",
+              "description": "A conflicting path.",
+            },
+            "minItems": 1,
+            "type": "array",
+          },
+          "status": {
+            "const": "conflict",
+            "description": "Some paths changed differently on both sides; nothing was written.",
+            "type": "string",
+          },
+        },
+        "required": [
+          "status",
+          "paths",
+          "base",
+          "fromHead",
+          "intoHead",
+        ],
+        "title": "syncBranch: conflict",
+        "type": "object",
+      },
+      "SyncFastForward": {
+        "additionalProperties": false,
+        "description": "syncBranch() fast-forwarded \`into\` to the head of \`from\` with a ref update naming the old head.",
+        "examples": [
+          {
+            "refUpdate": {
+              "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+              "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+              "ref": "refs/heads/staging",
+            },
+            "status": "fast_forward",
+          },
+        ],
+        "properties": {
+          "refUpdate": {
+            "$ref": "#/$defs/RefUpdate",
+            "description": "How \`into\` moved.",
+          },
+          "status": {
+            "const": "fast_forward",
+            "description": "\`into\` had no commits of its own and now points at the head of \`from\`.",
+            "type": "string",
+          },
+        },
+        "required": [
+          "status",
+          "refUpdate",
+        ],
+        "title": "syncBranch: fast-forward",
+        "type": "object",
+      },
+      "SyncMerged": {
+        "additionalProperties": false,
+        "description": "syncBranch() merged file by file against the merge base: a path changed on one side takes that side.",
+        "examples": [
+          {
+            "commit": {
+              "author": {
+                "date": "2026-11-20T09:30:00.000Z",
+                "email": "ada@example.com",
+                "name": "Ada Lovelace",
+              },
+              "committer": {
+                "date": "2026-11-20T09:30:00.000Z",
+                "email": "ada@example.com",
+                "name": "Ada Lovelace",
+              },
+              "idempotencyKey": "cms:publish:2f9c1e",
+              "message": "Update about page
+
+Gateway-Idempotency-Key: cms:publish:2f9c1e
+",
+              "parents": [
+                "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+              ],
+              "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+              "tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+            },
+            "refUpdate": {
+              "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+              "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+              "ref": "refs/heads/staging",
+            },
+            "status": "merged",
+          },
+        ],
+        "properties": {
+          "commit": {
+            "$ref": "#/$defs/Commit",
+            "description": "The merge commit; its parents are the old head of \`into\`, then the head of \`from\`.",
+          },
+          "refUpdate": {
+            "$ref": "#/$defs/RefUpdate",
+            "description": "How \`into\` moved.",
+          },
+          "status": {
+            "const": "merged",
+            "description": "Both branches had commits; a file-level merge commit was written to \`into\`.",
+            "type": "string",
+          },
+        },
+        "required": [
+          "status",
+          "commit",
+          "refUpdate",
+        ],
+        "title": "syncBranch: merged",
+        "type": "object",
+      },
+      "SyncUpToDate": {
+        "additionalProperties": false,
+        "description": "syncBranch() found that \`into\` already contains the head of \`from\`.",
+        "examples": [
+          {
+            "head": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            "status": "up_to_date",
+          },
+        ],
+        "properties": {
+          "head": {
+            "$ref": "#/$defs/Sha",
+            "description": "The head of \`into\`, unchanged.",
+          },
+          "status": {
+            "const": "up_to_date",
+            "description": "\`into\` already contains the head of \`from\`; nothing changed.",
+            "type": "string",
+          },
+        },
+        "required": [
+          "status",
+          "head",
+        ],
+        "title": "syncBranch: up to date",
+        "type": "object",
+      },
+      "Timestamp": {
+        "description": "A point in time as an ISO 8601 UTC timestamp ending in "Z", with optional fractional seconds (e.g. 2026-11-20T09:30:00.000Z).",
+        "examples": [
+          "2026-11-20T09:30:00.000Z",
+        ],
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+        "title": "Timestamp",
+        "type": "string",
+      },
+    },
+    "$ref": "#/$defs/SyncBranchOutput",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+  },
+}
+`;

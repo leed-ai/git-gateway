@@ -1,0 +1,20 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  // Example deployment. CI builds it with `wrangler deploy --dry-run`; nothing here deploys it.
+  "name": "git-gateway-example",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  // The repositories. Locally (wrangler dev, tests) this is the Artifacts simulator, which needs
+  // git 2.32 or later on the PATH.
+  "artifacts": [{ "binding": "ARTIFACTS", "namespace": "example", "remote": false }],
+  "vars": {
+    "JWT_ISSUER": "https://auth.example.com",
+    "JWT_AUDIENCE": "git.example.com",
+    // Where the repositories are served; mintReadToken() returns <PUBLIC_BASE_URL>/<repo>.git.
+    "PUBLIC_BASE_URL": "https://git.example.com",
+  },
+  // READ_TOKEN_SECRET signs and verifies read tokens: a Worker secret of 32+ random characters,
+  // set with `wrangler secret put READ_TOKEN_SECRET` (never in this file).
+}

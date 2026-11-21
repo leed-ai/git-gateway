@@ -1,0 +1,107 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`schema documentation > generates the JSON Schema for what the schemas accept 1`] = `
+{
+  "$defs": {
+    "GitVersion": {
+      "additionalProperties": false,
+      "description": "The version of the git binary a conformance run drives, parsed from \`git --version\`.",
+      "examples": [
+        {
+          "major": 2,
+          "minor": 43,
+          "patch": 0,
+          "raw": "2.43.0",
+        },
+      ],
+      "properties": {
+        "major": {
+          "description": "Major version number, e.g. 2 for git 2.43.0.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "minor": {
+          "description": "Minor version number, e.g. 43 for git 2.43.0.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "patch": {
+          "description": "Patch version number, e.g. 0 for git 2.43.0; 0 when the binary reports only two parts.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "raw": {
+          "description": "The version text exactly as git printed it after "git version", e.g. "2.39.5 (Apple Git-154)".",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "major",
+        "minor",
+        "patch",
+        "raw",
+      ],
+      "title": "Git version",
+      "type": "object",
+    },
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+}
+`;
+
+exports[`schema documentation > generates the JSON Schema for what the schemas produce 1`] = `
+{
+  "$defs": {
+    "GitVersion": {
+      "additionalProperties": false,
+      "description": "The version of the git binary a conformance run drives, parsed from \`git --version\`.",
+      "examples": [
+        {
+          "major": 2,
+          "minor": 43,
+          "patch": 0,
+          "raw": "2.43.0",
+        },
+      ],
+      "properties": {
+        "major": {
+          "description": "Major version number, e.g. 2 for git 2.43.0.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "minor": {
+          "description": "Minor version number, e.g. 43 for git 2.43.0.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "patch": {
+          "description": "Patch version number, e.g. 0 for git 2.43.0; 0 when the binary reports only two parts.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "raw": {
+          "description": "The version text exactly as git printed it after "git version", e.g. "2.39.5 (Apple Git-154)".",
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "major",
+        "minor",
+        "patch",
+        "raw",
+      ],
+      "title": "Git version",
+      "type": "object",
+    },
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+}
+`;
