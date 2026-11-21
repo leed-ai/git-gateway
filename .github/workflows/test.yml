@@ -50,17 +50,35 @@ jobs:
           bunx turbo run test --filter=@leed-ai/git-gateway-repo-tools
           -- --shard=${{ matrix.shard }}/${{ strategy.job-total }} --passWithNoTests
 
+  # Coverage gates need the whole suite in one run: a shard sees only part of it.
+  coverage:
+    name: coverage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-toolchain
+        with:
+          cache-key: test-coverage
+
+      - name: Packages with a coverage gate
+        run: bunx turbo run test --filter=@leed-ai/git-gateway-core
+
   # A single required check for branch protection that does not change when the shard count does.
   tests-passed:
     name: tests passed
     if: always()
-    needs: [unit]
+    needs: [unit, coverage]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
-      - name: Every shard passed
+      - name: Every shard and the coverage gate passed
         env:
-          RESULT: ${{ needs.unit.result }}
+          UNIT: ${{ needs.unit.result }}
+          COVERAGE: ${{ needs.coverage.result }}
         run: |
-          echo "unit shards: $RESULT"
-          [[ "$RESULT" == success ]]
+          echo "unit shards: $UNIT, coverage: $COVERAGE"
+          [[ "$UNIT" == success && "$COVERAGE" == success ]]

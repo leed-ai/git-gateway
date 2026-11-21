@@ -2,6 +2,10 @@
 import { libraryPack, nodeTest } from '@leed-ai/git-gateway-repo-tools/vite-presets';
 import { defineConfig } from 'vite-plus';
 
+// One shard sees only part of the suite, so its coverage says nothing about the whole: the gate
+// applies to unsharded runs (locally, and the coverage job in CI).
+const sharded = process.argv.some((argument) => argument.startsWith('--shard'));
+
 export default defineConfig({
   pack: libraryPack(),
   test: nodeTest({
@@ -12,7 +16,7 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       reporter: ['text-summary', 'lcov'],
       // The spec's gate for core: 90 % of lines.
-      thresholds: { lines: 90 },
+      ...(sharded ? {} : { thresholds: { lines: 90 } }),
     },
   }),
 });
