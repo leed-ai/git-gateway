@@ -12,5 +12,9 @@
   "vars": {
     "JWT_ISSUER": "https://auth.example.com",
     "JWT_AUDIENCE": "git.example.com",
+    // Where the repositories are served; mintReadToken() returns <PUBLIC_BASE_URL>/<repo>.git.
+    "PUBLIC_BASE_URL": "https://git.example.com",
   },
+  // READ_TOKEN_SECRET signs and verifies read tokens: a Worker secret of 32+ random characters,
+  // set with `wrangler secret put READ_TOKEN_SECRET` (never in this file).
 }

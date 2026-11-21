@@ -31,6 +31,20 @@ Push options (`git push -o …`) are refused unless their name is in `smartHttp.
 
 **Push events.** After the storage host accepts a push through the proxy, the refs its report marks `ok` are passed to `onPush` (through `waitUntil`; failures go to `onPushError` and never change the response). The RPC service does the same for every ref update it writes. Sync rules (`gateway.syncRules` on the app, `config.syncRules` on the RPC service) start a `SyncBranchWorkflow` after every accepted push to a rule's `from` branch; pass the binding as `syncWorkflow`, without which a gateway with sync rules refuses to start.
 
+**Read tokens.** `mintReadToken()` (RPC) issues `ggr_…` tokens good for cloning one repository. Compose the proxy with `withReadTokens` (`auth/read-token-auth`) so they are accepted beside the deployment's own credentials, with the same secret as the RPC service:
+
+```ts
+import { withReadTokens } from '@leed-ai/git-gateway-worker/auth/read-token-auth';
+
+createGatewayWorker((env) => ({
+  backend,
+  ...withReadTokens({ secret: env.READ_TOKEN_SECRET, authenticator, authorizer }),
+  branchPolicy,
+}));
+```
+
+A read-token principal (subject `read-token:<id>`, role `read:<repo>`) may fetch its repository until the token expires, and never push or read another; another authenticator's principal that claims the `read-token:` subject is refused.
+
 ## License
 
 Apache-2.0

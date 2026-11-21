@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@leed-ai/git-gateway-auth-jwt": "workspace:*",
+    "@leed-ai/git-gateway-contract": "workspace:*",
     "@leed-ai/git-gateway-repo-tools": "workspace:*",
     "@leed-ai/git-gateway-testkit": "workspace:*",
     "@leed-ai/git-gateway-worker": "workspace:*",

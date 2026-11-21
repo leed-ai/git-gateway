@@ -46,6 +46,11 @@
       "types": "./dist/auth/authorize.d.ts",
       "default": "./dist/auth/authorize.js"
     },
+    "./auth/read-token-auth": {
+      "source": "./src/auth/read-token-auth.ts",
+      "types": "./dist/auth/read-token-auth.d.ts",
+      "default": "./dist/auth/read-token-auth.js"
+    },
     "./cache/decision-cache": {
       "source": "./src/cache/decision-cache.ts",
       "types": "./dist/cache/decision-cache.d.ts",

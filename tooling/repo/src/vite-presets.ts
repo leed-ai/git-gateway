@@ -42,11 +42,22 @@ export function nodeTest(overrides: TestConfig = {}): TestConfig {
 /**
  * The Workers Vitest plugin: tests run inside workerd through Miniflare. Pass a Wrangler
  * config path for a deployable Worker; without one the tests get a bare Worker runtime.
+ * `testBindings` adds plain-text bindings for the tests alone, standing in for the Worker
+ * secrets a deployment sets with `wrangler secret put` (never real secrets).
  */
-export function workersTestPlugin(wranglerConfigPath?: string): Plugin {
+export function workersTestPlugin(
+  wranglerConfigPath?: string,
+  testBindings: Readonly<Record<string, string>> = {},
+): Plugin {
   return cloudflareTest(
     wranglerConfigPath === undefined
-      ? { miniflare: { compatibilityDate: COMPATIBILITY_DATE, compatibilityFlags: ['nodejs_compat'] } }
-      : { wrangler: { configPath: wranglerConfigPath } },
+      ? {
+          miniflare: {
+            compatibilityDate: COMPATIBILITY_DATE,
+            compatibilityFlags: ['nodejs_compat'],
+            bindings: { ...testBindings },
+          },
+        }
+      : { wrangler: { configPath: wranglerConfigPath }, miniflare: { bindings: { ...testBindings } } },
   );
 }
