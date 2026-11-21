@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { gitBinary } from '../../src/git-binary.ts';
+import { gitBinary } from './git-binary.ts';
 
 /** What a git invocation produced. */
 export interface GitRun {
@@ -13,7 +13,11 @@ export interface GitRun {
   readonly stderr: string;
 }
 
-/** A scratch directory with git isolated from the user's and the system's configuration. */
+/**
+ * A scratch directory where the real git binary (`GIT_BINARY`, or `git` on the PATH) runs isolated
+ * from the user's and the system's configuration: the conformance harness drives git clients
+ * against a gateway or a backend served on loopback with it. Call {@link dispose} when done.
+ */
 export class GitSandbox {
   readonly dir = mkdtempSync(join(tmpdir(), 'git-gateway-testkit-'));
 
@@ -76,6 +80,7 @@ export class GitSandbox {
     return join(this.dir, ...parts);
   }
 
+  /** Removes the scratch directory. */
   dispose(): void {
     rmSync(this.dir, { recursive: true, force: true });
   }

@@ -6,4 +6,11 @@
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
+  // The repositories. Locally (wrangler dev, tests) this is the Artifacts simulator, which needs
+  // git 2.32 or later on the PATH.
+  "artifacts": [{ "binding": "ARTIFACTS", "namespace": "example", "remote": false }],
+  "vars": {
+    "JWT_ISSUER": "https://auth.example.com",
+    "JWT_AUDIENCE": "git.example.com",
+  },
 }

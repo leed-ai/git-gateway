@@ -3,6 +3,179 @@
 exports[`schema documentation > generates the JSON Schema for what the schemas accept 1`] = `
 {
   "$defs": {
+    "AuditEvent": {
+      "additionalProperties": false,
+      "description": "Handed to the audit hook for every authenticated smart-HTTP request once it is decided: principal, repository, operation, refs and outcome. Never contains a credential.",
+      "examples": [
+        {
+          "at": "2026-11-20T09:30:00.000Z",
+          "endpoint": "receive-pack",
+          "operation": "write",
+          "outcome": "denied",
+          "principal": {
+            "email": null,
+            "expiresAt": null,
+            "name": null,
+            "roles": [
+              "editor",
+            ],
+            "subject": "user:42",
+          },
+          "reason": "main is protected",
+          "refs": [
+            {
+              "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+              "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+              "reason": "main is protected",
+              "ref": "refs/heads/main",
+              "status": "rejected",
+            },
+          ],
+          "repo": "acme-raw-content",
+          "requestId": "6f1d2c3b-9a8e-4f7d-b6c5-a4e3d2c1b0a9",
+        },
+      ],
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/Timestamp",
+          "description": "When the gateway finished deciding and forwarding the request.",
+        },
+        "endpoint": {
+          "$ref": "#/$defs/SmartHttpEndpoint",
+          "description": "Which smart-HTTP endpoint the request reached.",
+        },
+        "operation": {
+          "$ref": "#/$defs/GitOperation",
+          "description": "Whether the request reads or writes the repository.",
+        },
+        "outcome": {
+          "description": "What the gateway did with the request.",
+          "enum": [
+            "allowed",
+            "denied",
+            "failed",
+          ],
+          "enumDescriptions": {
+            "allowed": "Authorized and forwarded to storage; for a push, \`refs\` says what storage did with each ref.",
+            "denied": "Refused by the authorizer or the branch policy; nothing reached storage.",
+            "failed": "Authorized, but the gateway or the storage host failed before an answer was complete.",
+          },
+          "type": "string",
+        },
+        "principal": {
+          "$ref": "#/$defs/Principal",
+          "description": "Who made the request (never the credential).",
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "Why the request was denied or failed, as the client was told; null when it was allowed.",
+        },
+        "refs": {
+          "description": "For a push (receive-pack), every update command and its outcome; empty for every other request.",
+          "items": {
+            "$ref": "#/$defs/AuditRefOutcome",
+          },
+          "maxItems": 10000,
+          "type": "array",
+        },
+        "repo": {
+          "$ref": "#/$defs/RepoName",
+          "description": "The repository the request named.",
+        },
+        "requestId": {
+          "$ref": "#/$defs/RequestId",
+          "description": "The request this event records.",
+        },
+      },
+      "required": [
+        "requestId",
+        "at",
+        "principal",
+        "repo",
+        "operation",
+        "endpoint",
+        "outcome",
+        "reason",
+        "refs",
+      ],
+      "title": "Audit event",
+      "type": "object",
+    },
+    "AuditRefOutcome": {
+      "additionalProperties": false,
+      "description": "One update command of an audited push and what became of it.",
+      "examples": [
+        {
+          "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "reason": "main is protected",
+          "ref": "refs/heads/main",
+          "status": "rejected",
+        },
+      ],
+      "properties": {
+        "newSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the client asked the ref to name; all zeros when it asked to delete the ref.",
+        },
+        "oldSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the client said the ref named; all zeros when it asked to create the ref.",
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "Why the update was refused, as git was told; null unless \`status\` is "rejected".",
+        },
+        "ref": {
+          "description": "The ref the update command named, fully qualified; any namespace, since refused ones are audited too.",
+          "maxLength": 4096,
+          "minLength": 6,
+          "pattern": "^refs\\/[^\\n\\0]+$",
+          "type": "string",
+        },
+        "status": {
+          "description": "What happened to the ref.",
+          "enum": [
+            "ok",
+            "rejected",
+            "unknown",
+          ],
+          "enumDescriptions": {
+            "ok": "The storage host reported the ref updated.",
+            "rejected": "The gateway or the storage host refused the update; \`reason\` says why.",
+            "unknown": "The push was forwarded but the storage host report could not be read.",
+          },
+          "type": "string",
+        },
+      },
+      "required": [
+        "ref",
+        "oldSha",
+        "newSha",
+        "status",
+        "reason",
+      ],
+      "title": "Audited ref update",
+      "type": "object",
+    },
     "BranchName": {
       "description": "A short branch name, 1–255 characters, valid under git check-ref-format (no "..", "@{", "//", spaces, control characters or ~ ^ : ? * [ or backslash; no component starting with "." or ending with ".lock"; not starting with "-" or "refs/"; not "HEAD"; not 40 lowercase hex characters, which a Revision always reads as a commit id). The gateway stores it as refs/heads/<name>.",
       "examples": [
@@ -15,6 +188,173 @@ exports[`schema documentation > generates the JSON Schema for what the schemas a
       "pattern": "^(?!refs\\/)(?!HEAD$)(?![0-9a-f]{40}$)(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
       "title": "Branch name",
       "type": "string",
+    },
+    "BranchPermissions": {
+      "additionalProperties": false,
+      "description": "What the rule-based branch policy allows on a ref no rule matches. Defaults: anyone with write access, create and delete allowed, force pushes refused.",
+      "examples": [
+        {
+          "create": true,
+          "delete": true,
+          "forcePush": false,
+          "pushers": null,
+        },
+      ],
+      "properties": {
+        "create": {
+          "default": true,
+          "description": "Whether a push may create a ref; default true.",
+          "type": "boolean",
+        },
+        "delete": {
+          "default": true,
+          "description": "Whether a push may delete a ref; default true.",
+          "type": "boolean",
+        },
+        "forcePush": {
+          "default": false,
+          "description": "Whether a push may move a branch to a commit that does not contain its current head (a non-fast-forward, "git push --force") or move an existing tag; default false.",
+          "type": "boolean",
+        },
+        "pushers": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PrincipalSelector",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "default": null,
+          "description": "Who may update matching refs at all; null (the default) lets every principal the Authorizer allowed to write.",
+        },
+      },
+      "title": "Branch permissions",
+      "type": "object",
+    },
+    "BranchPolicyConfig": {
+      "additionalProperties": false,
+      "description": "Configuration of the reference rule-based BranchPolicy. Refs outside refs/heads/ and refs/tags/ are always refused, whatever the rules say.",
+      "examples": [
+        {
+          "fallback": {
+            "create": true,
+            "delete": true,
+            "forcePush": false,
+            "pushers": null,
+          },
+          "rules": [
+            {
+              "create": true,
+              "delete": false,
+              "forcePush": false,
+              "message": "main is protected",
+              "pattern": "refs/heads/main",
+              "pushers": {
+                "roles": [
+                  "maintainer",
+                ],
+                "subjects": [],
+              },
+            },
+          ],
+        },
+      ],
+      "properties": {
+        "fallback": {
+          "$ref": "#/$defs/BranchPermissions",
+          "default": {
+            "create": true,
+            "delete": true,
+            "forcePush": false,
+            "pushers": null,
+          },
+          "description": "What applies to a branch or tag ref no rule matches; default anyone with write access, create and delete allowed, force refused.",
+        },
+        "rules": {
+          "default": [],
+          "description": "Rules tried in order; the first whose pattern matches a ref decides it. At most 200, default none.",
+          "items": {
+            "$ref": "#/$defs/BranchRule",
+          },
+          "maxItems": 200,
+          "type": "array",
+        },
+      },
+      "title": "Branch policy configuration",
+      "type": "object",
+    },
+    "BranchRule": {
+      "additionalProperties": false,
+      "description": "Governs the refs matching \`pattern\`: who may push them, whether they may be created or deleted, and whether force pushes are allowed. Rules are tried in order and the first match decides.",
+      "examples": [
+        {
+          "create": true,
+          "delete": false,
+          "forcePush": false,
+          "message": "main is protected",
+          "pattern": "refs/heads/main",
+          "pushers": {
+            "roles": [
+              "maintainer",
+            ],
+            "subjects": [],
+          },
+        },
+      ],
+      "properties": {
+        "create": {
+          "default": true,
+          "description": "Whether a push may create a matching ref; default true.",
+          "type": "boolean",
+        },
+        "delete": {
+          "default": false,
+          "description": "Whether a push may delete a matching ref; default false (rules usually protect).",
+          "type": "boolean",
+        },
+        "forcePush": {
+          "default": false,
+          "description": "Whether a push may move a matching branch to a commit that does not contain its current head, or move a matching tag; default false.",
+          "type": "boolean",
+        },
+        "message": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "pattern": "^[^\\n\\0]+$",
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "default": null,
+          "description": "Text git shows the user when this rule refuses an update, e.g. "main is protected"; one line of 1–200 characters. Null (the default) uses a message naming the ref and what was refused.",
+        },
+        "pattern": {
+          "$ref": "#/$defs/RefPattern",
+          "description": "The refs this rule governs.",
+        },
+        "pushers": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PrincipalSelector",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "default": null,
+          "description": "Who may update matching refs at all; null (the default) lets every principal the Authorizer allowed to write.",
+        },
+      },
+      "required": [
+        "pattern",
+      ],
+      "title": "Branch rule",
+      "type": "object",
     },
     "ChmodAction": {
       "additionalProperties": false,
@@ -1609,6 +1949,23 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "title": "Git access",
       "type": "string",
     },
+    "GitOperation": {
+      "description": "What a git client asks to do to a repository through the gateway; Authorizer.authorize() decides each per principal and repository.",
+      "enum": [
+        "read",
+        "write",
+      ],
+      "enumDescriptions": {
+        "read": "Clone or fetch: GET info/refs?service=git-upload-pack and POST git-upload-pack.",
+        "write": "Push: GET info/refs?service=git-receive-pack and POST git-receive-pack.",
+      },
+      "examples": [
+        "read",
+        "write",
+      ],
+      "title": "Git operation",
+      "type": "string",
+    },
     "GitRemote": {
       "additionalProperties": false,
       "description": "A storage-host git remote minted for one use: the smart-HTTP URL plus the headers that authorize it. The gateway proxies to it; the credential never reaches a git client.",
@@ -2020,6 +2377,161 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "title": "Move action",
       "type": "object",
     },
+    "PolicyResult": {
+      "additionalProperties": false,
+      "description": "The branch policy verdict on every ref update of one push. The gateway forwards the push only when all of them are allowed (fast-forward-only ones after their ancestry is proven); otherwise nothing is written and git reports each refused ref with its reason.",
+      "examples": [
+        {
+          "refs": [
+            {
+              "decision": "fast-forward-only",
+              "reason": "force pushes to main are not allowed",
+              "ref": "refs/heads/main",
+            },
+            {
+              "decision": "deny",
+              "reason": "tags are created by the release pipeline",
+              "ref": "refs/tags/v1.0.0",
+            },
+          ],
+        },
+      ],
+      "properties": {
+        "refs": {
+          "description": "One decision per update the policy was given, for the same refs, each ref named at most once (a result naming a ref twice is refused, so the gateway never has to pick between conflicting decisions). A push is forwarded only when every update is allowed; an update without a decision is refused.",
+          "items": {
+            "$ref": "#/$defs/RefDecision",
+          },
+          "maxItems": 10000,
+          "type": "array",
+        },
+      },
+      "required": [
+        "refs",
+      ],
+      "title": "Policy result",
+      "type": "object",
+    },
+    "Principal": {
+      "additionalProperties": false,
+      "description": "Who a smart-HTTP request acts for, as returned by an Authenticator. Authorizers, branch policy, the audit hook and the decision cache all key on it; it never carries the credential itself.",
+      "examples": [
+        {
+          "email": "ada@example.com",
+          "expiresAt": "2026-11-20T10:30:00.000Z",
+          "name": "Ada Lovelace",
+          "roles": [
+            "maintainer",
+          ],
+          "subject": "user:42",
+        },
+      ],
+      "properties": {
+        "email": {
+          "anyOf": [
+            {
+              "format": "email",
+              "maxLength": 255,
+              "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "default": null,
+          "description": "Email address, at most 255 characters; null (the default) when unknown.",
+        },
+        "expiresAt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Timestamp",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "default": null,
+          "description": "When the credential that established this principal stops being valid, as an ISO 8601 UTC timestamp; cached decisions never outlive it. Null (the default) when the credential does not expire or the authenticator does not say.",
+        },
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[^\\n\\0]+$",
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "default": null,
+          "description": "Display name for logs and audit, 1–255 characters without newline or NUL; null (the default) when the authenticator does not know one.",
+        },
+        "roles": {
+          "default": [],
+          "description": "Roles or groups granted to the caller, at most 100; default none.",
+          "items": {
+            "$ref": "#/$defs/Role",
+          },
+          "maxItems": 100,
+          "type": "array",
+        },
+        "subject": {
+          "description": "Stable identifier of the caller in the deployment (e.g. the JWT "sub" claim or a user id): 1–255 characters without newline or NUL. Used for policy matching, audit and caching; never a credential.",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^\\n\\0]+$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "subject",
+      ],
+      "title": "Principal",
+      "type": "object",
+    },
+    "PrincipalSelector": {
+      "additionalProperties": false,
+      "description": "Selects principals by subject or role: a principal matches when its subject is listed or it holds any listed role. With both lists empty it matches nobody.",
+      "examples": [
+        {
+          "roles": [
+            "maintainer",
+          ],
+          "subjects": [
+            "user:42",
+          ],
+        },
+      ],
+      "properties": {
+        "roles": {
+          "default": [],
+          "description": "Principals holding any of these roles; at most 100, default none.",
+          "items": {
+            "$ref": "#/$defs/Role",
+          },
+          "maxItems": 100,
+          "type": "array",
+        },
+        "subjects": {
+          "default": [],
+          "description": "Principals named by subject; at most 1000, default none.",
+          "items": {
+            "description": "A principal subject, compared exactly with Principal.subject.",
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[^\\n\\0]+$",
+            "type": "string",
+          },
+          "maxItems": 1000,
+          "type": "array",
+        },
+      },
+      "title": "Principal selector",
+      "type": "object",
+    },
     "PromoteInput": {
       "additionalProperties": false,
       "description": "Input of promote(): fast-forward \`into\` to \`sha\`, only if \`sha\` is the head of \`from\` and contains the head of \`into\`. Never merges, never forces. Refusals: ref_not_found (from missing), not_head_of_source, not_fast_forward.",
@@ -2197,6 +2709,140 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       ],
       "title": "readFile output",
     },
+    "RefDecision": {
+      "description": "The branch policy verdict on one ref update, discriminated by \`decision\`.",
+      "examples": [
+        {
+          "decision": "deny",
+          "reason": "main is protected",
+          "ref": "refs/heads/main",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/RefDecisionAllow",
+        },
+        {
+          "$ref": "#/$defs/RefDecisionFastForwardOnly",
+        },
+        {
+          "$ref": "#/$defs/RefDecisionDeny",
+        },
+      ],
+      "title": "Ref decision",
+    },
+    "RefDecisionAllow": {
+      "additionalProperties": false,
+      "description": "The branch policy allows this update as it stands, force pushes included.",
+      "examples": [
+        {
+          "decision": "allow",
+          "ref": "refs/heads/feature/x",
+        },
+      ],
+      "properties": {
+        "decision": {
+          "const": "allow",
+          "description": "The update may proceed, whether or not it is a fast-forward.",
+          "type": "string",
+        },
+        "ref": {
+          "$ref": "#/$defs/FullRefName",
+          "description": "The ref the update names.",
+        },
+      },
+      "required": [
+        "ref",
+        "decision",
+      ],
+      "title": "Ref decision: allow",
+      "type": "object",
+    },
+    "RefDecisionDeny": {
+      "additionalProperties": false,
+      "description": "The branch policy refuses this update; git shows \`reason\` to the user.",
+      "examples": [
+        {
+          "decision": "deny",
+          "reason": "main is protected",
+          "ref": "refs/heads/main",
+        },
+      ],
+      "properties": {
+        "decision": {
+          "const": "deny",
+          "description": "The update is refused.",
+          "type": "string",
+        },
+        "reason": {
+          "description": "Why the update is or would be refused, shown to the user by git as "! [remote rejected] <ref> (<reason>)": one line of 1–500 characters.",
+          "maxLength": 500,
+          "minLength": 1,
+          "pattern": "^[^\\n\\0]+$",
+          "type": "string",
+        },
+        "ref": {
+          "$ref": "#/$defs/FullRefName",
+          "description": "The ref the update names.",
+        },
+      },
+      "required": [
+        "ref",
+        "decision",
+        "reason",
+      ],
+      "title": "Ref decision: deny",
+      "type": "object",
+    },
+    "RefDecisionFastForwardOnly": {
+      "additionalProperties": false,
+      "description": "The branch policy allows this update only as a fast-forward. The gateway proves the new commit descends from the old one (from the pushed pack and the backend) and refuses with \`reason\` when it does not or cannot be shown to. Creating a ref is allowed (there is no old head to lose); deleting one is refused with \`reason\` (there is no new commit to contain the old head). Moving an existing tag is never a fast-forward.",
+      "examples": [
+        {
+          "decision": "fast-forward-only",
+          "reason": "force pushes to main are not allowed",
+          "ref": "refs/heads/main",
+        },
+      ],
+      "properties": {
+        "decision": {
+          "const": "fast-forward-only",
+          "description": "The update may proceed only if the new commit contains the current head; the gateway checks ancestry and refuses otherwise. A creation (no current head) proceeds; a deletion (no new commit) is refused.",
+          "type": "string",
+        },
+        "reason": {
+          "description": "Why the update is or would be refused, shown to the user by git as "! [remote rejected] <ref> (<reason>)": one line of 1–500 characters.",
+          "maxLength": 500,
+          "minLength": 1,
+          "pattern": "^[^\\n\\0]+$",
+          "type": "string",
+        },
+        "ref": {
+          "$ref": "#/$defs/FullRefName",
+          "description": "The ref the update names.",
+        },
+      },
+      "required": [
+        "ref",
+        "decision",
+        "reason",
+      ],
+      "title": "Ref decision: fast-forward only",
+      "type": "object",
+    },
+    "RefPattern": {
+      "description": "A glob matched against a whole fully qualified ref under refs/heads/ or refs/tags/: "*" matches any run of characters inside one path component (never "/"), "**" matches any run including "/", everything else matches itself. No "..", "//", trailing "/", whitespace, control characters, ~ ^ : ? [ or backslash; 12–266 characters.",
+      "examples": [
+        "refs/heads/main",
+        "refs/heads/release/*",
+        "refs/tags/**",
+      ],
+      "maxLength": 266,
+      "minLength": 12,
+      "pattern": "^refs\\/(?:heads|tags)\\/(?!.*\\.\\.)(?!.*\\/\\/)(?!.*\\/$)(?!.*\\*{3})[^\\x00-\\x20\\x7f~^:?[\\\\]+$",
+      "title": "Ref pattern",
+      "type": "string",
+    },
     "RefUpdate": {
       "additionalProperties": false,
       "description": "One ref moved by a write, in receive-pack command form: the ref, the id it named before and the id it names after. Creation and deletion use the all-zero id on the missing side.",
@@ -2280,6 +2926,18 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "title": "Repository name",
       "type": "string",
     },
+    "RequestId": {
+      "description": "Identifies one request in logs, audit events and the X-Request-Id response header: 1–128 characters of letters, digits, ".", "_", ":" and "-". The Cloudflare Ray id when there is one, otherwise a random UUID.",
+      "examples": [
+        "8f1c2d3e4a5b6c7d-LHR",
+        "6f1d2c3b-9a8e-4f7d-b6c5-a4e3d2c1b0a9",
+      ],
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9._:-]+$",
+      "title": "Request id",
+      "type": "string",
+    },
     "ResolveRefInput": {
       "additionalProperties": false,
       "description": "Input of resolveRef(): resolve a branch to its head, or confirm a commit id exists.",
@@ -2352,6 +3010,18 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       ],
       "title": "Revision",
     },
+    "Role": {
+      "description": "A role or group the deployment grants a principal, matched by branch-policy rules and authorizers: 1–100 characters without whitespace or NUL. Case-sensitive.",
+      "examples": [
+        "maintainer",
+        "site:acme:editor",
+      ],
+      "maxLength": 100,
+      "minLength": 1,
+      "pattern": "^[^\\s\\0]+$",
+      "title": "Role",
+      "type": "string",
+    },
     "Sha": {
       "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
       "examples": [
@@ -2398,6 +3068,85 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       ],
       "title": "Signature",
       "type": "object",
+    },
+    "SmartHttpConfig": {
+      "additionalProperties": false,
+      "description": "Limits and names used by the smart-HTTP proxy. Every field has a default, so {} is a complete configuration.",
+      "examples": [
+        {
+          "decisionCacheEntries": 10000,
+          "maxAncestryReads": 2000,
+          "maxAuditReportBytes": 1048576,
+          "maxPushHeadBytes": 8388608,
+          "maxScannedCommitBytes": 33554432,
+          "realm": "git-gateway",
+        },
+      ],
+      "properties": {
+        "decisionCacheEntries": {
+          "default": 10000,
+          "description": "Most authentication and authorization decisions held in the per-isolate cache, oldest evicted first; 0 disables the cache. Default 10000. How long entries live is GatewayConfig.authCacheSeconds.",
+          "maximum": 1000000,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "maxAncestryReads": {
+          "default": 2000,
+          "description": "Most commits read from the storage backend to prove that a fast-forward-only update is a fast-forward; past it the update is refused as unverifiable. 1–100000, default 2000.",
+          "maximum": 100000,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "maxAuditReportBytes": {
+          "default": 1048576,
+          "description": "Most bytes of a storage host push response kept to read its per-ref report for the audit event; past it the refs are audited as "unknown". 0 skips reading reports. Default 1 MiB (1048576).",
+          "maximum": 16777216,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "maxPushHeadBytes": {
+          "default": 8388608,
+          "description": "Most bytes of a push read before the pack (update commands, capabilities, push options); a larger head is refused. 4 KiB–64 MiB, default 8 MiB (8388608).",
+          "maximum": 67108864,
+          "minimum": 4096,
+          "type": "integer",
+        },
+        "maxScannedCommitBytes": {
+          "default": 33554432,
+          "description": "Most bytes of commit objects kept while scanning a pushed pack for ancestry; a push needing more is refused as unverifiable. 1 MiB–256 MiB, default 32 MiB (33554432).",
+          "maximum": 268435456,
+          "minimum": 1048576,
+          "type": "integer",
+        },
+        "realm": {
+          "default": "git-gateway",
+          "description": "Realm named in the WWW-Authenticate: Basic challenge of a 401, which git credential helpers show and key on; 1–100 characters without quotes, backslash, newline or NUL. Default "git-gateway".",
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[^"\\\\\\n\\0]+$",
+          "type": "string",
+        },
+      },
+      "title": "Smart-HTTP proxy configuration",
+      "type": "object",
+    },
+    "SmartHttpEndpoint": {
+      "description": "Which of the three git smart-HTTP endpoints of /<repo>.git a request reached.",
+      "enum": [
+        "info-refs",
+        "upload-pack",
+        "receive-pack",
+      ],
+      "enumDescriptions": {
+        "info-refs": "GET /<repo>.git/info/refs?service=…: the ref advertisement (or the protocol v2 capabilities).",
+        "receive-pack": "POST /<repo>.git/git-receive-pack: ref update commands and the pack pushed by the client.",
+        "upload-pack": "POST /<repo>.git/git-upload-pack: fetch negotiation and the pack sent to the client.",
+      },
+      "examples": [
+        "receive-pack",
+      ],
+      "title": "Smart-HTTP endpoint",
+      "type": "string",
     },
     "StorageLogOptions": {
       "additionalProperties": false,
@@ -2997,6 +3746,179 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
 exports[`schema documentation > generates the JSON Schema for what the schemas produce 1`] = `
 {
   "$defs": {
+    "AuditEvent": {
+      "additionalProperties": false,
+      "description": "Handed to the audit hook for every authenticated smart-HTTP request once it is decided: principal, repository, operation, refs and outcome. Never contains a credential.",
+      "examples": [
+        {
+          "at": "2026-11-20T09:30:00.000Z",
+          "endpoint": "receive-pack",
+          "operation": "write",
+          "outcome": "denied",
+          "principal": {
+            "email": null,
+            "expiresAt": null,
+            "name": null,
+            "roles": [
+              "editor",
+            ],
+            "subject": "user:42",
+          },
+          "reason": "main is protected",
+          "refs": [
+            {
+              "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+              "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+              "reason": "main is protected",
+              "ref": "refs/heads/main",
+              "status": "rejected",
+            },
+          ],
+          "repo": "acme-raw-content",
+          "requestId": "6f1d2c3b-9a8e-4f7d-b6c5-a4e3d2c1b0a9",
+        },
+      ],
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/Timestamp",
+          "description": "When the gateway finished deciding and forwarding the request.",
+        },
+        "endpoint": {
+          "$ref": "#/$defs/SmartHttpEndpoint",
+          "description": "Which smart-HTTP endpoint the request reached.",
+        },
+        "operation": {
+          "$ref": "#/$defs/GitOperation",
+          "description": "Whether the request reads or writes the repository.",
+        },
+        "outcome": {
+          "description": "What the gateway did with the request.",
+          "enum": [
+            "allowed",
+            "denied",
+            "failed",
+          ],
+          "enumDescriptions": {
+            "allowed": "Authorized and forwarded to storage; for a push, \`refs\` says what storage did with each ref.",
+            "denied": "Refused by the authorizer or the branch policy; nothing reached storage.",
+            "failed": "Authorized, but the gateway or the storage host failed before an answer was complete.",
+          },
+          "type": "string",
+        },
+        "principal": {
+          "$ref": "#/$defs/Principal",
+          "description": "Who made the request (never the credential).",
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "Why the request was denied or failed, as the client was told; null when it was allowed.",
+        },
+        "refs": {
+          "description": "For a push (receive-pack), every update command and its outcome; empty for every other request.",
+          "items": {
+            "$ref": "#/$defs/AuditRefOutcome",
+          },
+          "maxItems": 10000,
+          "type": "array",
+        },
+        "repo": {
+          "$ref": "#/$defs/RepoName",
+          "description": "The repository the request named.",
+        },
+        "requestId": {
+          "$ref": "#/$defs/RequestId",
+          "description": "The request this event records.",
+        },
+      },
+      "required": [
+        "requestId",
+        "at",
+        "principal",
+        "repo",
+        "operation",
+        "endpoint",
+        "outcome",
+        "reason",
+        "refs",
+      ],
+      "title": "Audit event",
+      "type": "object",
+    },
+    "AuditRefOutcome": {
+      "additionalProperties": false,
+      "description": "One update command of an audited push and what became of it.",
+      "examples": [
+        {
+          "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "reason": "main is protected",
+          "ref": "refs/heads/main",
+          "status": "rejected",
+        },
+      ],
+      "properties": {
+        "newSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the client asked the ref to name; all zeros when it asked to delete the ref.",
+        },
+        "oldSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the client said the ref named; all zeros when it asked to create the ref.",
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "Why the update was refused, as git was told; null unless \`status\` is "rejected".",
+        },
+        "ref": {
+          "description": "The ref the update command named, fully qualified; any namespace, since refused ones are audited too.",
+          "maxLength": 4096,
+          "minLength": 6,
+          "pattern": "^refs\\/[^\\n\\0]+$",
+          "type": "string",
+        },
+        "status": {
+          "description": "What happened to the ref.",
+          "enum": [
+            "ok",
+            "rejected",
+            "unknown",
+          ],
+          "enumDescriptions": {
+            "ok": "The storage host reported the ref updated.",
+            "rejected": "The gateway or the storage host refused the update; \`reason\` says why.",
+            "unknown": "The push was forwarded but the storage host report could not be read.",
+          },
+          "type": "string",
+        },
+      },
+      "required": [
+        "ref",
+        "oldSha",
+        "newSha",
+        "status",
+        "reason",
+      ],
+      "title": "Audited ref update",
+      "type": "object",
+    },
     "BranchName": {
       "description": "A short branch name, 1–255 characters, valid under git check-ref-format (no "..", "@{", "//", spaces, control characters or ~ ^ : ? * [ or backslash; no component starting with "." or ending with ".lock"; not starting with "-" or "refs/"; not "HEAD"; not 40 lowercase hex characters, which a Revision always reads as a commit id). The gateway stores it as refs/heads/<name>.",
       "examples": [
@@ -3009,6 +3931,188 @@ exports[`schema documentation > generates the JSON Schema for what the schemas p
       "pattern": "^(?!refs\\/)(?!HEAD$)(?![0-9a-f]{40}$)(?!@$)(?!.*\\.\\.)(?!.*@\\{)(?!.*\\/\\/)(?!.*\\/\\.)(?!.*\\.lock(?:\\/|$))(?!.*[./]$)[^\\x00-\\x20\\x7f~^:?*[\\\\.\\-/][^\\x00-\\x20\\x7f~^:?*[\\\\]*$",
       "title": "Branch name",
       "type": "string",
+    },
+    "BranchPermissions": {
+      "additionalProperties": false,
+      "description": "What the rule-based branch policy allows on a ref no rule matches. Defaults: anyone with write access, create and delete allowed, force pushes refused.",
+      "examples": [
+        {
+          "create": true,
+          "delete": true,
+          "forcePush": false,
+          "pushers": null,
+        },
+      ],
+      "properties": {
+        "create": {
+          "default": true,
+          "description": "Whether a push may create a ref; default true.",
+          "type": "boolean",
+        },
+        "delete": {
+          "default": true,
+          "description": "Whether a push may delete a ref; default true.",
+          "type": "boolean",
+        },
+        "forcePush": {
+          "default": false,
+          "description": "Whether a push may move a branch to a commit that does not contain its current head (a non-fast-forward, "git push --force") or move an existing tag; default false.",
+          "type": "boolean",
+        },
+        "pushers": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PrincipalSelector",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "default": null,
+          "description": "Who may update matching refs at all; null (the default) lets every principal the Authorizer allowed to write.",
+        },
+      },
+      "required": [
+        "pushers",
+        "create",
+        "delete",
+        "forcePush",
+      ],
+      "title": "Branch permissions",
+      "type": "object",
+    },
+    "BranchPolicyConfig": {
+      "additionalProperties": false,
+      "description": "Configuration of the reference rule-based BranchPolicy. Refs outside refs/heads/ and refs/tags/ are always refused, whatever the rules say.",
+      "examples": [
+        {
+          "fallback": {
+            "create": true,
+            "delete": true,
+            "forcePush": false,
+            "pushers": null,
+          },
+          "rules": [
+            {
+              "create": true,
+              "delete": false,
+              "forcePush": false,
+              "message": "main is protected",
+              "pattern": "refs/heads/main",
+              "pushers": {
+                "roles": [
+                  "maintainer",
+                ],
+                "subjects": [],
+              },
+            },
+          ],
+        },
+      ],
+      "properties": {
+        "fallback": {
+          "$ref": "#/$defs/BranchPermissions",
+          "default": {
+            "create": true,
+            "delete": true,
+            "forcePush": false,
+            "pushers": null,
+          },
+          "description": "What applies to a branch or tag ref no rule matches; default anyone with write access, create and delete allowed, force refused.",
+        },
+        "rules": {
+          "default": [],
+          "description": "Rules tried in order; the first whose pattern matches a ref decides it. At most 200, default none.",
+          "items": {
+            "$ref": "#/$defs/BranchRule",
+          },
+          "maxItems": 200,
+          "type": "array",
+        },
+      },
+      "required": [
+        "rules",
+        "fallback",
+      ],
+      "title": "Branch policy configuration",
+      "type": "object",
+    },
+    "BranchRule": {
+      "additionalProperties": false,
+      "description": "Governs the refs matching \`pattern\`: who may push them, whether they may be created or deleted, and whether force pushes are allowed. Rules are tried in order and the first match decides.",
+      "examples": [
+        {
+          "create": true,
+          "delete": false,
+          "forcePush": false,
+          "message": "main is protected",
+          "pattern": "refs/heads/main",
+          "pushers": {
+            "roles": [
+              "maintainer",
+            ],
+            "subjects": [],
+          },
+        },
+      ],
+      "properties": {
+        "create": {
+          "default": true,
+          "description": "Whether a push may create a matching ref; default true.",
+          "type": "boolean",
+        },
+        "delete": {
+          "default": false,
+          "description": "Whether a push may delete a matching ref; default false (rules usually protect).",
+          "type": "boolean",
+        },
+        "forcePush": {
+          "default": false,
+          "description": "Whether a push may move a matching branch to a commit that does not contain its current head, or move a matching tag; default false.",
+          "type": "boolean",
+        },
+        "message": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "pattern": "^[^\\n\\0]+$",
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "default": null,
+          "description": "Text git shows the user when this rule refuses an update, e.g. "main is protected"; one line of 1–200 characters. Null (the default) uses a message naming the ref and what was refused.",
+        },
+        "pattern": {
+          "$ref": "#/$defs/RefPattern",
+          "description": "The refs this rule governs.",
+        },
+        "pushers": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PrincipalSelector",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "default": null,
+          "description": "Who may update matching refs at all; null (the default) lets every principal the Authorizer allowed to write.",
+        },
+      },
+      "required": [
+        "pattern",
+        "pushers",
+        "create",
+        "delete",
+        "forcePush",
+        "message",
+      ],
+      "title": "Branch rule",
+      "type": "object",
     },
     "ChmodAction": {
       "additionalProperties": false,
@@ -4616,6 +5720,23 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "title": "Git access",
       "type": "string",
     },
+    "GitOperation": {
+      "description": "What a git client asks to do to a repository through the gateway; Authorizer.authorize() decides each per principal and repository.",
+      "enum": [
+        "read",
+        "write",
+      ],
+      "enumDescriptions": {
+        "read": "Clone or fetch: GET info/refs?service=git-upload-pack and POST git-upload-pack.",
+        "write": "Push: GET info/refs?service=git-receive-pack and POST git-receive-pack.",
+      },
+      "examples": [
+        "read",
+        "write",
+      ],
+      "title": "Git operation",
+      "type": "string",
+    },
     "GitRemote": {
       "additionalProperties": false,
       "description": "A storage-host git remote minted for one use: the smart-HTTP URL plus the headers that authorize it. The gateway proxies to it; the credential never reaches a git client.",
@@ -5036,6 +6157,169 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "title": "Move action",
       "type": "object",
     },
+    "PolicyResult": {
+      "additionalProperties": false,
+      "description": "The branch policy verdict on every ref update of one push. The gateway forwards the push only when all of them are allowed (fast-forward-only ones after their ancestry is proven); otherwise nothing is written and git reports each refused ref with its reason.",
+      "examples": [
+        {
+          "refs": [
+            {
+              "decision": "fast-forward-only",
+              "reason": "force pushes to main are not allowed",
+              "ref": "refs/heads/main",
+            },
+            {
+              "decision": "deny",
+              "reason": "tags are created by the release pipeline",
+              "ref": "refs/tags/v1.0.0",
+            },
+          ],
+        },
+      ],
+      "properties": {
+        "refs": {
+          "description": "One decision per update the policy was given, for the same refs, each ref named at most once (a result naming a ref twice is refused, so the gateway never has to pick between conflicting decisions). A push is forwarded only when every update is allowed; an update without a decision is refused.",
+          "items": {
+            "$ref": "#/$defs/RefDecision",
+          },
+          "maxItems": 10000,
+          "type": "array",
+        },
+      },
+      "required": [
+        "refs",
+      ],
+      "title": "Policy result",
+      "type": "object",
+    },
+    "Principal": {
+      "additionalProperties": false,
+      "description": "Who a smart-HTTP request acts for, as returned by an Authenticator. Authorizers, branch policy, the audit hook and the decision cache all key on it; it never carries the credential itself.",
+      "examples": [
+        {
+          "email": "ada@example.com",
+          "expiresAt": "2026-11-20T10:30:00.000Z",
+          "name": "Ada Lovelace",
+          "roles": [
+            "maintainer",
+          ],
+          "subject": "user:42",
+        },
+      ],
+      "properties": {
+        "email": {
+          "anyOf": [
+            {
+              "format": "email",
+              "maxLength": 255,
+              "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "default": null,
+          "description": "Email address, at most 255 characters; null (the default) when unknown.",
+        },
+        "expiresAt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Timestamp",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "default": null,
+          "description": "When the credential that established this principal stops being valid, as an ISO 8601 UTC timestamp; cached decisions never outlive it. Null (the default) when the credential does not expire or the authenticator does not say.",
+        },
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[^\\n\\0]+$",
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "default": null,
+          "description": "Display name for logs and audit, 1–255 characters without newline or NUL; null (the default) when the authenticator does not know one.",
+        },
+        "roles": {
+          "default": [],
+          "description": "Roles or groups granted to the caller, at most 100; default none.",
+          "items": {
+            "$ref": "#/$defs/Role",
+          },
+          "maxItems": 100,
+          "type": "array",
+        },
+        "subject": {
+          "description": "Stable identifier of the caller in the deployment (e.g. the JWT "sub" claim or a user id): 1–255 characters without newline or NUL. Used for policy matching, audit and caching; never a credential.",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^\\n\\0]+$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "subject",
+        "name",
+        "email",
+        "roles",
+        "expiresAt",
+      ],
+      "title": "Principal",
+      "type": "object",
+    },
+    "PrincipalSelector": {
+      "additionalProperties": false,
+      "description": "Selects principals by subject or role: a principal matches when its subject is listed or it holds any listed role. With both lists empty it matches nobody.",
+      "examples": [
+        {
+          "roles": [
+            "maintainer",
+          ],
+          "subjects": [
+            "user:42",
+          ],
+        },
+      ],
+      "properties": {
+        "roles": {
+          "default": [],
+          "description": "Principals holding any of these roles; at most 100, default none.",
+          "items": {
+            "$ref": "#/$defs/Role",
+          },
+          "maxItems": 100,
+          "type": "array",
+        },
+        "subjects": {
+          "default": [],
+          "description": "Principals named by subject; at most 1000, default none.",
+          "items": {
+            "description": "A principal subject, compared exactly with Principal.subject.",
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[^\\n\\0]+$",
+            "type": "string",
+          },
+          "maxItems": 1000,
+          "type": "array",
+        },
+      },
+      "required": [
+        "subjects",
+        "roles",
+      ],
+      "title": "Principal selector",
+      "type": "object",
+    },
     "PromoteInput": {
       "additionalProperties": false,
       "description": "Input of promote(): fast-forward \`into\` to \`sha\`, only if \`sha\` is the head of \`from\` and contains the head of \`into\`. Never merges, never forces. Refusals: ref_not_found (from missing), not_head_of_source, not_fast_forward.",
@@ -5214,6 +6498,140 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       ],
       "title": "readFile output",
     },
+    "RefDecision": {
+      "description": "The branch policy verdict on one ref update, discriminated by \`decision\`.",
+      "examples": [
+        {
+          "decision": "deny",
+          "reason": "main is protected",
+          "ref": "refs/heads/main",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/RefDecisionAllow",
+        },
+        {
+          "$ref": "#/$defs/RefDecisionFastForwardOnly",
+        },
+        {
+          "$ref": "#/$defs/RefDecisionDeny",
+        },
+      ],
+      "title": "Ref decision",
+    },
+    "RefDecisionAllow": {
+      "additionalProperties": false,
+      "description": "The branch policy allows this update as it stands, force pushes included.",
+      "examples": [
+        {
+          "decision": "allow",
+          "ref": "refs/heads/feature/x",
+        },
+      ],
+      "properties": {
+        "decision": {
+          "const": "allow",
+          "description": "The update may proceed, whether or not it is a fast-forward.",
+          "type": "string",
+        },
+        "ref": {
+          "$ref": "#/$defs/FullRefName",
+          "description": "The ref the update names.",
+        },
+      },
+      "required": [
+        "ref",
+        "decision",
+      ],
+      "title": "Ref decision: allow",
+      "type": "object",
+    },
+    "RefDecisionDeny": {
+      "additionalProperties": false,
+      "description": "The branch policy refuses this update; git shows \`reason\` to the user.",
+      "examples": [
+        {
+          "decision": "deny",
+          "reason": "main is protected",
+          "ref": "refs/heads/main",
+        },
+      ],
+      "properties": {
+        "decision": {
+          "const": "deny",
+          "description": "The update is refused.",
+          "type": "string",
+        },
+        "reason": {
+          "description": "Why the update is or would be refused, shown to the user by git as "! [remote rejected] <ref> (<reason>)": one line of 1–500 characters.",
+          "maxLength": 500,
+          "minLength": 1,
+          "pattern": "^[^\\n\\0]+$",
+          "type": "string",
+        },
+        "ref": {
+          "$ref": "#/$defs/FullRefName",
+          "description": "The ref the update names.",
+        },
+      },
+      "required": [
+        "ref",
+        "decision",
+        "reason",
+      ],
+      "title": "Ref decision: deny",
+      "type": "object",
+    },
+    "RefDecisionFastForwardOnly": {
+      "additionalProperties": false,
+      "description": "The branch policy allows this update only as a fast-forward. The gateway proves the new commit descends from the old one (from the pushed pack and the backend) and refuses with \`reason\` when it does not or cannot be shown to. Creating a ref is allowed (there is no old head to lose); deleting one is refused with \`reason\` (there is no new commit to contain the old head). Moving an existing tag is never a fast-forward.",
+      "examples": [
+        {
+          "decision": "fast-forward-only",
+          "reason": "force pushes to main are not allowed",
+          "ref": "refs/heads/main",
+        },
+      ],
+      "properties": {
+        "decision": {
+          "const": "fast-forward-only",
+          "description": "The update may proceed only if the new commit contains the current head; the gateway checks ancestry and refuses otherwise. A creation (no current head) proceeds; a deletion (no new commit) is refused.",
+          "type": "string",
+        },
+        "reason": {
+          "description": "Why the update is or would be refused, shown to the user by git as "! [remote rejected] <ref> (<reason>)": one line of 1–500 characters.",
+          "maxLength": 500,
+          "minLength": 1,
+          "pattern": "^[^\\n\\0]+$",
+          "type": "string",
+        },
+        "ref": {
+          "$ref": "#/$defs/FullRefName",
+          "description": "The ref the update names.",
+        },
+      },
+      "required": [
+        "ref",
+        "decision",
+        "reason",
+      ],
+      "title": "Ref decision: fast-forward only",
+      "type": "object",
+    },
+    "RefPattern": {
+      "description": "A glob matched against a whole fully qualified ref under refs/heads/ or refs/tags/: "*" matches any run of characters inside one path component (never "/"), "**" matches any run including "/", everything else matches itself. No "..", "//", trailing "/", whitespace, control characters, ~ ^ : ? [ or backslash; 12–266 characters.",
+      "examples": [
+        "refs/heads/main",
+        "refs/heads/release/*",
+        "refs/tags/**",
+      ],
+      "maxLength": 266,
+      "minLength": 12,
+      "pattern": "^refs\\/(?:heads|tags)\\/(?!.*\\.\\.)(?!.*\\/\\/)(?!.*\\/$)(?!.*\\*{3})[^\\x00-\\x20\\x7f~^:?[\\\\]+$",
+      "title": "Ref pattern",
+      "type": "string",
+    },
     "RefUpdate": {
       "additionalProperties": false,
       "description": "One ref moved by a write, in receive-pack command form: the ref, the id it named before and the id it names after. Creation and deletion use the all-zero id on the missing side.",
@@ -5297,6 +6715,18 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "title": "Repository name",
       "type": "string",
     },
+    "RequestId": {
+      "description": "Identifies one request in logs, audit events and the X-Request-Id response header: 1–128 characters of letters, digits, ".", "_", ":" and "-". The Cloudflare Ray id when there is one, otherwise a random UUID.",
+      "examples": [
+        "8f1c2d3e4a5b6c7d-LHR",
+        "6f1d2c3b-9a8e-4f7d-b6c5-a4e3d2c1b0a9",
+      ],
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9._:-]+$",
+      "title": "Request id",
+      "type": "string",
+    },
     "ResolveRefInput": {
       "additionalProperties": false,
       "description": "Input of resolveRef(): resolve a branch to its head, or confirm a commit id exists.",
@@ -5369,6 +6799,18 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       ],
       "title": "Revision",
     },
+    "Role": {
+      "description": "A role or group the deployment grants a principal, matched by branch-policy rules and authorizers: 1–100 characters without whitespace or NUL. Case-sensitive.",
+      "examples": [
+        "maintainer",
+        "site:acme:editor",
+      ],
+      "maxLength": 100,
+      "minLength": 1,
+      "pattern": "^[^\\s\\0]+$",
+      "title": "Role",
+      "type": "string",
+    },
     "Sha": {
       "description": "A git object id: 40-character lowercase hex SHA-1 naming a commit, tree or blob. Never abbreviated.",
       "examples": [
@@ -5415,6 +6857,93 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       ],
       "title": "Signature",
       "type": "object",
+    },
+    "SmartHttpConfig": {
+      "additionalProperties": false,
+      "description": "Limits and names used by the smart-HTTP proxy. Every field has a default, so {} is a complete configuration.",
+      "examples": [
+        {
+          "decisionCacheEntries": 10000,
+          "maxAncestryReads": 2000,
+          "maxAuditReportBytes": 1048576,
+          "maxPushHeadBytes": 8388608,
+          "maxScannedCommitBytes": 33554432,
+          "realm": "git-gateway",
+        },
+      ],
+      "properties": {
+        "decisionCacheEntries": {
+          "default": 10000,
+          "description": "Most authentication and authorization decisions held in the per-isolate cache, oldest evicted first; 0 disables the cache. Default 10000. How long entries live is GatewayConfig.authCacheSeconds.",
+          "maximum": 1000000,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "maxAncestryReads": {
+          "default": 2000,
+          "description": "Most commits read from the storage backend to prove that a fast-forward-only update is a fast-forward; past it the update is refused as unverifiable. 1–100000, default 2000.",
+          "maximum": 100000,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "maxAuditReportBytes": {
+          "default": 1048576,
+          "description": "Most bytes of a storage host push response kept to read its per-ref report for the audit event; past it the refs are audited as "unknown". 0 skips reading reports. Default 1 MiB (1048576).",
+          "maximum": 16777216,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "maxPushHeadBytes": {
+          "default": 8388608,
+          "description": "Most bytes of a push read before the pack (update commands, capabilities, push options); a larger head is refused. 4 KiB–64 MiB, default 8 MiB (8388608).",
+          "maximum": 67108864,
+          "minimum": 4096,
+          "type": "integer",
+        },
+        "maxScannedCommitBytes": {
+          "default": 33554432,
+          "description": "Most bytes of commit objects kept while scanning a pushed pack for ancestry; a push needing more is refused as unverifiable. 1 MiB–256 MiB, default 32 MiB (33554432).",
+          "maximum": 268435456,
+          "minimum": 1048576,
+          "type": "integer",
+        },
+        "realm": {
+          "default": "git-gateway",
+          "description": "Realm named in the WWW-Authenticate: Basic challenge of a 401, which git credential helpers show and key on; 1–100 characters without quotes, backslash, newline or NUL. Default "git-gateway".",
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[^"\\\\\\n\\0]+$",
+          "type": "string",
+        },
+      },
+      "required": [
+        "realm",
+        "maxPushHeadBytes",
+        "maxAncestryReads",
+        "maxScannedCommitBytes",
+        "decisionCacheEntries",
+        "maxAuditReportBytes",
+      ],
+      "title": "Smart-HTTP proxy configuration",
+      "type": "object",
+    },
+    "SmartHttpEndpoint": {
+      "description": "Which of the three git smart-HTTP endpoints of /<repo>.git a request reached.",
+      "enum": [
+        "info-refs",
+        "upload-pack",
+        "receive-pack",
+      ],
+      "enumDescriptions": {
+        "info-refs": "GET /<repo>.git/info/refs?service=…: the ref advertisement (or the protocol v2 capabilities).",
+        "receive-pack": "POST /<repo>.git/git-receive-pack: ref update commands and the pack pushed by the client.",
+        "upload-pack": "POST /<repo>.git/git-upload-pack: fetch negotiation and the pack sent to the client.",
+      },
+      "examples": [
+        "receive-pack",
+      ],
+      "title": "Smart-HTTP endpoint",
+      "type": "string",
     },
     "StorageLogOptions": {
       "additionalProperties": false,

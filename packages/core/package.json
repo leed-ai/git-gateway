@@ -62,6 +62,11 @@
       "types": "./dist/objects/commit-object.d.ts",
       "default": "./dist/objects/commit-object.js"
     },
+    "./objects/commit-parents": {
+      "source": "./src/objects/commit-parents.ts",
+      "types": "./dist/objects/commit-parents.d.ts",
+      "default": "./dist/objects/commit-parents.js"
+    },
     "./objects/hash-object": {
       "source": "./src/objects/hash-object.ts",
       "types": "./dist/objects/hash-object.d.ts",
@@ -87,15 +92,45 @@
       "types": "./dist/pack/deflate.d.ts",
       "default": "./dist/pack/deflate.js"
     },
+    "./pack/deflate-constants": {
+      "source": "./src/pack/deflate-constants.ts",
+      "types": "./dist/pack/deflate-constants.d.ts",
+      "default": "./dist/pack/deflate-constants.js"
+    },
+    "./pack/deflate-tables": {
+      "source": "./src/pack/deflate-tables.ts",
+      "types": "./dist/pack/deflate-tables.d.ts",
+      "default": "./dist/pack/deflate-tables.js"
+    },
     "./pack/huffman": {
       "source": "./src/pack/huffman.ts",
       "types": "./dist/pack/huffman.d.ts",
       "default": "./dist/pack/huffman.js"
     },
+    "./pack/inflate-output": {
+      "source": "./src/pack/inflate-output.ts",
+      "types": "./dist/pack/inflate-output.d.ts",
+      "default": "./dist/pack/inflate-output.js"
+    },
+    "./pack/pack-entry-header": {
+      "source": "./src/pack/pack-entry-header.ts",
+      "types": "./dist/pack/pack-entry-header.d.ts",
+      "default": "./dist/pack/pack-entry-header.js"
+    },
+    "./pack/pack-scanner": {
+      "source": "./src/pack/pack-scanner.ts",
+      "types": "./dist/pack/pack-scanner.d.ts",
+      "default": "./dist/pack/pack-scanner.js"
+    },
     "./pack/read-pack": {
       "source": "./src/pack/read-pack.ts",
       "types": "./dist/pack/read-pack.d.ts",
       "default": "./dist/pack/read-pack.js"
+    },
+    "./pack/stream-inflater": {
+      "source": "./src/pack/stream-inflater.ts",
+      "types": "./dist/pack/stream-inflater.d.ts",
+      "default": "./dist/pack/stream-inflater.js"
     },
     "./pack/write-pack": {
       "source": "./src/pack/write-pack.ts",

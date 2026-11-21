@@ -11,6 +11,8 @@ export interface ParsedReceivePack {
   readonly request: ReceivePackRequest;
   /** The whole request body, byte for byte, from its first byte (the commands included). */
   readonly body: ReadableStream<Uint8Array>;
+  /** How many bytes of `body` the head spans: the pack (when there is one) starts at this offset. */
+  readonly headLength: number;
 }
 
 const SHALLOW = /^shallow ([0-9a-f]{40})$/;
@@ -137,8 +139,8 @@ async function parseHead(reader: PktLineReader): Promise<ReceivePackRequest> {
  * the update commands (capabilities after a NUL on the first), and push options when the
  * "push-options" capability is requested — reading only those leading pkt-lines, never the pack.
  *
- * Returns the parsed head and `body`, a stream that replays the request from its first byte, so
- * the caller can forward it unchanged. Throws a malformed_pkt_line or malformed_request CoreError
+ * Returns the parsed head, `body`, a stream that replays the request from its first byte, so the
+ * caller can forward it unchanged, and `headLength`, where the pack starts in it. Throws a malformed_pkt_line or malformed_request CoreError
  * for bad input — including more than 10000 shallow lines or commands, more than 100 push options,
  * or a head over `maxHeadBytes` — and unsupported_request for signed pushes and non-SHA-1 object
  * formats. On any failure the source stream is cancelled and released.
@@ -157,5 +159,5 @@ export async function parseReceivePackRequest(
     await reader.cancel(error).catch(() => undefined);
     throw error;
   }
-  return { request, body: reader.replay() };
+  return { request, headLength: reader.offset, body: reader.replay() };
 }

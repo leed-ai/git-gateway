@@ -154,6 +154,20 @@ describe('decodeCommit', () => {
     ],
     ['a missing tree', bytes('author Ada <a@b.co> 1 +0000\ncommitter Ada <a@b.co> 1 +0000\n\nm'), /tree/],
     [
+      'a parent line after the author, which git does not read as a parent',
+      bytes(
+        `tree ${TREE}\nauthor Ada <a@b.co> 1 +0000\ncommitter Ada <a@b.co> 1 +0000\nparent ${PARENT}\n\nm`,
+      ),
+      /parent lines only straight after it/,
+    ],
+    [
+      'a parent line before the tree',
+      bytes(
+        `parent ${PARENT}\ntree ${TREE}\nauthor Ada <a@b.co> 1 +0000\ncommitter Ada <a@b.co> 1 +0000\n\nm`,
+      ),
+      /must start with a tree line/,
+    ],
+    [
       'no message',
       bytes(`tree ${TREE}\nauthor Ada <a@b.co> 1 +0000\ncommitter Ada <a@b.co> 1 +0000`),
       /message/,

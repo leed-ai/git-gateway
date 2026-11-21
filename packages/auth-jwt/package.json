@@ -28,10 +28,50 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
+    "./base64url": {
+      "source": "./src/base64url.ts",
+      "types": "./dist/base64url.d.ts",
+      "default": "./dist/base64url.js"
+    },
+    "./jwks-source": {
+      "source": "./src/jwks-source.ts",
+      "types": "./dist/jwks-source.d.ts",
+      "default": "./dist/jwks-source.js"
+    },
+    "./jwt-authenticator": {
+      "source": "./src/jwt-authenticator.ts",
+      "types": "./dist/jwt-authenticator.d.ts",
+      "default": "./dist/jwt-authenticator.js"
+    },
+    "./jwt-verify": {
+      "source": "./src/jwt-verify.ts",
+      "types": "./dist/jwt-verify.d.ts",
+      "default": "./dist/jwt-verify.js"
+    },
     "./package-name": {
       "source": "./src/package-name.ts",
       "types": "./dist/package-name.d.ts",
       "default": "./dist/package-name.js"
+    },
+    "./schemas/jwks": {
+      "source": "./src/schemas/jwks.ts",
+      "types": "./dist/schemas/jwks.d.ts",
+      "default": "./dist/schemas/jwks.js"
+    },
+    "./schemas/jwt-algorithm": {
+      "source": "./src/schemas/jwt-algorithm.ts",
+      "types": "./dist/schemas/jwt-algorithm.d.ts",
+      "default": "./dist/schemas/jwt-algorithm.js"
+    },
+    "./schemas/jwt-authenticator-config": {
+      "source": "./src/schemas/jwt-authenticator-config.ts",
+      "types": "./dist/schemas/jwt-authenticator-config.d.ts",
+      "default": "./dist/schemas/jwt-authenticator-config.js"
+    },
+    "./schemas/jwt-parts": {
+      "source": "./src/schemas/jwt-parts.ts",
+      "types": "./dist/schemas/jwt-parts.d.ts",
+      "default": "./dist/schemas/jwt-parts.js"
     },
     "./package.json": "./package.json"
   },
@@ -44,10 +84,14 @@
     "check": "vp check",
     "test": "vp test"
   },
+  "dependencies": {
+    "@leed-ai/git-gateway-contract": "workspace:*"
+  },
   "devDependencies": {
     "@leed-ai/git-gateway-repo-tools": "workspace:*",
     "@leed-ai/git-gateway-schema-docs": "workspace:*",
     "@types/node": "^24.19.2",
+    "fast-check": "^4.10.3",
     "typescript": "^7.0.2",
     "vite-plus": "^1.7.0",
     "zod": "^4.6.7"

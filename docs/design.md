@@ -163,15 +163,16 @@ Content is UTF-8 text or base64. A commit with no effective change is reported a
 Routed with Hono; authentication, authorization and branch policy are Hono middleware. Endpoints: `GET /<repo>.git/info/refs?service=git-upload-pack|git-receive-pack`, `POST /<repo>.git/git-upload-pack`, `POST /<repo>.git/git-receive-pack`.
 
 - Request and response bodies are **streamed**, never buffered. For pushes, only the leading pkt-line update commands are parsed (old sha, new sha, ref) before the stream is forwarded.
-- Policy failures are reported in-protocol (`ERR` / `ng <ref> <reason>`) so `git` prints a readable message.
-- Protocol v2 is passed through for fetch; push uses v1 receive-pack (which every client supports).
-- The upstream credential is minted per request from the backend and never reaches the client.
+- Policy failures are reported in-protocol (`ERR` / `ng <ref> <reason>`) so `git` prints a readable message. A push is forwarded only when every update in it is allowed; otherwise each refused ref gets its reason, the rest "not updated: another update in this push was refused", and nothing reaches storage.
+- **Fast-forwards are proven at the edge** (the host may accept non-fast-forwards; open question 1). When the policy answers "fast-forward-only", the gateway walks parents from the new commit: from storage when the host already has it, otherwise from the pushed pack, which `PackScanner` (core) walks as it streams to the host — every entry inflated by a streaming inflater to find where it ends, only commits kept. The last 20 bytes of the push, the pack checksum, are held back until the walk proves the update; a refusal fails the upstream request, so the host sees a truncated pack and updates no ref. Parents are read as git reads them — only the `parent` lines straight after the leading `tree` line — and a commit with a `parent` header anywhere else is unverifiable, so a crafted header cannot pass for a fast-forward. An update that cannot be proven (missing or unverifiable commits, more than `maxAncestryReads` storage reads) is refused. The host's answer is held until the walk has decided, and the push is audited only then. Under "fast-forward-only" a creation proceeds and a deletion is refused. Moving an existing tag is never a fast-forward.
+- Protocol v2 is passed through for fetch; push uses v1 receive-pack (which every client supports), so a `Git-Protocol: version=2` header is not forwarded on pushes.
+- The upstream credential is minted per request from the backend and never reaches the client; only `Content-Type` and caching headers come back from the host. git's auth probe (a receive-pack body of a lone flush) is answered by the gateway itself.
 
 ### Authentication and authorization
 
 ```ts
 interface Authenticator {
-  authenticate(req: Request): Promise<Principal | null>; // null → 401 with WWW-Authenticate: Basic
+  authenticate(req: Request): Promise<PrincipalInput | null>; // null → 401 with WWW-Authenticate: Basic
 }
 interface Authorizer {
   authorize(p: Principal, repo: string, op: 'read' | 'write'): Promise<boolean>;
@@ -182,7 +183,8 @@ interface BranchPolicy {
 ```
 
 - git sends credentials as HTTP Basic; the password is treated as a bearer credential, so a credential helper can return an OAuth access token.
-- Decisions may be cached briefly per principal and repository (configurable, default 60 s).
+- The hooks and their schemas live in `@leed-ai/git-gateway-contract/proxy/*`. `RuleBranchPolicy` (worker) is the reference `BranchPolicy`: ordered `BranchRule`s (ref glob, who may push, create, delete, force push, message), first match wins; `JwtAuthenticator` (auth-jwt) the reference `Authenticator`.
+- Decisions may be cached briefly per principal and repository (configurable, default 60 s): the principal per credential fingerprint (SHA-256, never the credential), the authorization per subject, repository and operation; no entry outlives the principal's `expiresAt`.
 - The RPC API is reachable only over a service binding; it carries the calling service's identity, not a user's.
 - An audit hook receives every authenticated operation (principal, repo, op, refs, outcome).
 

@@ -76,6 +76,11 @@
       "types": "./dist/git-binary.d.ts",
       "default": "./dist/git-binary.js"
     },
+    "./git-sandbox": {
+      "source": "./src/git-sandbox.ts",
+      "types": "./dist/git-sandbox.d.ts",
+      "default": "./dist/git-sandbox.js"
+    },
     "./memory/memory-backend": {
       "source": "./src/memory/memory-backend.ts",
       "types": "./dist/memory/memory-backend.d.ts",
@@ -121,6 +126,11 @@
       "types": "./dist/node/serve-fetch-handler.d.ts",
       "default": "./dist/node/serve-fetch-handler.js"
     },
+    "./node/serve-streaming": {
+      "source": "./src/node/serve-streaming.ts",
+      "types": "./dist/node/serve-streaming.d.ts",
+      "default": "./dist/node/serve-streaming.js"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -139,10 +149,13 @@
     "@leed-ai/git-gateway-core": "workspace:*"
   },
   "devDependencies": {
+    "@leed-ai/git-gateway-auth-jwt": "workspace:*",
     "@leed-ai/git-gateway-repo-tools": "workspace:*",
     "@leed-ai/git-gateway-schema-docs": "workspace:*",
+    "@leed-ai/git-gateway-worker": "workspace:*",
     "@types/node": "^24.19.2",
     "cloudflare": "^5.2.0",
+    "hono": "^4.13.19",
     "typescript": "^7.0.2",
     "vite-plus": "^1.7.0",
     "zod": "^4.6.7"

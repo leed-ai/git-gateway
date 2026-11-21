@@ -97,6 +97,46 @@
       "types": "./dist/package-name.d.ts",
       "default": "./dist/package-name.js"
     },
+    "./proxy/audit-event": {
+      "source": "./src/proxy/audit-event.ts",
+      "types": "./dist/proxy/audit-event.d.ts",
+      "default": "./dist/proxy/audit-event.js"
+    },
+    "./proxy/branch-rule": {
+      "source": "./src/proxy/branch-rule.ts",
+      "types": "./dist/proxy/branch-rule.d.ts",
+      "default": "./dist/proxy/branch-rule.js"
+    },
+    "./proxy/gateway-hooks": {
+      "source": "./src/proxy/gateway-hooks.ts",
+      "types": "./dist/proxy/gateway-hooks.d.ts",
+      "default": "./dist/proxy/gateway-hooks.js"
+    },
+    "./proxy/git-operation": {
+      "source": "./src/proxy/git-operation.ts",
+      "types": "./dist/proxy/git-operation.d.ts",
+      "default": "./dist/proxy/git-operation.js"
+    },
+    "./proxy/policy-result": {
+      "source": "./src/proxy/policy-result.ts",
+      "types": "./dist/proxy/policy-result.d.ts",
+      "default": "./dist/proxy/policy-result.js"
+    },
+    "./proxy/principal": {
+      "source": "./src/proxy/principal.ts",
+      "types": "./dist/proxy/principal.d.ts",
+      "default": "./dist/proxy/principal.js"
+    },
+    "./proxy/request-credential": {
+      "source": "./src/proxy/request-credential.ts",
+      "types": "./dist/proxy/request-credential.d.ts",
+      "default": "./dist/proxy/request-credential.js"
+    },
+    "./proxy/smart-http-config": {
+      "source": "./src/proxy/smart-http-config.ts",
+      "types": "./dist/proxy/smart-http-config.d.ts",
+      "default": "./dist/proxy/smart-http-config.js"
+    },
     "./reference/apply-actions": {
       "source": "./src/reference/apply-actions.ts",
       "types": "./dist/reference/apply-actions.d.ts",

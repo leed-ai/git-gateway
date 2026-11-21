@@ -6,6 +6,7 @@ import type { Signature } from '@leed-ai/git-gateway-contract/schemas/identity';
 
 import { coreError } from '../core-error.ts';
 import { CommitFields, type GitObject } from '../schemas/git-object.ts';
+import { commitHeaderLines, readCommitParents } from './commit-parents.ts';
 import { createObject } from './hash-object.ts';
 
 const IDENT = /^(.*) <([^<>\n]*)> (\d+) ([+-]\d{4})$/;
@@ -79,7 +80,9 @@ function parseIdent(sha: string, header: string, value: string | undefined): Sig
 }
 
 /**
- * Decodes the content of a commit object with id `sha` into a contract {@link Commit}. Dates are
+ * Decodes the content of a commit object with id `sha` into a contract {@link Commit}. Parents are
+ * read as git reads them: only the `parent` lines straight after the leading tree line; a commit
+ * with a `parent` header anywhere else is refused, as git's fsck refuses it. Dates are
  * converted to UTC (the original time zone is not kept); headers other than tree, parent,
  * author and committer (encoding, gpgsig, mergetag) are skipped. Throws an invalid_object
  * CoreError for content that is not a commit or that the Commit schema cannot represent (e.g.
@@ -93,7 +96,14 @@ export function decodeCommit(sha: string, data: Uint8Array): Commit {
     throw invalidCommit(sha, 'content is not UTF-8');
   }
   const split = text.indexOf('\n\n');
-  const headerLines = (split === -1 ? text : text.slice(0, split)).split('\n');
+  const headerLines = commitHeaderLines(text);
+  const parents = readCommitParents(headerLines);
+  if (parents === null) {
+    throw invalidCommit(
+      sha,
+      'the header must start with a tree line, with parent lines only straight after it',
+    );
+  }
   const headers = new Map<string, string[]>();
   for (const line of headerLines) {
     if (line.startsWith(' ')) continue;
@@ -104,7 +114,7 @@ export function decodeCommit(sha: string, data: Uint8Array): Commit {
   const parsed = Commit.safeParse({
     sha,
     tree: headers.get('tree')?.[0],
-    parents: headers.get('parent') ?? [],
+    parents,
     author: parseIdent(sha, 'author', headers.get('author')?.[0]),
     committer: parseIdent(sha, 'committer', headers.get('committer')?.[0]),
     message: split === -1 ? '' : text.slice(split + 2),

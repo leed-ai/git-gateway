@@ -26,10 +26,135 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
+    "./audit/audit-recorder": {
+      "source": "./src/audit/audit-recorder.ts",
+      "types": "./dist/audit/audit-recorder.d.ts",
+      "default": "./dist/audit/audit-recorder.js"
+    },
+    "./audit/push-report": {
+      "source": "./src/audit/push-report.ts",
+      "types": "./dist/audit/push-report.d.ts",
+      "default": "./dist/audit/push-report.js"
+    },
+    "./auth/authenticate": {
+      "source": "./src/auth/authenticate.ts",
+      "types": "./dist/auth/authenticate.d.ts",
+      "default": "./dist/auth/authenticate.js"
+    },
+    "./auth/authorize": {
+      "source": "./src/auth/authorize.ts",
+      "types": "./dist/auth/authorize.d.ts",
+      "default": "./dist/auth/authorize.js"
+    },
+    "./cache/decision-cache": {
+      "source": "./src/cache/decision-cache.ts",
+      "types": "./dist/cache/decision-cache.d.ts",
+      "default": "./dist/cache/decision-cache.js"
+    },
+    "./gateway-app": {
+      "source": "./src/gateway-app.ts",
+      "types": "./dist/gateway-app.d.ts",
+      "default": "./dist/gateway-app.js"
+    },
+    "./gateway-worker": {
+      "source": "./src/gateway-worker.ts",
+      "types": "./dist/gateway-worker.d.ts",
+      "default": "./dist/gateway-worker.js"
+    },
     "./health": {
       "source": "./src/health.ts",
       "types": "./dist/health.d.ts",
       "default": "./dist/health.js"
+    },
+    "./logging/logger": {
+      "source": "./src/logging/logger.ts",
+      "types": "./dist/logging/logger.d.ts",
+      "default": "./dist/logging/logger.js"
+    },
+    "./policy/branch-policy": {
+      "source": "./src/policy/branch-policy.ts",
+      "types": "./dist/policy/branch-policy.d.ts",
+      "default": "./dist/policy/branch-policy.js"
+    },
+    "./policy/enforce-branch-policy": {
+      "source": "./src/policy/enforce-branch-policy.ts",
+      "types": "./dist/policy/enforce-branch-policy.d.ts",
+      "default": "./dist/policy/enforce-branch-policy.js"
+    },
+    "./policy/fast-forward": {
+      "source": "./src/policy/fast-forward.ts",
+      "types": "./dist/policy/fast-forward.d.ts",
+      "default": "./dist/policy/fast-forward.js"
+    },
+    "./policy/ref-pattern": {
+      "source": "./src/policy/ref-pattern.ts",
+      "types": "./dist/policy/ref-pattern.d.ts",
+      "default": "./dist/policy/ref-pattern.js"
+    },
+    "./policy/rule-branch-policy": {
+      "source": "./src/policy/rule-branch-policy.ts",
+      "types": "./dist/policy/rule-branch-policy.d.ts",
+      "default": "./dist/policy/rule-branch-policy.js"
+    },
+    "./proxy/defer": {
+      "source": "./src/proxy/defer.ts",
+      "types": "./dist/proxy/defer.d.ts",
+      "default": "./dist/proxy/defer.js"
+    },
+    "./proxy/forward-read": {
+      "source": "./src/proxy/forward-read.ts",
+      "types": "./dist/proxy/forward-read.d.ts",
+      "default": "./dist/proxy/forward-read.js"
+    },
+    "./proxy/gateway-deps": {
+      "source": "./src/proxy/gateway-deps.ts",
+      "types": "./dist/proxy/gateway-deps.d.ts",
+      "default": "./dist/proxy/gateway-deps.js"
+    },
+    "./proxy/gateway-env": {
+      "source": "./src/proxy/gateway-env.ts",
+      "types": "./dist/proxy/gateway-env.d.ts",
+      "default": "./dist/proxy/gateway-env.js"
+    },
+    "./proxy/git-responses": {
+      "source": "./src/proxy/git-responses.ts",
+      "types": "./dist/proxy/git-responses.d.ts",
+      "default": "./dist/proxy/git-responses.js"
+    },
+    "./proxy/git-route": {
+      "source": "./src/proxy/git-route.ts",
+      "types": "./dist/proxy/git-route.d.ts",
+      "default": "./dist/proxy/git-route.js"
+    },
+    "./proxy/push-guard": {
+      "source": "./src/proxy/push-guard.ts",
+      "types": "./dist/proxy/push-guard.d.ts",
+      "default": "./dist/proxy/push-guard.js"
+    },
+    "./proxy/receive-pack": {
+      "source": "./src/proxy/receive-pack.ts",
+      "types": "./dist/proxy/receive-pack.d.ts",
+      "default": "./dist/proxy/receive-pack.js"
+    },
+    "./proxy/request-log": {
+      "source": "./src/proxy/request-log.ts",
+      "types": "./dist/proxy/request-log.d.ts",
+      "default": "./dist/proxy/request-log.js"
+    },
+    "./proxy/resolve-route": {
+      "source": "./src/proxy/resolve-route.ts",
+      "types": "./dist/proxy/resolve-route.d.ts",
+      "default": "./dist/proxy/resolve-route.js"
+    },
+    "./proxy/upstream": {
+      "source": "./src/proxy/upstream.ts",
+      "types": "./dist/proxy/upstream.d.ts",
+      "default": "./dist/proxy/upstream.js"
+    },
+    "./proxy/upstream-call": {
+      "source": "./src/proxy/upstream-call.ts",
+      "types": "./dist/proxy/upstream-call.d.ts",
+      "default": "./dist/proxy/upstream-call.js"
     },
     "./rpc/branch-methods": {
       "source": "./src/rpc/branch-methods.ts",

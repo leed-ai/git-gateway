@@ -12,12 +12,14 @@
     "test": "vp test"
   },
   "dependencies": {
+    "@leed-ai/git-gateway-auth-jwt": "workspace:*",
+    "@leed-ai/git-gateway-backend-artifacts": "workspace:*",
+    "@leed-ai/git-gateway-contract": "workspace:*",
     "@leed-ai/git-gateway-worker": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.8.5",
     "@cloudflare/workers-types": "^5.20261120.1",
-    "@leed-ai/git-gateway-contract": "workspace:*",
     "@leed-ai/git-gateway-repo-tools": "workspace:*",
     "@leed-ai/git-gateway-schema-docs": "workspace:*",
     "hono": "^4.13.19",

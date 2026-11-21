@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vite-plus/test';
 import { MemoryBackend } from '../src/memory/memory-backend.ts';
 import { serveFetchHandler, type LocalServer } from '../src/node/serve-fetch-handler.ts';
 import { pseudoRandomBytes } from '../src/contract-suite/backend-fixtures.ts';
-import { GitSandbox } from './helpers/git-sandbox.ts';
+import { GitSandbox } from '../src/git-sandbox.ts';
 
 // The in-memory backend's smart-HTTP server driven by the real git binary: clone, fetch, push,
 // thin packs with deltas, branch create/delete, force and non-fast-forward, credential helpers.
