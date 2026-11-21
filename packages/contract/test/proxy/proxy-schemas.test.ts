@@ -133,8 +133,17 @@ describe('proxy schemas', () => {
       decisionCacheEntries: 10_000,
       maxAuditReportBytes: 1_048_576,
       allowedPushOptions: [],
+      deniedStatus: 'err',
     });
     expect(SmartHttpConfig.safeParse({ realm: 'a"b' }).success).toBe(false);
+  });
+
+  it('answers authorization refusals in-protocol by default, or with 403, and nothing else', () => {
+    expect(SmartHttpConfig.parse({ deniedStatus: 403 }).deniedStatus).toBe(403);
+    expect(SmartHttpConfig.parse({ deniedStatus: 'err' }).deniedStatus).toBe('err');
+    for (const deniedStatus of [401, 404, '403', 'ng']) {
+      expect(SmartHttpConfig.safeParse({ deniedStatus }).success).toBe(false);
+    }
   });
 
   it('allows push option names only, without whitespace, NUL or "="', () => {

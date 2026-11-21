@@ -69,6 +69,23 @@ export const SmartHttpConfig = z
       .describe(
         "Push option names the proxy forwards to the storage host; a push carrying any other option is refused before it reaches storage. The host runs push options as the gateway's own credential (GitLab's merge_request.* and ci.variable, for example), so each one bypasses branch policy unless refused here. At most 100; default none, so every push option is refused.",
       ),
+    deniedStatus: z
+      .union([
+        z
+          .literal('err')
+          .describe(
+            'Answer in-protocol: HTTP 200 with an "ERR" packet, which git prints as "remote error: <reason>".',
+          ),
+        z
+          .literal(403)
+          .describe(
+            'Answer HTTP 403 with the reason as a plain-text body, which git prints as "The requested URL returned error: 403".',
+          ),
+      ])
+      .default('err')
+      .describe(
+        'How an authorization refusal (the Authorizer denying read or write of a repository) is answered: "err" (default) or 403. Branch-policy refusals of individual refs are always in-protocol ("ng" or "ERR"), so a push to a protected branch keeps its readable reason either way.',
+      ),
   })
   .strict()
   .meta({
@@ -85,6 +102,7 @@ export const SmartHttpConfig = z
         decisionCacheEntries: 10_000,
         maxAuditReportBytes: 1_048_576,
         allowedPushOptions: ['ci.skip'],
+        deniedStatus: 'err',
       },
     ],
   });

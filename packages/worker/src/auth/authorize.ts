@@ -10,8 +10,9 @@ import { decisionTtl } from './authenticate.ts';
 /**
  * Authorization middleware: asks the deployment's Authorizer whether the principal may read
  * (fetch) or write (push) the repository, through the decision cache keyed by principal subject
- * and roles, repository and operation. A refusal is answered in-protocol with an "ERR" packet, so git prints
- * "remote error: …", and audited.
+ * and roles, repository and operation. A refusal is audited and answered as `smartHttp.deniedStatus`
+ * says: in-protocol with an "ERR" packet (default), so git prints "remote error: …", or HTTP 403
+ * with the reason as the body.
  */
 export function authorize(deps: GatewayDeps): MiddlewareHandler<GatewayEnv> {
   return async (context, next) => {
@@ -44,6 +45,9 @@ export function authorize(deps: GatewayDeps): MiddlewareHandler<GatewayEnv> {
         deferWith(context),
         requestId,
       );
+      if (deps.config.deniedStatus === 403) {
+        return textResponse(403, reason, { 'X-Request-Id': requestId });
+      }
       const response = errResponse(git.service, git.endpoint === 'info-refs' ? 'info-refs' : 'rpc', reason);
       response.headers.set('X-Request-Id', requestId);
       return response;

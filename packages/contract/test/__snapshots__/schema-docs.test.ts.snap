@@ -3078,6 +3078,7 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
             "ci.skip",
           ],
           "decisionCacheEntries": 10000,
+          "deniedStatus": "err",
           "maxAncestryReads": 2000,
           "maxAuditReportBytes": 1048576,
           "maxPushHeadBytes": 8388608,
@@ -3105,6 +3106,22 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
           "maximum": 1000000,
           "minimum": 0,
           "type": "integer",
+        },
+        "deniedStatus": {
+          "anyOf": [
+            {
+              "const": "err",
+              "description": "Answer in-protocol: HTTP 200 with an "ERR" packet, which git prints as "remote error: <reason>".",
+              "type": "string",
+            },
+            {
+              "const": 403,
+              "description": "Answer HTTP 403 with the reason as a plain-text body, which git prints as "The requested URL returned error: 403".",
+              "type": "number",
+            },
+          ],
+          "default": "err",
+          "description": "How an authorization refusal (the Authorizer denying read or write of a repository) is answered: "err" (default) or 403. Branch-policy refusals of individual refs are always in-protocol ("ng" or "ERR"), so a push to a protected branch keeps its readable reason either way.",
         },
         "maxAncestryReads": {
           "default": 2000,
@@ -6883,6 +6900,7 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
             "ci.skip",
           ],
           "decisionCacheEntries": 10000,
+          "deniedStatus": "err",
           "maxAncestryReads": 2000,
           "maxAuditReportBytes": 1048576,
           "maxPushHeadBytes": 8388608,
@@ -6910,6 +6928,22 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
           "maximum": 1000000,
           "minimum": 0,
           "type": "integer",
+        },
+        "deniedStatus": {
+          "anyOf": [
+            {
+              "const": "err",
+              "description": "Answer in-protocol: HTTP 200 with an "ERR" packet, which git prints as "remote error: <reason>".",
+              "type": "string",
+            },
+            {
+              "const": 403,
+              "description": "Answer HTTP 403 with the reason as a plain-text body, which git prints as "The requested URL returned error: 403".",
+              "type": "number",
+            },
+          ],
+          "default": "err",
+          "description": "How an authorization refusal (the Authorizer denying read or write of a repository) is answered: "err" (default) or 403. Branch-policy refusals of individual refs are always in-protocol ("ng" or "ERR"), so a push to a protected branch keeps its readable reason either way.",
         },
         "maxAncestryReads": {
           "default": 2000,
@@ -6956,6 +6990,7 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
         "decisionCacheEntries",
         "maxAuditReportBytes",
         "allowedPushOptions",
+        "deniedStatus",
       ],
       "title": "Smart-HTTP proxy configuration",
       "type": "object",
