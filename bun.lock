@@ -157,13 +157,10 @@
         "@leed-ai/git-gateway-core": "workspace:*",
       },
       "devDependencies": {
-        "@leed-ai/git-gateway-auth-jwt": "workspace:*",
         "@leed-ai/git-gateway-repo-tools": "workspace:*",
         "@leed-ai/git-gateway-schema-docs": "workspace:*",
-        "@leed-ai/git-gateway-worker": "workspace:*",
         "@types/node": "^24.19.2",
         "cloudflare": "^5.2.0",
-        "hono": "^4.13.19",
         "typescript": "^7.0.2",
         "vite-plus": "^1.7.0",
         "zod": "^4.6.7",
@@ -198,6 +195,21 @@
       "peerDependencies": {
         "hono": "^4",
         "zod": "^4",
+      },
+    },
+    "tooling/gateway-conformance": {
+      "name": "@leed-ai/git-gateway-gateway-conformance",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@leed-ai/git-gateway-auth-jwt": "workspace:*",
+        "@leed-ai/git-gateway-repo-tools": "workspace:*",
+        "@leed-ai/git-gateway-testkit": "workspace:*",
+        "@leed-ai/git-gateway-worker": "workspace:*",
+        "@types/node": "^24.19.2",
+        "hono": "^4.13.19",
+        "typescript": "^7.0.2",
+        "vite-plus": "^1.7.0",
+        "zod": "^4.6.7",
       },
     },
     "tooling/repo": {
@@ -535,6 +547,8 @@
     "@leed-ai/git-gateway-core": ["@leed-ai/git-gateway-core@workspace:packages/core"],
 
     "@leed-ai/git-gateway-example": ["@leed-ai/git-gateway-example@workspace:examples/gateway"],
+
+    "@leed-ai/git-gateway-gateway-conformance": ["@leed-ai/git-gateway-gateway-conformance@workspace:tooling/gateway-conformance"],
 
     "@leed-ai/git-gateway-repo-tools": ["@leed-ai/git-gateway-repo-tools@workspace:tooling/repo"],
 

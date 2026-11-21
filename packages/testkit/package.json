@@ -149,13 +149,10 @@
     "@leed-ai/git-gateway-core": "workspace:*"
   },
   "devDependencies": {
-    "@leed-ai/git-gateway-auth-jwt": "workspace:*",
     "@leed-ai/git-gateway-repo-tools": "workspace:*",
     "@leed-ai/git-gateway-schema-docs": "workspace:*",
-    "@leed-ai/git-gateway-worker": "workspace:*",
     "@types/node": "^24.19.2",
     "cloudflare": "^5.2.0",
-    "hono": "^4.13.19",
     "typescript": "^7.0.2",
     "vite-plus": "^1.7.0",
     "zod": "^4.6.7"

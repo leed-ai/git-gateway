@@ -5,10 +5,10 @@ import { JwtAuthenticator } from '@leed-ai/git-gateway-auth-jwt/jwt-authenticato
 import { createGatewayApp } from '@leed-ai/git-gateway-worker/gateway-app';
 import { RuleBranchPolicy } from '@leed-ai/git-gateway-worker/policy/rule-branch-policy';
 
-import { GitSandbox, type GitRun } from '../../src/git-sandbox.ts';
-import { MemoryBackend } from '../../src/memory/memory-backend.ts';
-import { serveStreaming } from '../../src/node/serve-streaming.ts';
-import type { LocalServer } from '../../src/node/serve-fetch-handler.ts';
+import { GitSandbox, type GitRun } from '@leed-ai/git-gateway-testkit/git-sandbox';
+import { MemoryBackend } from '@leed-ai/git-gateway-testkit/memory/memory-backend';
+import { serveStreaming } from '@leed-ai/git-gateway-testkit/node/serve-streaming';
+import type { LocalServer } from '@leed-ai/git-gateway-testkit/node/serve-fetch-handler';
 
 const ISSUER = 'https://auth.conformance.test';
 const AUDIENCE = 'git.conformance.test';

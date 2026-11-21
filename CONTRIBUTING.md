@@ -13,12 +13,13 @@ bun run verify        # check, test and build every package, then the repository
 
 ## Layout
 
-| Path                  | What it is                                                                          |
-| --------------------- | ----------------------------------------------------------------------------------- |
-| `packages/*`          | The published packages, `@leed-ai/git-gateway-<name>`.                              |
-| `examples/gateway`    | A deployable Worker showing the composition. Built in CI, never deployed from here. |
-| `tooling/schema-docs` | The schema-documentation test harness every package runs. Private.                  |
-| `tooling/repo`        | Repository checks and release scripts. Private.                                     |
+| Path                          | What it is                                                                                 |
+| ----------------------------- | ------------------------------------------------------------------------------------------ |
+| `packages/*`                  | The published packages, `@leed-ai/git-gateway-<name>`.                                     |
+| `examples/gateway`            | A deployable Worker showing the composition. Built in CI, never deployed from here.        |
+| `tooling/schema-docs`         | The schema-documentation test harness every package runs. Private.                         |
+| `tooling/repo`                | Repository checks and release scripts. Private.                                            |
+| `tooling/gateway-conformance` | Real-git conformance tests for the assembled gateway (worker, auth-jwt, testkit). Private. |
 
 ## Everyday commands
 
