@@ -53,6 +53,22 @@ export const SmartHttpConfig = z
       .describe(
         'Most bytes of a storage host push response kept to read its per-ref report for the audit event and the push event; past it the refs are audited as "unknown" and no push event is sent. 0 skips reading reports for audit; when an onPush hook is set the report is still read, up to the 1 MiB default. Default 1 MiB (1048576).',
       ),
+    allowedPushOptions: z
+      .array(
+        z
+          .string()
+          .min(1)
+          .max(100)
+          .regex(/^[^\s\0=]+$/)
+          .describe(
+            'A push option name, the part of a "git push -o <name>[=<value>]" option before the first "="; 1–100 characters without whitespace, NUL or "=". Matched exactly and case-sensitively.',
+          ),
+      )
+      .max(100)
+      .default([])
+      .describe(
+        "Push option names the proxy forwards to the storage host; a push carrying any other option is refused before it reaches storage. The host runs push options as the gateway's own credential (GitLab's merge_request.* and ci.variable, for example), so each one bypasses branch policy unless refused here. At most 100; default none, so every push option is refused.",
+      ),
   })
   .strict()
   .meta({
@@ -68,6 +84,7 @@ export const SmartHttpConfig = z
         maxScannedCommitBytes: 33_554_432,
         decisionCacheEntries: 10_000,
         maxAuditReportBytes: 1_048_576,
+        allowedPushOptions: ['ci.skip'],
       },
     ],
   });

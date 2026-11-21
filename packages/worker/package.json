@@ -136,6 +136,11 @@
       "types": "./dist/proxy/push-guard.d.ts",
       "default": "./dist/proxy/push-guard.js"
     },
+    "./proxy/push-options": {
+      "source": "./src/proxy/push-options.ts",
+      "types": "./dist/proxy/push-options.d.ts",
+      "default": "./dist/proxy/push-options.js"
+    },
     "./proxy/receive-pack": {
       "source": "./src/proxy/receive-pack.ts",
       "types": "./dist/proxy/receive-pack.d.ts",

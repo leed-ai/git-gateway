@@ -143,6 +143,19 @@ describe('pushing through the gateway with the git binary', () => {
     expect(h.syncs.size).toBe(before);
   });
 
+  it('refuses push options the storage host would act on with the gateway credential', async () => {
+    const repo = await seeded('bob');
+    await h.sandbox.ok(['checkout', '-q', '-b', 'feature/mr'], { cwd: repo.work });
+    await commit(repo.work, 'mr.txt', 'merge me');
+    const options = ['-o', 'merge_request.create', '-o', 'merge_request.target=main'];
+    const pushed = await h.git('bob', ['push', ...options, 'origin', 'feature/mr'], repo.work);
+    expect(pushed.status).not.toBe(0);
+    const reason = 'push options "merge_request.create", "merge_request.target" not allowed by this gateway';
+    expect(pushed.stderr).toContain(`[remote rejected] feature/mr -> feature/mr (${reason})`);
+    expect(await h.backend.resolveRef(repo.name, 'feature/mr')).toBeNull();
+    expect((await h.git('bob', ['push', '-q', 'origin', 'feature/mr'], repo.work)).status).toBe(0);
+  });
+
   it('lets exactly one of two concurrent pushes to the same branch win', async () => {
     const repo = await seeded();
     const other = h.sandbox.path(`${repo.name}-other`);

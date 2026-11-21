@@ -3074,6 +3074,9 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "description": "Limits and names used by the smart-HTTP proxy. Every field has a default, so {} is a complete configuration.",
       "examples": [
         {
+          "allowedPushOptions": [
+            "ci.skip",
+          ],
           "decisionCacheEntries": 10000,
           "maxAncestryReads": 2000,
           "maxAuditReportBytes": 1048576,
@@ -3083,6 +3086,19 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
         },
       ],
       "properties": {
+        "allowedPushOptions": {
+          "default": [],
+          "description": "Push option names the proxy forwards to the storage host; a push carrying any other option is refused before it reaches storage. The host runs push options as the gateway's own credential (GitLab's merge_request.* and ci.variable, for example), so each one bypasses branch policy unless refused here. At most 100; default none, so every push option is refused.",
+          "items": {
+            "description": "A push option name, the part of a "git push -o <name>[=<value>]" option before the first "="; 1–100 characters without whitespace, NUL or "=". Matched exactly and case-sensitively.",
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[^\\s\\0=]+$",
+            "type": "string",
+          },
+          "maxItems": 100,
+          "type": "array",
+        },
         "decisionCacheEntries": {
           "default": 10000,
           "description": "Most authentication and authorization decisions held in the per-isolate cache, oldest evicted first; 0 disables the cache. Default 10000. How long entries live is GatewayConfig.authCacheSeconds.",
@@ -6863,6 +6879,9 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "description": "Limits and names used by the smart-HTTP proxy. Every field has a default, so {} is a complete configuration.",
       "examples": [
         {
+          "allowedPushOptions": [
+            "ci.skip",
+          ],
           "decisionCacheEntries": 10000,
           "maxAncestryReads": 2000,
           "maxAuditReportBytes": 1048576,
@@ -6872,6 +6891,19 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
         },
       ],
       "properties": {
+        "allowedPushOptions": {
+          "default": [],
+          "description": "Push option names the proxy forwards to the storage host; a push carrying any other option is refused before it reaches storage. The host runs push options as the gateway's own credential (GitLab's merge_request.* and ci.variable, for example), so each one bypasses branch policy unless refused here. At most 100; default none, so every push option is refused.",
+          "items": {
+            "description": "A push option name, the part of a "git push -o <name>[=<value>]" option before the first "="; 1–100 characters without whitespace, NUL or "=". Matched exactly and case-sensitively.",
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[^\\s\\0=]+$",
+            "type": "string",
+          },
+          "maxItems": 100,
+          "type": "array",
+        },
         "decisionCacheEntries": {
           "default": 10000,
           "description": "Most authentication and authorization decisions held in the per-isolate cache, oldest evicted first; 0 disables the cache. Default 10000. How long entries live is GatewayConfig.authCacheSeconds.",
@@ -6923,6 +6955,7 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
         "maxScannedCommitBytes",
         "decisionCacheEntries",
         "maxAuditReportBytes",
+        "allowedPushOptions",
       ],
       "title": "Smart-HTTP proxy configuration",
       "type": "object",

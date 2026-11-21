@@ -27,6 +27,8 @@ export default createGatewayWorker((env) => ({
 
 `gateway-app` (`createGatewayApp`) is the same gateway as a Hono app. Each request to `/<repo>.git/…` runs route resolution, authentication (401 with `WWW-Authenticate: Basic` when it fails, so git asks its credential helper), authorization (refused in-protocol with `ERR`) and, for pushes, the branch policy (refused per ref with `ng <ref> <reason>`; a push is forwarded only when every update is allowed). The request then streams to the storage host with a credential minted for it alone. Fast-forward-only updates are proven from storage, or from the pushed pack as it streams, holding back the pack checksum until they are proven. See the [design](https://github.com/leed-ai/git-gateway/blob/main/docs/design.md#smart-http-proxy).
 
+Push options (`git push -o …`) are refused unless their name is in `smartHttp.allowedPushOptions` (default none): the storage host acts on them with the gateway's own credential — GitLab opens and auto-merges merge requests on `merge_request.*` — so an unchecked option would reach refs the branch policy never saw.
+
 **Push events.** After the storage host accepts a push through the proxy, the refs its report marks `ok` are passed to `onPush` (through `waitUntil`; failures go to `onPushError` and never change the response). The RPC service does the same for every ref update it writes. Sync rules (`gateway.syncRules` on the app, `config.syncRules` on the RPC service) start a `SyncBranchWorkflow` after every accepted push to a rule's `from` branch; pass the binding as `syncWorkflow`, without which a gateway with sync rules refuses to start.
 
 ## License

@@ -10,6 +10,7 @@ import { deferWith } from '../proxy/defer.ts';
 import type { GatewayDeps } from '../proxy/gateway-deps.ts';
 import type { GatewayEnv } from '../proxy/gateway-env.ts';
 import { errResponse, NO_CACHE, refusePush, textResponse, type RefRefusal } from '../proxy/git-responses.ts';
+import { disallowedPushOptions, pushOptionsReason } from '../proxy/push-options.ts';
 import { judgePush, reasonLine } from './branch-policy.ts';
 
 /** The reason given for an update refused only because another update of the same push was. */
@@ -66,7 +67,9 @@ async function receivePackBody(request: Request): Promise<ReadableStream<Uint8Ar
 
 /**
  * Branch-policy middleware for git-receive-pack: reads only the leading update commands of the
- * push (never the pack), asks the BranchPolicy about every ref, and proves fast-forwards it can
+ * push (never the pack), refuses a push carrying a push option outside
+ * `SmartHttpConfig.allowedPushOptions` (the storage host would act on it with the gateway's own
+ * credential), asks the BranchPolicy about every ref, and proves fast-forwards it can
  * from storage. A push is forwarded only when every update is allowed — otherwise the client is
  * answered in-protocol ("ng <ref> <reason>" per ref) and nothing reaches storage. Updates whose
  * ancestry depends on commits in the pack are left for the receive-pack handler to prove as the
@@ -97,6 +100,34 @@ export function enforceBranchPolicy(deps: GatewayDeps): MiddlewareHandler<Gatewa
       const reason = reasonLine(`malformed push: ${error.message}`);
       deps.audit.record({ requestId, principal, git, outcome: 'denied', reason, refs: [] }, defer, requestId);
       const response = errResponse(git.service, 'rpc', reason);
+      response.headers.set('X-Request-Id', requestId);
+      return response;
+    }
+    const refusedOptions = disallowedPushOptions(parsed.request, deps.config.allowedPushOptions);
+    if (refusedOptions.length > 0) {
+      const reason = reasonLine(pushOptionsReason(refusedOptions));
+      const refusals = parsed.request.commands.map((command) => ({ ref: command.ref, reason }));
+      deps.audit.record(
+        {
+          requestId,
+          principal,
+          git,
+          outcome: 'denied',
+          reason,
+          refs: rejectedOutcomes(parsed.request, new Map(), reason),
+        },
+        defer,
+        requestId,
+      );
+      await drain(parsed.body);
+      deps.logger.log({
+        level: 'info',
+        message: 'push refused for its push options',
+        requestId,
+        repo: git.repo,
+        reason,
+      });
+      const response = refusePush(parsed.request.capabilities, refusals);
       response.headers.set('X-Request-Id', requestId);
       return response;
     }

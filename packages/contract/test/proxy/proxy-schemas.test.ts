@@ -132,8 +132,18 @@ describe('proxy schemas', () => {
       maxScannedCommitBytes: 33_554_432,
       decisionCacheEntries: 10_000,
       maxAuditReportBytes: 1_048_576,
+      allowedPushOptions: [],
     });
     expect(SmartHttpConfig.safeParse({ realm: 'a"b' }).success).toBe(false);
+  });
+
+  it('allows push option names only, without whitespace, NUL or "="', () => {
+    expect(SmartHttpConfig.parse({ allowedPushOptions: ['ci.skip'] }).allowedPushOptions).toEqual([
+      'ci.skip',
+    ]);
+    for (const name of ['', 'ci.variable=A', 'two words', 'a\0b', 'x'.repeat(101)]) {
+      expect(SmartHttpConfig.safeParse({ allowedPushOptions: [name] }).success).toBe(false);
+    }
   });
 
   it('audits refs of any namespace but never an unknown field', () => {
