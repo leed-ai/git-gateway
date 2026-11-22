@@ -7,6 +7,12 @@ import { ArtifactsBackend } from '../src/artifacts-backend.ts';
 import { artifactsError, fakeBinding, fakeHandle, INFO } from './helpers/fake-binding.ts';
 
 const SHA = '8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a';
+/** A backend whose create() rejects with `error`. */
+const throwing = (error: unknown): ArtifactsBackend =>
+  new ArtifactsBackend({ binding: fakeBinding(fakeHandle(), { create: async () => Promise.reject(error) }) });
+/** An error named like the binding's, with `extra` own properties. */
+const named = (message: string, extra: Record<string, unknown> = {}): Error =>
+  Object.assign(new Error(message), { name: 'ArtifactsError', ...extra });
 const internal = async (): Promise<never> => Promise.reject(artifactsError('INTERNAL_ERROR'));
 
 async function errorCode(call: Promise<unknown>): Promise<string | undefined> {
@@ -55,6 +61,34 @@ describe('ArtifactsBackend with a scripted binding', () => {
       }),
     });
     expect((await backend.createRepo('acme')).name).toBe('acme');
+  });
+
+  it('maps an existing name on createRepo to repo_exists however the live binding words it', async () => {
+    // As seen live: the code did not survive, only the message.
+    expect(await errorCode(throwing(named('repo already exists: acme')).createRepo('acme'))).toBe(
+      'repo_exists',
+    );
+    expect(
+      await errorCode(throwing(named('ArtifactsError: repo already exists: acme')).createRepo('acme')),
+    ).toBe('repo_exists');
+    expect(
+      await errorCode(
+        throwing(named('conflict', { code: 'INTERNAL_ERROR', numericCode: 10201 })).createRepo('acme'),
+      ),
+    ).toBe('repo_exists');
+    // Narrow: another repository's name, other wording, or a call other than create is not.
+    expect(await errorCode(throwing(named('repo already exists: acme-2')).createRepo('acme'))).toBe(
+      'storage_unavailable',
+    );
+    expect(await errorCode(throwing(named('the repo already exists somewhere')).createRepo('acme'))).toBe(
+      'storage_unavailable',
+    );
+    const reading = new ArtifactsBackend({
+      binding: fakeBinding(fakeHandle(), {
+        get: async () => Promise.reject(named('repo already exists: acme')),
+      }),
+    });
+    expect(await errorCode(reading.readBlob('acme', SHA))).toBe('storage_unavailable');
   });
 
   it('maps ALREADY_EXISTS, NOT_FOUND and other binding errors to gateway errors', async () => {
