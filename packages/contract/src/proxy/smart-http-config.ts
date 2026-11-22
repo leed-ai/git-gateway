@@ -37,6 +37,14 @@ export const SmartHttpConfig = z
       .describe(
         'Most bytes of commit objects kept while scanning a pushed pack for ancestry; a push needing more is refused as unverifiable. 1 MiB–256 MiB, default 32 MiB (33554432).',
       ),
+    maxVerdictWaitMs: z
+      .int()
+      .min(0)
+      .max(600_000)
+      .default(60_000)
+      .describe(
+        'Most milliseconds a push waits, once the storage host\'s request has failed, for the gateway to finish proving the push from its pack, so that a refusal (which makes the host\'s request fail by design) is reported in-protocol as "ng <ref> <reason>" rather than as a 502. Past it, or when no verdict comes, the push is answered 502 and nothing is written. 0–600000, default 60000 (one minute).',
+      ),
     decisionCacheEntries: z
       .int()
       .min(0)
@@ -99,6 +107,7 @@ export const SmartHttpConfig = z
         maxPushHeadBytes: 8_388_608,
         maxAncestryReads: 2000,
         maxScannedCommitBytes: 33_554_432,
+        maxVerdictWaitMs: 60_000,
         decisionCacheEntries: 10_000,
         maxAuditReportBytes: 1_048_576,
         allowedPushOptions: ['ci.skip'],

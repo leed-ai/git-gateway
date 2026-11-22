@@ -130,6 +130,7 @@ describe('proxy schemas', () => {
       maxPushHeadBytes: 8_388_608,
       maxAncestryReads: 2000,
       maxScannedCommitBytes: 33_554_432,
+      maxVerdictWaitMs: 60_000,
       decisionCacheEntries: 10_000,
       maxAuditReportBytes: 1_048_576,
       allowedPushOptions: [],

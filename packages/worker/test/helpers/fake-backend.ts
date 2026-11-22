@@ -31,6 +31,12 @@ export class FakeBackend implements StorageBackend {
   commitReads = 0;
   failRemote: Error | null = null;
   failReads = false;
+  /** Milliseconds every commit read takes, as a slow host's would. */
+  readDelayMs = 0;
+  /** Questions asked of {@link isAncestor} once {@link answerAncestry} has turned it on. */
+  ancestryQueries = 0;
+  /** The optional capability; absent until {@link answerAncestry} is called. */
+  isAncestor?: (repo: string, ancestor: string, descendant: string) => Promise<boolean | null>;
 
   createRepo = unused;
   deleteRepo = unused;
@@ -43,6 +49,7 @@ export class FakeBackend implements StorageBackend {
 
   async readCommit(repo: string, sha: string): Promise<Commit | null> {
     this.commitReads += 1;
+    if (this.readDelayMs > 0) await new Promise((resolve) => setTimeout(resolve, this.readDelayMs));
     if (this.failReads) throw gatewayError('storage_unavailable', 'down', { retryable: true });
     if (!this.repos.has(repo)) throw repoNotFound(repo);
     const raw = this.rawCommits.get(sha);
@@ -59,6 +66,28 @@ export class FakeBackend implements StorageBackend {
       url: `https://storage.test/git/${repo}.git`,
       headers: { Authorization: `Bearer ${token}` },
       expiresAt: '2026-11-20T10:00:00.000Z',
+    };
+  }
+
+  /** Turns on the isAncestor capability, answered from the recorded commits without counting reads. */
+  answerAncestry(): void {
+    this.isAncestor = async (repo, ancestor, descendant) => {
+      this.ancestryQueries += 1;
+      if (this.failReads) throw gatewayError('storage_unavailable', 'down', { retryable: true });
+      if (!this.repos.has(repo)) throw repoNotFound(repo);
+      if (!this.commits.has(ancestor) || !this.commits.has(descendant)) return null;
+      const queue = [descendant];
+      const seen = new Set(queue);
+      for (let sha = queue.shift(); sha !== undefined; sha = queue.shift()) {
+        if (sha === ancestor) return true;
+        for (const parent of this.commits.get(sha)?.parents ?? []) {
+          if (!seen.has(parent)) {
+            seen.add(parent);
+            queue.push(parent);
+          }
+        }
+      }
+      return false;
     };
   }
 

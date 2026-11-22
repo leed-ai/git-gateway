@@ -23,6 +23,7 @@ import { z } from 'zod';
 import { GitLabApi, GitLabHttpError } from './gitlab-api.ts';
 import { FrontedProjects, frontedLifecycleRefused } from './gitlab-fronted.ts';
 import { readCommitsOverGit, readTreeOverGit } from './gitlab-git-reads.ts';
+import { isAncestorOnGitLab } from './gitlab-merge-base.ts';
 import { GitLabBackendConfig } from './schemas/gitlab-config.ts';
 import { GitLabCommitSummary, GitLabGroup, GitLabProject, GitLabRef } from './schemas/gitlab-responses.ts';
 
@@ -40,7 +41,8 @@ const enc = encodeURIComponent;
  * still live on GitLab. Each repository is a private project in one group. Lifecycle, refs,
  * blobs, files and history use the REST API (v4); commits and trees are read as git objects over
  * the smart-HTTP transport (GitLab's API reports neither tree ids nor raw messages), and writes
- * are git pushes to {@link gitRemote}. Every API response is parsed with Zod.
+ * are git pushes to {@link gitRemote}. It offers the optional `isAncestor` capability through
+ * GitLab's merge-base API, so the gateway proves fast-forwards in one call. Every API response is parsed with Zod.
  *
  * With `frontedProjects`, a reserved name `<prefix><projectId>` addresses an existing project by
  * id, wherever it lives under `frontedProjects.namespace`, so the gateway can front repositories
@@ -183,6 +185,16 @@ export class GitLabBackend implements StorageBackend {
       const shas = await this.#listFirstParents(repo, revision, offset + limit);
       return readCommitsOverGit(await this.#client(repo), shas.slice(offset, offset + limit));
     });
+  }
+
+  /** One merge-base API call: `ancestor` is an ancestor exactly when it is the merge base. */
+  async isAncestor(name: string, ancestor: string, descendant: string): Promise<boolean | null> {
+    const repo = parseStorageInput(RepoName, name);
+    const older = parseStorageInput(Sha, ancestor);
+    const newer = parseStorageInput(Sha, descendant);
+    return this.#call(repo, 'isAncestor', async () =>
+      isAncestorOnGitLab(this.#api, await this.#projectPath(repo), older, newer),
+    );
   }
 
   async gitRemote(name: string, access: string): Promise<GitRemote> {

@@ -3,6 +3,7 @@ import type { TestRegistrar } from '@leed-ai/git-gateway-contract/behaviour/beha
 import type { StorageBackend } from '@leed-ai/git-gateway-contract/storage/storage-backend';
 import type { FetchLike } from '@leed-ai/git-gateway-core/smart-http/git-http-client';
 
+import { ancestryCases } from './ancestry-cases.ts';
 import { clientFactory, type BackendCase, type HostBehaviour } from './backend-case.ts';
 import { contentCases } from './content-cases.ts';
 import { lifecycleCases } from './lifecycle-cases.ts';
@@ -17,6 +18,7 @@ export const BACKEND_CASES: readonly BackendCase[] = [
   ...readCases,
   ...pushCases,
   ...contentCases,
+  ...ancestryCases,
 ];
 
 /** How to run the backend contract suite against one backend. */

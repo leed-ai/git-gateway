@@ -15,6 +15,19 @@ import { callUpstream, streamToClient, type UpstreamResult } from './upstream-ca
 /** Bytes of a host report read for push events when the audit report is switched off (1 MiB). */
 const DEFAULT_REPORT_BYTES = 1024 * 1024;
 
+/** The reason given for every update when proving the push failed unexpectedly. */
+const UNCHECKED_REASON = 'the push could not be checked; try again later';
+
+/** Waits for `promise`, but at most `ms` milliseconds. */
+async function within(promise: Promise<void>, ms: number): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<void>((resolve) => {
+    timer = setTimeout(resolve, ms);
+  });
+  await Promise.race([promise, timeout]);
+  clearTimeout(timer);
+}
+
 /**
  * Holds a 2xx storage host answer back until the push guard has decided, so a host that answers
  * before reading the whole body cannot carry a push past a refusal made later. Returns once the
@@ -47,7 +60,9 @@ async function awaitVerdict(
  * pack, the body streams through a guard that scans it and holds back the pack checksum until
  * they are; a refusal then fails the upstream request (the host gets a truncated pack and updates
  * nothing) and the client is told in-protocol which refs were refused and why. The host's answer
- * is held until that verdict is known, and the push is audited only after it; otherwise it
+ * is held until that verdict is known — and when the host's request fails first, the verdict is
+ * still awaited (at most `maxVerdictWaitMs`), so a refusal is never mistaken for a storage
+ * failure — and the push is audited only after it; otherwise it
  * streams back untouched. When an audit hook or an onPush hook is set, a copy of the answer is
  * read for per-ref outcomes: the audit event gets them, and the refs the host accepted go to the
  * onPush hook as push events, both after the response through `waitUntil`.
@@ -61,8 +76,9 @@ export function receivePack(deps: GatewayDeps): Handler<GatewayEnv> {
     const defer = deferWith(context);
     const commands = push.request.commands;
     let refused: readonly RefRefusal[] | null = null;
-    /** Settles once the guard has allowed or refused the push (never, when nothing is pending). */
+    /** Settles once the guard has allowed or refused the push, or will never decide it. */
     const { promise: verdict, resolve: settleVerdict } = Promise.withResolvers<void>();
+    let deciding = false;
     if (push.pending.length > 0) {
       deps.logger.log({
         level: 'debug',
@@ -72,25 +88,42 @@ export function receivePack(deps: GatewayDeps): Handler<GatewayEnv> {
         refs: push.pending.map(({ update }) => update.ref),
       });
     }
-    const body =
-      push.pending.length === 0
-        ? push.body
-        : push.body.pipeThrough(
-            guardPush({
-              headLength: push.headLength,
-              maxCommitBytes: deps.config.maxScannedCommitBytes,
-              decide: async (scan) => {
-                const refusals = await provePending(deps, git, push.pending, scan.commits);
-                if (refusals.length === 0) settleVerdict();
-                return refusals;
-              },
-              onRefused: (refusals) => {
-                refused = refuseAll(push.request, refusals);
-                settleVerdict();
-              },
-              refuseAll: (reason) => commands.map((command) => ({ ref: command.ref, reason })),
-            }),
-          );
+    let body = push.body;
+    if (push.pending.length > 0) {
+      const guard = guardPush({
+        headLength: push.headLength,
+        maxCommitBytes: deps.config.maxScannedCommitBytes,
+        decide: async (scan) => {
+          deciding = true;
+          let refusals: readonly RefRefusal[];
+          try {
+            refusals = await provePending(deps, git, push.pending, scan.commits);
+          } catch (error) {
+            deps.logger.log({
+              level: 'error',
+              message: 'proving the push failed',
+              requestId,
+              repo: git.repo,
+              error: error instanceof Error ? error.message : String(error),
+            });
+            refusals = commands.map((command) => ({ ref: command.ref, reason: UNCHECKED_REASON }));
+          }
+          if (refusals.length === 0) settleVerdict();
+          return refusals;
+        },
+        onRefused: (refusals) => {
+          refused = refuseAll(push.request, refusals);
+          settleVerdict();
+        },
+        refuseAll: (reason) => commands.map((command) => ({ ref: command.ref, reason })),
+      });
+      // The pipe fails when the host stops reading (or the client stops sending); if that happens
+      // before the pack has been scanned, no verdict will ever come.
+      push.body.pipeTo(guard.writable).catch(() => {
+        if (!deciding) settleVerdict();
+      });
+      body = guard.readable;
+    }
     const refusal = (all: readonly RefRefusal[]): Response => {
       const reasons = new Map(all.map((entry) => [entry.ref, entry.reason]));
       const reason = all.find((entry) => entry.reason !== COLLATERAL_REASON)?.reason ?? COLLATERAL_REASON;
@@ -117,17 +150,31 @@ export function receivePack(deps: GatewayDeps): Handler<GatewayEnv> {
       response.headers.set('X-Request-Id', requestId);
       return response;
     };
-    let result: UpstreamResult;
+    let result: UpstreamResult | null = null;
+    let failure: unknown = null;
     try {
       result = await callUpstream(deps, context, body);
     } catch (error) {
-      if (refused !== null) return refusal(refused);
+      failure = error;
+    }
+    if (push.pending.length > 0) {
+      if (result?.ok === true) result = await awaitVerdict(result.response, verdict, () => refused !== null);
+      // A refusal fails the host's request by design (the pack is cut short), and the host may
+      // notice before the guard has recorded its verdict: wait for it, so a refused push is
+      // answered in-protocol rather than as a storage failure.
+      else if (refused === null) await within(verdict, deps.config.maxVerdictWaitMs);
+    }
+    if (refused !== null) {
+      await result?.response.body?.cancel().catch(() => undefined);
+      return refusal(refused);
+    }
+    if (result === null) {
       deps.logger.log({
         level: 'error',
         message: 'storage host unreachable',
         requestId,
         repo: git.repo,
-        error: error instanceof Error ? error.message : String(error),
+        error: failure instanceof Error ? failure.message : String(failure),
       });
       const reason = 'The storage backend is unreachable; try again later';
       deps.audit.record(
@@ -136,12 +183,6 @@ export function receivePack(deps: GatewayDeps): Handler<GatewayEnv> {
         requestId,
       );
       return textResponse(502, reason, { 'X-Request-Id': requestId });
-    }
-    if (result.ok && push.pending.length > 0)
-      result = await awaitVerdict(result.response, verdict, () => refused !== null);
-    if (refused !== null) {
-      await result.response.body?.cancel().catch(() => undefined);
-      return refusal(refused);
     }
     if (!result.ok) {
       deps.audit.record(
