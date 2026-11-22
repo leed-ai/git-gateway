@@ -50,7 +50,8 @@ function liveShapedErrors(binding: ArtifactsNamespaceBinding): ArtifactsNamespac
 // The lifecycle group again, with every binding error shaped as live ones, so the
 // "createRepo of an existing name is repo_exists" and "every read and gitRemote on a missing
 // repository is repo_not_found" cases cover what the live service sends (the simulator itself
-// sends codes ALREADY_EXISTS and NOT_FOUND).
+// sends codes ALREADY_EXISTS and NOT_FOUND). The wrong-kind read cases too, since the simulator
+// refuses those with INTERNAL_ERROR and the live binding with a code-less error.
 registerBackendContractSuite(
   { describe, it },
   {
@@ -58,6 +59,9 @@ registerBackendContractSuite(
     createBackend: () => new ArtifactsBackend({ binding: liveShapedErrors(testBinding(env)) }),
     behaviour: { nonFastForward: 'accepted', readRemoteCannotPush: true },
     repoPrefix: 'contract-le',
-    include: (entry) => entry.group === 'lifecycle',
+    include: (entry) =>
+      entry.group === 'lifecycle' ||
+      entry.name === 'reading an id as the wrong kind of object is null' ||
+      entry.name === 'an object is found by asking for each kind in turn',
   },
 );

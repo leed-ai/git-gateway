@@ -75,6 +75,23 @@ export const readCases: readonly BackendCase[] = [
     assertEqual(await backend.readBlob(repo, root.commit.tree), null, 'readBlob of a tree');
     assertEqual(await backend.readBlob(repo, root.sha), null, 'readBlob of a commit');
   }),
+  backendCase(GROUP, 'an object is found by asking for each kind in turn', async (context) => {
+    // How the push policy reads a thin pack's delta base: as a tree, else as a blob. Each read of
+    // the wrong kind must be null, not an error, for the next one to be reached.
+    const root = await seedRepo(context, FILES);
+    const blob = present(
+      root.objects.find((object) => object.type === 'blob'),
+      'a blob',
+    );
+    const { backend, repo } = context;
+    assertEqual(await backend.readTree(repo, blob.sha), null, 'a blob asked for as a tree');
+    assertTrue(
+      sameBytes(present(await backend.readBlob(repo, blob.sha), 'then as a blob'), blob.data),
+      'the blob read as a blob is its bytes',
+    );
+    assertEqual(await backend.readCommit(repo, root.commit.tree), null, 'a tree asked for as a commit');
+    present(await backend.readTree(repo, root.commit.tree), 'then as a tree');
+  }),
   backendCase(GROUP, 'readTree lists one level in stored order with kinds and modes', async (context) => {
     const { root } = await seedHistory(context);
     const entries = present(await context.backend.readTree(context.repo, root.commit.tree), 'root tree');

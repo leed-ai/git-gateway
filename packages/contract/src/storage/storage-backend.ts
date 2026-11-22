@@ -21,6 +21,11 @@ import type { StorageTreeEntry } from './storage-tree-entry.ts';
  * - Every call on a repository that does not exist throws `repo_not_found`, except
  *   {@link repoInfo} (null) and {@link deleteRepo} (no-op).
  * - A missing object, ref or path is `null` (an empty array for {@link log}), never an error.
+ * - So is an id that names an object of another kind: {@link readCommit} of a tree or a blob,
+ *   {@link readTree} of a commit or a blob, {@link readBlob} of a commit or a tree, and a
+ *   revision naming a tree or a blob. Each read answers whether an object of its kind has that
+ *   id, so a caller may try one kind after another; a backend whose host refuses such a read with
+ *   an error maps that error to `null`, and only that error.
  * - A host failure throws `storage_unavailable`. Everything the host returns is parsed with Zod
  *   before it is handed back.
  */
@@ -34,11 +39,11 @@ export interface StorageBackend {
 
   /** The commit a ref names, or null when the ref does not exist (always null in an empty repository). */
   resolveRef(repo: RepoName, ref: StorageRef): Promise<Sha | null>;
-  /** A commit by id, or null when no commit has that id. */
+  /** A commit by id, or null when no commit has that id (also when the id names a tree or a blob). */
   readCommit(repo: RepoName, sha: Sha): Promise<Commit | null>;
-  /** One level of a tree by id, in stored order, or null when no tree has that id. */
+  /** One level of a tree by id, in stored order, or null when no tree has that id (also when it names a commit or a blob). */
   readTree(repo: RepoName, sha: Sha): Promise<StorageTreeEntry[] | null>;
-  /** A blob's bytes by id, or null when no blob has that id. */
+  /** A blob's bytes by id, or null when no blob has that id (also when it names a commit or a tree). */
   readBlob(repo: RepoName, sha: Sha): Promise<Uint8Array | null>;
   /** A file's bytes at a revision, or null when the revision or the file does not exist. */
   readFile(repo: RepoName, ref: Revision, path: FilePath): Promise<Uint8Array | null>;

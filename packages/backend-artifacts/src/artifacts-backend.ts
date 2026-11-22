@@ -19,7 +19,7 @@ import {
   type ArtifactsNamespaceBinding,
   type ArtifactsRepoHandle,
 } from './artifacts-binding.ts';
-import { artifactsErrorCode, isRepoNotFound, toGatewayError } from './artifacts-errors.ts';
+import { artifactsErrorCode, isRepoNotFound, isWrongKind, toGatewayError } from './artifacts-errors.ts';
 import { blobIdAt, isUnserializableBlob, readBlobOverGit } from './artifacts-git-reads.ts';
 import { toContractCommit, toStorageTreeEntry } from './artifacts-mapping.ts';
 import {
@@ -128,10 +128,10 @@ export class ArtifactsBackend implements StorageBackend {
     const repo = parseStorageInput(RepoName, name);
     const id = parseStorageInput(Sha, sha);
     return this.#withRepo(repo, 'readCommit', async (handle) => {
-      const metadata = await this.#readTyped(
-        async () => handle.readCommit(id),
-        [async () => handle.readBlob(id), async () => handle.readTree(id)],
-      );
+      const metadata = await this.#readTyped(id, async () => handle.readCommit(id), [
+        async () => handle.readBlob(id),
+        async () => handle.readTree(id),
+      ]);
       return metadata === null ? null : toContractCommit(parseHost(ArtifactsCommit, metadata));
     });
   }
@@ -140,10 +140,10 @@ export class ArtifactsBackend implements StorageBackend {
     const repo = parseStorageInput(RepoName, name);
     const id = parseStorageInput(Sha, sha);
     return this.#withRepo(repo, 'readTree', async (handle) => {
-      const entries = await this.#readTyped(
-        async () => handle.readTree(id),
-        [async () => handle.readBlob(id), async () => handle.readCommit(id)],
-      );
+      const entries = await this.#readTyped(id, async () => handle.readTree(id), [
+        async () => handle.readBlob(id),
+        async () => handle.readCommit(id),
+      ]);
       return entries === null ? null : z.array(ArtifactsTreeEntry).parse(entries).map(toStorageTreeEntry);
     });
   }
@@ -155,6 +155,8 @@ export class ArtifactsBackend implements StorageBackend {
       try {
         return await bytesOf(await handle.readBlob(id));
       } catch (error) {
+        // The binding documents null for an id that is not a blob; an error saying so is null too.
+        if (isWrongKind(error, id)) return null;
         if (!isUnserializableBlob(error)) throw error;
         return readBlobOverGit(await this.gitRemote(repo, 'read'), id);
       }
@@ -170,6 +172,8 @@ export class ArtifactsBackend implements StorageBackend {
       try {
         return await bytesOf(await handle.readFile({ ref: revision, path: file }));
       } catch (error) {
+        // A revision naming a tree or a blob is a revision that does not exist.
+        if (isWrongKind(error, revision)) return null;
         if (!isUnserializableBlob(error)) throw error;
         const blob = await blobIdAt(handle, revision, file);
         return blob === null ? null : readBlobOverGit(await this.gitRemote(repo, 'read'), blob);
@@ -223,18 +227,24 @@ export class ArtifactsBackend implements StorageBackend {
   }
 
   /**
-   * Reads an object of one kind. The binding answers null for a missing id but throws
-   * INTERNAL_ERROR when the id names an object of another kind; that case is null too, told apart
-   * from a real failure by the object being readable as one of the other kinds (`probes`).
+   * Reads object `id` as one kind. The binding answers null for a missing id but throws when the id
+   * names an object of another kind; that case is null too, as the contract requires. It is told
+   * apart from a real failure by the message saying so ({@link isWrongKind}: what the live binding
+   * and the simulator send), else, for an INTERNAL_ERROR or an error whose code did not survive, by
+   * the object being readable as one of the other kinds (`probes`). Anything else, or a probe that
+   * finds nothing, rethrows the original failure.
    */
   async #readTyped(
+    id: string,
     read: () => Promise<unknown>,
     probes: readonly (() => Promise<unknown>)[],
   ): Promise<unknown> {
     try {
       return await read();
     } catch (error) {
-      if (artifactsErrorCode(error) !== 'INTERNAL_ERROR') throw error;
+      if (isWrongKind(error, id)) return null;
+      const code = artifactsErrorCode(error);
+      if (code !== null && code !== 'INTERNAL_ERROR') throw error;
       for (const probe of probes) {
         // A Blob that could not be carried back (wrangler's remote binding) was still found.
         const found = await probe().catch((probeError: unknown) =>
