@@ -57,7 +57,7 @@ CI runs `check`, `test`, `conformance`, `contract` (in-memory leg) and CodeQL on
 
 ## Releases
 
-Maintainers merge the Changesets release PR to publish to npm with provenance. Every merge to `main` also publishes all packages under the `next` dist-tag. Both are inert until the repository has an `NPM_TOKEN` secret.
+Every merge to `main` updates the Changesets release PR and publishes all packages under the `next` dist-tag. After the release PR is merged, a maintainer runs the `release` workflow by hand to publish under `latest`. Both publish through npm trusted publishing (OIDC), with provenance and no npm token; publishing is off until the repository's `NPM_PUBLISHING` variable is `true`. [docs/RELEASING.md](docs/RELEASING.md) has the details and the one-time setup.
 
 ## License
 

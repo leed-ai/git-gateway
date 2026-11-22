@@ -29,10 +29,10 @@ const stepsOf = (document: unknown): Record<string, unknown>[] => {
   );
 };
 
-describe('the snapshot workflow', () => {
+describe('the next snapshot in the release workflow', () => {
   it('gives snapshot versioning a GitHub token, which the GitHub changelog needs for every changeset', () => {
     const snapshot = readWorkflowFiles(REPO_ROOT).find(
-      ({ path }) => path === '.github/workflows/snapshot.yml',
+      ({ path }) => path === '.github/workflows/release.yml',
     );
     const step = stepsOf(snapshot?.document).find(
       ({ run }) => typeof run === 'string' && run.includes('changeset version --snapshot'),

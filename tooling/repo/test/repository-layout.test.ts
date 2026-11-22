@@ -56,6 +56,18 @@ describe('published packages', () => {
     expect(existsSync(join(dir, 'LICENSE'))).toBe(true);
   });
 
+  // npm trusted publishing and provenance both require repository.url to name this repository exactly.
+  it.each(PUBLISHED)('%s names this repository, which trusted publishing matches exactly', (pkg) => {
+    const manifest: unknown = JSON.parse(
+      readFileSync(join(REPO_ROOT, 'packages', pkg, 'package.json'), 'utf8'),
+    );
+    expect(recordAt(manifest, 'repository')).toEqual({
+      type: 'git',
+      url: 'git+https://github.com/leed-ai/git-gateway.git',
+      directory: `packages/${pkg}`,
+    });
+  });
+
   it('declare only policy peers, by their major range, and never as runtime dependencies', () => {
     for (const { dir, manifest } of publicPackages) {
       const policyPeers = Object.entries(manifest.peerDependencies ?? {}).filter(

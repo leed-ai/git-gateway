@@ -8,14 +8,6 @@ export interface PublishTarget {
   readonly version: string;
 }
 
-/** Options for one `npm publish` of a packed tarball. */
-export interface PublishOptions {
-  readonly tarball: string;
-  readonly tag: string;
-  readonly provenance: boolean;
-  readonly dryRun: boolean;
-}
-
 /** Manifest fields whose packages a consumer installs alongside this one; devDependencies never are. */
 const INSTALLED_FIELDS = ['dependencies', 'peerDependencies', 'optionalDependencies'] as const;
 
@@ -72,19 +64,4 @@ export function planPublish(
       throw new Error(`${dir}: package.json needs a name and version`);
     return isPublished(name, version) ? [] : [{ dir, name, version }];
   });
-}
-
-/** Arguments for `npm publish` of a tarball packed by `bun pm pack` (which resolves workspace: ranges). */
-export function publishArguments({ tarball, tag, provenance, dryRun }: PublishOptions): string[] {
-  if (!/^[a-z][a-z0-9-]*$/.test(tag)) throw new Error(`invalid dist-tag "${tag}"`);
-  return [
-    'publish',
-    tarball,
-    '--access',
-    'public',
-    '--tag',
-    tag,
-    ...(provenance ? ['--provenance'] : []),
-    ...(dryRun ? ['--dry-run'] : []),
-  ];
 }

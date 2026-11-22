@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { oidcViolations } from './oidc-policy.ts';
 import { requiredClauses } from './workflow-condition.ts';
 
 /** The repository whose secrets the live jobs may use; a fork never matches. */
@@ -186,11 +187,29 @@ function checkJobs(
   }
 }
 
+/** An OIDC token is a credential like a secret: its jobs run only in this repository, from main. */
+function checkOidcGuards(
+  document: Readonly<Record<string, unknown>>,
+  oidcJobs: readonly string[],
+  report: (message: string) => void,
+): void {
+  const jobs = isRecord(document['jobs']) ? document['jobs'] : {};
+  for (const name of oidcJobs) {
+    const job = jobs[name];
+    const condition = isRecord(job) && typeof job['if'] === 'string' ? job['if'] : '';
+    const clauses = requiredClauses(condition) ?? [];
+    if (!clauses.includes(UPSTREAM_GUARD) || !clauses.includes(MAIN_GUARD)) {
+      report(`job "${name}" holds id-token: write without an if: limiting it to ${UPSTREAM_REPOSITORY} main`);
+    }
+  }
+}
+
 /**
  * Checks workflows and composite actions: no pull_request_target or workflow_run triggers,
  * top-level permissions on every workflow, third-party actions pinned to a full commit SHA and
  * images to a digest, and no job that references a repository secret unless it is limited to
- * this repository's main branch and unreachable from a pull request or a fork.
+ * this repository's main branch and unreachable from a pull request or a fork. A job holding
+ * id-token: write is held to the same guards and to the rules in oidc-policy.ts.
  */
 export function findWorkflowViolations(files: readonly WorkflowFile[]): WorkflowViolation[] {
   const violations: WorkflowViolation[] = [];
@@ -215,6 +234,7 @@ export function findWorkflowViolations(files: readonly WorkflowFile[]): Workflow
       if (!PINNED_ACTION.test(reference)) report(`action ${reference} must be pinned to a full commit SHA`);
     }
     checkJobs(path, document, report);
+    checkOidcGuards(document, oidcViolations(path, document, report), report);
   }
   return violations;
 }

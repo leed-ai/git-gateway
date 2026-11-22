@@ -38,14 +38,6 @@ describe('the repository workflows', () => {
     const text = JSON.stringify(byPath.get('.github/workflows/test.yml'));
     expect(text).toContain('--shard=${{ matrix.shard }}/${{ strategy.job-total }}');
   });
-
-  it('publish only when NPM_TOKEN is configured', () => {
-    for (const name of ['release', 'snapshot']) {
-      const text = JSON.stringify(byPath.get(`.github/workflows/${name}.yml`));
-      expect(text).toContain("secrets.NPM_TOKEN != ''");
-      expect(text).toContain("env.HAS_NPM_TOKEN == 'true'");
-    }
-  });
 });
 
 describe('findWorkflowViolations', () => {

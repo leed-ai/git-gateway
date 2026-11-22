@@ -6,4 +6,4 @@ Every change to a published package (`packages/*`) needs a changeset, which reco
 bun run changeset
 ```
 
-Merging to `main` opens or updates the release PR; merging the release PR publishes to npm with provenance. Every merge to `main` also publishes all packages under the `next` dist-tag (`0.x.y-next.<timestamp>`). Changing a published contract schema is a breaking change.
+Merging to `main` opens or updates the release PR and publishes all packages under the `next` dist-tag (`0.x.y-next.<timestamp>`). After the release PR is merged, a maintainer runs the `release` workflow to publish the new versions under `latest` (see `docs/RELEASING.md`). Changing a published contract schema is a breaking change.
