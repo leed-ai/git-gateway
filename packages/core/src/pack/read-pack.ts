@@ -3,7 +3,7 @@ import { bytesToHex, sha1Bytes } from '../bytes.ts';
 import { coreError } from '../core-error.ts';
 import { createObject } from '../objects/hash-object.ts';
 import type { GitObject, GitObjectType } from '../schemas/git-object.ts';
-import { applyDelta } from './apply-delta.ts';
+import { applyDelta, deltaResultSize } from './apply-delta.ts';
 import { inflateZlibAt } from './zlib-inflate.ts';
 
 const TYPES: Readonly<Record<number, GitObjectType>> = { 1: 'commit', 2: 'tree', 3: 'blob' };
@@ -19,6 +19,27 @@ export type BaseLookup = (sha: string) => Promise<GitObject | null>;
 export interface ReadPackOptions {
   /** Resolves REF_DELTA bases the pack does not contain. Without it such a base is an error. */
   readonly lookupBase?: BaseLookup;
+  /**
+   * Most bytes the read may decompress and rebuild in all: every entry's inflated data plus
+   * every delta's result. A pack needing more throws unsupported_request before the memory is
+   * spent. Default: no limit.
+   */
+  readonly maxObjectBytes?: number;
+}
+
+/** Counts bytes against {@link ReadPackOptions.maxObjectBytes}. */
+type Spend = (bytes: number) => void;
+
+function spender(limit: number | undefined): Spend {
+  let spent = 0;
+  return (bytes) => {
+    spent += bytes;
+    if (limit !== undefined && spent > limit) {
+      throw coreError('unsupported_request', 'The pack is too large to read', {
+        feature: `more than ${limit} bytes of objects in one pack`,
+      });
+    }
+  };
 }
 
 function badPack(reason: string, offset: number): Error {
@@ -73,8 +94,9 @@ function readOfsBase(
   return { baseOffset, next: offset };
 }
 
-function readEntry(pack: Uint8Array, start: number): { entry: RawEntry; next: number } {
+function readEntry(pack: Uint8Array, start: number, spend: Spend): { entry: RawEntry; next: number } {
   const header = readEntryHeader(pack, start);
+  spend(header.size);
   let at = header.next;
   let base: { baseOffset: number } | { baseSha: string } | null = null;
   if (header.type === OFS_DELTA) {
@@ -128,22 +150,24 @@ async function verifyHeader(pack: Uint8Array): Promise<number> {
  */
 export async function readPack(pack: Uint8Array, options: ReadPackOptions = {}): Promise<GitObject[]> {
   const count = await verifyHeader(pack);
+  const spend = spender(options.maxObjectBytes);
   const entries: RawEntry[] = [];
   let offset = 12;
   for (let index = 0; index < count; index += 1) {
     if (offset >= pack.length - 20) throw badPack(`the pack ends after ${index} of ${count} entries`, offset);
-    const { entry, next } = readEntry(pack, offset);
+    const { entry, next } = readEntry(pack, offset, spend);
     entries.push(entry);
     offset = next;
   }
   if (offset !== pack.length - 20)
     throw badPack('bytes remain between the last entry and the checksum', offset);
-  return resolveEntries(entries, options.lookupBase);
+  return resolveEntries(entries, options.lookupBase, spend);
 }
 
 async function resolveEntries(
   entries: readonly RawEntry[],
   lookupBase: BaseLookup | undefined,
+  spend: Spend,
 ): Promise<GitObject[]> {
   const byOffset = new Map<number, GitObject>();
   const bySha = new Map<string, GitObject>();
@@ -155,12 +179,12 @@ async function resolveEntries(
   while (pending.length > 0) {
     const waiting: RawEntry[] = [];
     for (const entry of pending) {
-      const object = await resolveEntry(entry, byOffset, bySha);
+      const object = await resolveEntry(entry, byOffset, bySha, spend);
       if (object === null) waiting.push(entry);
       else record(entry.offset, object);
     }
     if (waiting.length === pending.length) {
-      const resolved = await resolveExternal(waiting, lookupBase);
+      const resolved = await resolveExternal(waiting, lookupBase, spend);
       for (const [offset, object] of resolved) record(offset, object);
       waiting.splice(0, waiting.length, ...waiting.filter((entry) => !byOffset.has(entry.offset)));
     }
@@ -173,10 +197,12 @@ async function resolveEntry(
   entry: RawEntry,
   byOffset: ReadonlyMap<number, GitObject>,
   bySha: ReadonlyMap<string, GitObject>,
+  spend: Spend,
 ): Promise<GitObject | null> {
   if (entry.kind === 'whole') return createObject(entry.type, entry.data);
   const base = entry.kind === 'ofs' ? byOffset.get(entry.baseOffset) : bySha.get(entry.baseSha);
   if (base === undefined) return null;
+  spend(deltaResultSize(entry.delta));
   return createObject(base.type, applyDelta(base.data, entry.delta));
 }
 
@@ -184,13 +210,15 @@ async function resolveEntry(
 async function resolveExternal(
   waiting: readonly RawEntry[],
   lookupBase: BaseLookup | undefined,
+  spend: Spend,
 ): Promise<Map<number, GitObject>> {
   const resolved = new Map<number, GitObject>();
   for (const entry of waiting) {
     if (entry.kind !== 'ref') continue;
     const base = lookupBase === undefined ? null : await lookupBase(entry.baseSha);
-    if (base !== null)
-      resolved.set(entry.offset, await createObject(base.type, applyDelta(base.data, entry.delta)));
+    if (base === null) continue;
+    spend(base.data.length + deltaResultSize(entry.delta));
+    resolved.set(entry.offset, await createObject(base.type, applyDelta(base.data, entry.delta)));
   }
   if (resolved.size === 0) {
     const first = waiting[0];

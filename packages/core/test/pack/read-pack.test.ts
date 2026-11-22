@@ -108,6 +108,24 @@ describe('readPack', () => {
     );
   });
 
+  it('refuses a pack whose objects and delta results exceed maxObjectBytes, before rebuilding them', async () => {
+    const base = bytes('x'.repeat(100));
+    const pack = buildPack([
+      { kind: 'whole', type: 'blob', data: base },
+      { kind: 'ofs', base: 0, delta: appendDelta(base, 'y') },
+    ]);
+    const unsupported = async (limit: number): Promise<boolean> =>
+      readPack(pack, { maxObjectBytes: limit }).then(
+        () => false,
+        (error: unknown) => isCoreError(error, 'unsupported_request'),
+      );
+    // 100 bytes of base, the delta itself, and its 101-byte result.
+    const needed = 100 + appendDelta(base, 'y').length + 101;
+    expect(await unsupported(needed - 1)).toBe(true);
+    expect((await readPack(pack, { maxObjectBytes: needed })).length).toBe(2);
+    expect(await unsupported(50)).toBe(true);
+  });
+
   it('rejects an OFS_DELTA whose base offset is not an entry, or outside the pack', async () => {
     const first = { kind: 'whole' as const, type: 'blob' as const, data: bytes('a') };
     const firstLength = buildPack([first]).length - 32;

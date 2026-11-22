@@ -34,7 +34,7 @@ git-gateway narrows what a host must provide to what every git host provides —
                       ▼                                         ▼
  ┌───────────────────────────────────────────────────────────────────────────┐
  │ gateway Worker                                                            │
- │  authenticate ─► authorize ─► branch policy ─► proxy (streamed)           │
+ │  authenticate ─► authorize ─► branch policy ─► push policy ─► proxy        │
  │  RPC: commit · readFile · listTree · resolveRef · log · commitExists      │
  │       syncBranch · promote · createRepo · deleteRepo · mintReadToken      │
  │  Workflows: CommitWorkflow · SyncBranchWorkflow                           │
@@ -185,6 +185,10 @@ interface Authorizer {
 interface BranchPolicy {
   check(p: Principal, repo: string, updates: RefUpdate[]): PolicyResult; // per-ref allow/deny + reason
 }
+interface PushPolicy {
+  needs(p: Principal, repo: string, updates: RefUpdate[]): PushPolicyNeeds; // { changedPaths: boolean }
+  check(input: PushPolicyInput): PushPolicyResult; // per-ref allow/deny + reason
+}
 ```
 
 - git sends credentials as HTTP Basic; the password is treated as a bearer credential, so a credential helper can return an OAuth access token.
@@ -192,6 +196,26 @@ interface BranchPolicy {
 - Decisions may be cached briefly per principal and repository (configurable, default 60 s): the principal per credential fingerprint (SHA-256, never the credential), the authorization per subject, repository and operation; no entry outlives the principal's `expiresAt`.
 - The RPC API is reachable only over a service binding; it carries the calling service's identity, not a user's.
 - An audit hook receives every authenticated operation (principal, repo, op, refs, outcome).
+
+### Push policy
+
+An optional `PushPolicy` (`GatewayAppOptions.pushPolicy`, schemas in `@leed-ai/git-gateway-contract/proxy/push-policy` and `proxy/push-policy-result`) runs after the branch policy on every push it allowed, for rules about _what_ a push changes rather than which refs it moves: paths a principal may not touch, file types, file sizes — what client-side hooks enforce only for clones that install them. The gateway ships no rules, only the hook (and an example policy in `examples/gateway`). Pushes made through the RPC API are the calling service's and are not checked.
+
+- `needs()` sees the ref updates only and answers `{ changedPaths }`. Without changed paths, `check()` runs in the middleware before the pack is read, and a refusal sends nothing to storage.
+- With changed paths, `check()` gets, per update, the commits it brings — the commits of the pushed pack reachable from the new id, newest first — and for each the `ChangedPath`s against its parent: path, `added`/`modified`/`deleted`, modes and ids on both sides, and the new blob's size. A root commit is compared with the empty tree; a merge reports only paths that differ from every parent (git's combined diff), since content matching one parent came from it, and that parent is either already in storage or checked itself. Checking every new commit rather than the net change means a file added and removed again within a push is still seen. A commit storage already has (a ref moved to existing history) brings no commits; a deletion neither.
+- Refusals are in-protocol either way (`ng <ref> <reason>`, the rest collateral), through the same path as fast-forward refusals; a `needs()` that throws is a 503 like a failing branch policy, a `check()` that throws after the pack refuses the push.
+
+**Cost model.** Changed paths need object reads, so they are computed only when asked for and every step is bounded; a push that cannot be checked within the bounds is refused with the reason ("the push policy could not check this push: …"), the same refuse-when-unprovable rule as fast-forward proofs.
+
+| Step          | Cost                                                                                                                                                                                                          | Bound                                                                                                        |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Hold the pack | The guard keeps the pushed pack in memory as it streams to storage (the checksum held back as for fast-forwards).                                                                                             | `maxPushPolicyPackBytes` (32 MiB); past it the push is refused before it completes.                          |
+| Read the pack | Every entry inflated and every delta resolved (`readPack`, checksum verified); thin-pack bases read from storage, a tree re-encoded and accepted only if it hashes to its id.                                 | `maxPushPolicyObjectBytes` (64 MiB) of inflated data plus delta results, checked before the memory is spent. |
+| Diff trees    | Per commit, per parent: trees compared recursively, entering only subtrees whose ids differ, so the work follows what changed. Trees and commits come from the pack, else storage (`readTree`, `readCommit`). | `maxPushPolicyReads` (2000) storage calls in all, shared with thin-pack bases and sizes.                     |
+| Sizes         | Blobs in the pack are free; a changed path naming a blob storage already has (a revert, a move) costs one `readBlob`.                                                                                         | Same read budget.                                                                                            |
+| Hand over     | Changed paths across all commits.                                                                                                                                                                             | `maxChangedPaths` (10 000).                                                                                  |
+
+A typical push of a few commits touching a few files costs no storage reads beyond the parents' commits and the trees along changed directories; a push that restructures a large tree, or carries large files, reaches the bounds and is refused rather than allowed unchecked.
 
 ## Testing
 

@@ -3,6 +3,7 @@ import type {
   Authenticator,
   Authorizer,
   BranchPolicy,
+  PushPolicy,
 } from '@leed-ai/git-gateway-contract/proxy/gateway-hooks';
 import type { Principal } from '@leed-ai/git-gateway-contract/proxy/principal';
 import type { SmartHttpConfig } from '@leed-ai/git-gateway-contract/proxy/smart-http-config';
@@ -25,6 +26,8 @@ export interface GatewayDeps {
   readonly authenticator: Authenticator;
   readonly authorizer: Authorizer;
   readonly branchPolicy: BranchPolicy;
+  /** The deployment's rules over what a push changes, run after the branch policy; undefined: none. */
+  readonly pushPolicy: PushPolicy | undefined;
   readonly audit: AuditRecorder;
   readonly logger: Logger;
   readonly cache: DecisionCache<CachedDecision>;

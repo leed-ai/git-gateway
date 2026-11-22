@@ -5,6 +5,8 @@ import type { AuditEvent } from './audit-event.ts';
 import type { GitOperation } from './git-operation.ts';
 import type { PolicyResult } from './policy-result.ts';
 import type { Principal, PrincipalInput } from './principal.ts';
+import type { PushPolicyNeeds, PushPolicyResultInput } from './push-policy-result.ts';
+import type { PushPolicyInput } from './push-policy.ts';
 
 /**
  * Establishes who a smart-HTTP request acts for. git sends credentials as HTTP Basic; the
@@ -30,6 +32,31 @@ export interface Authorizer {
  */
 export interface BranchPolicy {
   check(principal: Principal, repo: RepoName, updates: readonly RefUpdate[]): PolicyResult;
+}
+
+/**
+ * A deployment's own rules over what a push changes, run after the BranchPolicy on every push it
+ * allowed — e.g. which paths a principal may change, which file types or sizes are accepted.
+ * Pushes through the RPC API (`commit`, `syncBranch`, `promote`) are the calling service's and are
+ * not checked.
+ *
+ * `needs()` is called first, with the ref updates alone, and says whether `check()` needs changed
+ * paths (its result is parsed with {@link PushPolicyNeeds}). Without them, `check()` runs before
+ * the pack is read and a refusal sends nothing to storage. With them, the gateway reads the
+ * pushed pack as it streams to storage (holding back its checksum, as it does to prove
+ * fast-forwards), computes every new commit's changed paths from the pack and storage within the
+ * configured bounds, and calls `check()` before the push completes; a refusal cuts the pack short
+ * so storage writes nothing. A push that cannot be checked within the bounds is refused. Either
+ * way a refusal reaches git in-protocol ("! [remote rejected] <ref> (<reason>)"). The result is
+ * parsed with PushPolicyResult; a `check()` that throws refuses the push.
+ */
+export interface PushPolicy {
+  needs(
+    principal: Principal,
+    repo: RepoName,
+    updates: readonly RefUpdate[],
+  ): PushPolicyNeeds | Promise<PushPolicyNeeds>;
+  check(input: PushPolicyInput): PushPolicyResultInput | Promise<PushPolicyResultInput>;
 }
 
 /**

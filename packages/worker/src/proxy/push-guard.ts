@@ -24,8 +24,16 @@ export interface PushGuardOptions {
   readonly headLength: number;
   /** Most bytes of commits the scan keeps. */
   readonly maxCommitBytes: number;
-  /** Decides the push once the whole pack has been scanned; returns the refused updates (none to allow it). */
-  readonly decide: (scan: PackScan) => Promise<readonly RefRefusal[]>;
+  /**
+   * Keep the whole pack (checksum included), at most this many bytes, and hand it to `decide`; a
+   * longer pack is refused with `tooLarge`. Absent: nothing is kept.
+   */
+  readonly keepPack?: { readonly maxBytes: number; readonly tooLarge: string };
+  /**
+   * Decides the push once the whole pack has been scanned, given the pack when `keepPack` asked
+   * for it (null otherwise); returns the refused updates (none to allow it).
+   */
+  readonly decide: (scan: PackScan, pack: Uint8Array | null) => Promise<readonly RefRefusal[]>;
   /** Called with every refused update, scan failures included, before the stream fails. */
   readonly onRefused: (refusals: readonly RefRefusal[]) => void;
   /** The refs to refuse when the pack cannot be scanned, with the reason to give for each. */
@@ -37,13 +45,16 @@ export interface PushGuardOptions {
  * gateway can prove fast-forwards from commits the host does not have yet — without buffering the
  * pack. Everything is forwarded as it arrives except the last 20 bytes, the pack checksum; once
  * the body has ended and the scan is complete, `decide` runs, and only if it refuses nothing are
- * those bytes released. On a refusal (or a pack that cannot be read) the stream fails instead, so
+ * those bytes released. With `keepPack`, the pack is also kept (bounded) for `decide` to read
+ * whole, as the push policy needs to compute changed paths. On a refusal (or a pack that cannot be read) the stream fails instead, so
  * the host sees a truncated pack and updates no ref.
  */
 export function guardPush(options: PushGuardOptions): TransformStream<Uint8Array, Uint8Array> {
   const scanner = new PackScanner({ maxCommitBytes: options.maxCommitBytes });
   let position = 0;
   let held = new Uint8Array(0);
+  const kept: Uint8Array[] = [];
+  let keptBytes = 0;
 
   const refuse = (refusals: readonly RefRefusal[]): PushRefused => {
     options.onRefused(refusals);
@@ -59,8 +70,15 @@ export function guardPush(options: PushGuardOptions): TransformStream<Uint8Array
       const start = position;
       position += chunk.length;
       if (position > options.headLength) {
+        const packBytes = chunk.subarray(Math.max(0, options.headLength - start));
+        if (options.keepPack !== undefined) {
+          keptBytes += packBytes.length;
+          if (keptBytes > options.keepPack.maxBytes)
+            throw refuse(options.refuseAll(options.keepPack.tooLarge));
+          kept.push(packBytes.slice());
+        }
         try {
-          await scanner.push(chunk.subarray(Math.max(0, options.headLength - start)));
+          await scanner.push(packBytes);
         } catch (error) {
           throw unreadable(error);
         }
@@ -83,7 +101,7 @@ export function guardPush(options: PushGuardOptions): TransformStream<Uint8Array
       } catch (error) {
         throw unreadable(error);
       }
-      const refusals = await options.decide(scan);
+      const refusals = await options.decide(scan, options.keepPack === undefined ? null : concatBytes(kept));
       if (refusals.length > 0) throw refuse(refusals);
       if (held.length > 0) controller.enqueue(held);
     },

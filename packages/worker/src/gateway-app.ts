@@ -4,6 +4,7 @@ import type {
   Authenticator,
   Authorizer,
   BranchPolicy,
+  PushPolicy,
 } from '@leed-ai/git-gateway-contract/proxy/gateway-hooks';
 import {
   SmartHttpConfig,
@@ -42,6 +43,13 @@ export interface GatewayAppOptions {
   readonly authorizer: Authorizer;
   /** Decides which refs a push may update (e.g. `RuleBranchPolicy`). */
   readonly branchPolicy: BranchPolicy;
+  /**
+   * The deployment's own rules over what a push changes (paths, file types, sizes), run after the
+   * branch policy on every push it allows; optional. When it asks for changed paths the gateway
+   * reads the pushed pack as it streams, bounded by `smartHttp.maxPushPolicy*` and
+   * `maxChangedPaths`.
+   */
+  readonly pushPolicy?: PushPolicy;
   /** Receives every authenticated operation; optional. */
   readonly audit?: AuditHook;
   /**
@@ -92,6 +100,7 @@ export function createGatewayApp(options: GatewayAppOptions): Hono<GatewayEnv> {
     authenticator: options.authenticator,
     authorizer: options.authorizer,
     branchPolicy: options.branchPolicy,
+    pushPolicy: options.pushPolicy,
     audit: new AuditRecorder(options.audit, logger, now),
     logger,
     cache: new DecisionCache<CachedDecision>({

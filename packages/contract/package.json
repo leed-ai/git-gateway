@@ -122,6 +122,16 @@
       "types": "./dist/proxy/policy-result.d.ts",
       "default": "./dist/proxy/policy-result.js"
     },
+    "./proxy/push-policy": {
+      "source": "./src/proxy/push-policy.ts",
+      "types": "./dist/proxy/push-policy.d.ts",
+      "default": "./dist/proxy/push-policy.js"
+    },
+    "./proxy/push-policy-result": {
+      "source": "./src/proxy/push-policy-result.ts",
+      "types": "./dist/proxy/push-policy-result.d.ts",
+      "default": "./dist/proxy/push-policy-result.js"
+    },
     "./proxy/principal": {
       "source": "./src/proxy/principal.ts",
       "types": "./dist/proxy/principal.d.ts",
