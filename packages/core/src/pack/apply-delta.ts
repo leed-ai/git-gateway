@@ -20,6 +20,12 @@ function readSize(delta: Uint8Array, start: number): [number, number] {
   }
 }
 
+/** The size of the object a delta produces, read from its header without applying it. */
+export function deltaResultSize(delta: Uint8Array): number {
+  const [, afterBase] = readSize(delta, 0);
+  return readSize(delta, afterBase)[0];
+}
+
 /**
  * Applies a git delta (the payload of an OFS_DELTA or REF_DELTA pack entry) to its base object:
  * the base size and result size, then copy instructions (byte ranges of the base) and insert

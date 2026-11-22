@@ -21,6 +21,11 @@ export interface AllowedPush {
   readonly headLength: number;
   /** Updates still to be proven fast-forwards from the pack as it streams past. */
   readonly pending: readonly PendingFastForward[];
+  /**
+   * Every update of the push, when the push policy is still to check them with changed paths
+   * computed from the pack; null when there is nothing left for it to check.
+   */
+  readonly policyUpdates: readonly RefUpdate[] | null;
 }
 
 /** The Hono environment of the gateway app: what each middleware leaves for the next. */

@@ -9,6 +9,8 @@ import { consoleLogger } from '@leed-ai/git-gateway-worker/logging/logger';
 import { RuleBranchPolicy } from '@leed-ai/git-gateway-worker/policy/rule-branch-policy';
 import { createGatewayService } from '@leed-ai/git-gateway-worker/rpc/gateway-service';
 
+import { ExamplePushPolicy } from './example-push-policy.ts';
+
 /** The example deployment's bindings, variables and secrets (wrangler.jsonc). */
 export interface Env {
   /** The Artifacts namespace holding the repositories. */
@@ -46,7 +48,9 @@ export const GatewayService = createGatewayService((env: Env) => ({
 /**
  * The example deployment: git smart HTTP at /<repo>.git over Cloudflare Artifacts, JWT
  * credentials verified against the issuer's JWKS, read tokens from mintReadToken() accepted for
- * cloning their one repository, main protected from force pushes and deletion.
+ * cloning their one repository, main protected from force pushes and deletion, and every push
+ * checked by an example push policy (no file over 10 MiB; CI workflows changed only by
+ * maintainers).
  */
 export default createGatewayWorker<Env>((env) => ({
   backend: new ArtifactsBackend({ binding: env.ARTIFACTS }),
@@ -59,6 +63,11 @@ export default createGatewayWorker<Env>((env) => ({
     rules: [
       { pattern: 'refs/heads/main', message: 'main is protected: force pushes and deletion are refused' },
     ],
+  }),
+  pushPolicy: new ExamplePushPolicy({
+    maxFileBytes: 10 * 1024 * 1024,
+    protectedPrefixes: ['.github/workflows/'],
+    maintainerRole: 'maintainer',
   }),
   logger: consoleLogger,
   serviceName: 'git-gateway-example',

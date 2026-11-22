@@ -356,6 +356,112 @@ exports[`schema documentation > generates the JSON Schema for what the schemas a
       "title": "Branch rule",
       "type": "object",
     },
+    "ChangedPath": {
+      "additionalProperties": false,
+      "description": "One path a pushed commit changed, from comparing its tree with its parent's: the change, the modes and ids on both sides, and the new blob's size.",
+      "examples": [
+        {
+          "change": "modified",
+          "newMode": "100644",
+          "newSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "oldMode": "100644",
+          "oldSha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+          "path": "content/pages/about.md",
+          "size": 1832,
+        },
+      ],
+      "properties": {
+        "change": {
+          "description": "What the commit did to the path.",
+          "enum": [
+            "added",
+            "modified",
+            "deleted",
+          ],
+          "enumDescriptions": {
+            "added": "The path is new: no entry before (a file replacing a directory is added too).",
+            "deleted": "The path is gone (a directory replacing a file deletes the file).",
+            "modified": "The path existed and its content or mode changed.",
+          },
+          "type": "string",
+        },
+        "newMode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FileMode",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "The mode after the commit; null when the path was deleted.",
+        },
+        "newSha": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "The blob (or submodule commit) after the commit; null when deleted.",
+        },
+        "oldMode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FileMode",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "The mode before the commit; null when the path was added.",
+        },
+        "oldSha": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "The blob (or submodule commit) before the commit; null when added.",
+        },
+        "path": {
+          "description": "The file's path from the repository root, "/"-separated, exactly as the tree names it (any bytes git allows except NUL, decoded as UTF-8); 1–4096 characters. Always a file, symlink or submodule, never a directory: a directory added or removed appears as each file in it.",
+          "maxLength": 4096,
+          "minLength": 1,
+          "pattern": "^[^\\0]+$",
+          "type": "string",
+        },
+        "size": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "Size in bytes of the new blob (for a symlink, of its target text); null when the path was deleted or is a submodule (mode 160000).",
+        },
+      },
+      "required": [
+        "path",
+        "change",
+        "oldMode",
+        "newMode",
+        "oldSha",
+        "newSha",
+        "size",
+      ],
+      "title": "Changed path",
+      "type": "object",
+    },
     "ChmodAction": {
       "additionalProperties": false,
       "description": "Sets (true) or clears (false) the executable bit of an existing file. Fails with path_not_found if the path is not a file. Setting the bit it already has changes nothing.",
@@ -2646,6 +2752,233 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "title": "promote: up to date",
       "type": "object",
     },
+    "PushPolicyInput": {
+      "additionalProperties": false,
+      "description": "What PushPolicy.check() is given: the principal, the repository and every ref update of a push the branch policy allowed, with changed paths when the policy asked for them.",
+      "examples": [
+        {
+          "principal": {
+            "email": null,
+            "expiresAt": null,
+            "name": null,
+            "roles": [
+              "editor",
+            ],
+            "subject": "alice",
+          },
+          "repo": "acme-site",
+          "updates": [
+            {
+              "commits": null,
+              "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+              "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+              "ref": "refs/heads/main",
+            },
+          ],
+        },
+      ],
+      "properties": {
+        "principal": {
+          "$ref": "#/$defs/Principal",
+          "description": "Who is pushing, as the Authenticator established it.",
+        },
+        "repo": {
+          "$ref": "#/$defs/RepoName",
+          "description": "The repository pushed to.",
+        },
+        "updates": {
+          "description": "Every update of the push, in the order the client sent them; all passed the branch policy.",
+          "items": {
+            "$ref": "#/$defs/PushPolicyUpdate",
+          },
+          "maxItems": 10000,
+          "minItems": 1,
+          "type": "array",
+        },
+      },
+      "required": [
+        "principal",
+        "repo",
+        "updates",
+      ],
+      "title": "Push policy input",
+      "type": "object",
+    },
+    "PushPolicyNeeds": {
+      "additionalProperties": false,
+      "description": "What PushPolicy.needs() returns for a push: whether check() needs the changed paths of every update.",
+      "examples": [
+        {
+          "changedPaths": true,
+        },
+      ],
+      "properties": {
+        "changedPaths": {
+          "description": "true to be given, for every update, the commits it brings with the paths each changes (PushPolicyUpdate.commits). That means buffering and reading the pushed pack and reading trees from storage, bounded by SmartHttpConfig.maxPushPolicyPackBytes, maxPushPolicyObjectBytes, maxPushPolicyReads and maxChangedPaths; a push past a bound is refused as uncheckable. false to decide from the ref updates alone, before the pack is read (\`commits\` is then null).",
+          "type": "boolean",
+        },
+      },
+      "required": [
+        "changedPaths",
+      ],
+      "title": "Push policy needs",
+      "type": "object",
+    },
+    "PushPolicyResult": {
+      "additionalProperties": false,
+      "description": "The push policy verdict on every ref update of one push. It runs after the branch policy, and the push is written only when both allow every update.",
+      "examples": [
+        {
+          "refs": [
+            {
+              "decision": "deny",
+              "reason": "files over 10 MiB are not accepted: video.mp4",
+              "ref": "refs/heads/main",
+            },
+            {
+              "decision": "allow",
+              "ref": "refs/heads/feature/x",
+            },
+          ],
+        },
+      ],
+      "properties": {
+        "refs": {
+          "description": "One decision per update the policy was given, each ref named at most once. An update without a decision is refused, and a push is written only when every update is allowed; otherwise each refused ref is reported with its reason and the rest as "not updated: another update in this push was refused".",
+          "items": {
+            "$ref": "#/$defs/PushRefDecision",
+          },
+          "maxItems": 10000,
+          "type": "array",
+        },
+      },
+      "required": [
+        "refs",
+      ],
+      "title": "Push policy result",
+      "type": "object",
+    },
+    "PushPolicyUpdate": {
+      "additionalProperties": false,
+      "description": "One ref update of a push and, when the policy asked for them, the commits it brings.",
+      "examples": [
+        {
+          "commits": null,
+          "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "ref": "refs/heads/main",
+        },
+      ],
+      "properties": {
+        "commits": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/PushedCommit",
+              },
+              "maxItems": 100000,
+              "type": "array",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "The commits new to the repository that the update brings — those of the pushed pack reachable from \`newSha\` — newest first (breadth-first from \`newSha\`), each with its changed paths. Empty for a deletion, or when \`newSha\` is a commit storage already has. Null when the policy did not ask for changed paths (PushPolicyNeeds.changedPaths false).",
+        },
+        "newSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the ref will name; the all-zero id when the update deletes the ref.",
+        },
+        "oldSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the ref names now; the all-zero id when the update creates the ref.",
+        },
+        "ref": {
+          "$ref": "#/$defs/FullRefName",
+          "description": "The ref the update names, fully qualified.",
+        },
+      },
+      "required": [
+        "ref",
+        "oldSha",
+        "newSha",
+        "commits",
+      ],
+      "title": "Push policy update",
+      "type": "object",
+    },
+    "PushRefDecision": {
+      "description": "The push policy verdict on one ref update: allow it, or deny it with a reason git shows.",
+      "examples": [
+        {
+          "decision": "deny",
+          "reason": "generated/ is written by the build pipeline",
+          "ref": "refs/heads/main",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/RefDecisionAllow",
+        },
+        {
+          "$ref": "#/$defs/RefDecisionDeny",
+        },
+      ],
+      "title": "Push ref decision",
+    },
+    "PushedCommit": {
+      "additionalProperties": false,
+      "description": "A commit new to the repository that a ref update brings (it is in the pushed pack), with the paths it changes.",
+      "examples": [
+        {
+          "changes": [
+            {
+              "change": "added",
+              "newMode": "100644",
+              "newSha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+              "oldMode": null,
+              "oldSha": null,
+              "path": "README.md",
+              "size": 0,
+            },
+          ],
+          "parents": [
+            "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          ],
+          "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        },
+      ],
+      "properties": {
+        "changes": {
+          "description": "The paths the commit changes. Against its parent for an ordinary commit and against the empty tree for a root commit; for a merge, only the paths whose result differs from every parent (git's combined diff), since anything matching one parent came from that parent. Sorted by path.",
+          "items": {
+            "$ref": "#/$defs/ChangedPath",
+          },
+          "maxItems": 100000,
+          "type": "array",
+        },
+        "parents": {
+          "description": "Parent ids in order.",
+          "items": {
+            "$ref": "#/$defs/Sha",
+            "description": "A parent commit id.",
+          },
+          "maxItems": 1000,
+          "type": "array",
+        },
+        "sha": {
+          "$ref": "#/$defs/Sha",
+          "description": "The commit id.",
+        },
+      },
+      "required": [
+        "sha",
+        "parents",
+        "changes",
+      ],
+      "title": "Pushed commit",
+      "type": "object",
+    },
     "ReadContent": {
       "description": "File content returned by a read, interpreted according to the accompanying encoding: UTF-8 text, or base64 of the raw bytes. Not length-capped: base64 output is 4/3 the size of the bytes and files can arrive over git push at any size, so a read returns whatever the repository holds. An empty string is an empty file.",
       "examples": [
@@ -3081,7 +3414,11 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
           "deniedStatus": "err",
           "maxAncestryReads": 2000,
           "maxAuditReportBytes": 1048576,
+          "maxChangedPaths": 10000,
           "maxPushHeadBytes": 8388608,
+          "maxPushPolicyObjectBytes": 67108864,
+          "maxPushPolicyPackBytes": 33554432,
+          "maxPushPolicyReads": 2000,
           "maxScannedCommitBytes": 33554432,
           "maxVerdictWaitMs": 60000,
           "realm": "git-gateway",
@@ -3138,11 +3475,39 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
           "minimum": 0,
           "type": "integer",
         },
+        "maxChangedPaths": {
+          "default": 10000,
+          "description": "Most changed paths, summed over every commit of a push, given to the push policy; a push changing more is refused as uncheckable. 1–100000, default 10000.",
+          "maximum": 100000,
+          "minimum": 1,
+          "type": "integer",
+        },
         "maxPushHeadBytes": {
           "default": 8388608,
           "description": "Most bytes of a push read before the pack (update commands, capabilities, push options); a larger head is refused. 4 KiB–64 MiB, default 8 MiB (8388608).",
           "maximum": 67108864,
           "minimum": 4096,
+          "type": "integer",
+        },
+        "maxPushPolicyObjectBytes": {
+          "default": 67108864,
+          "description": "Most bytes of objects decompressed and rebuilt from the pushed pack (every entry's data plus every delta's result, thin-pack bases read from storage included) to compute changed paths; past it the push is refused as uncheckable. 1 MiB–512 MiB, default 64 MiB (67108864).",
+          "maximum": 536870912,
+          "minimum": 1048576,
+          "type": "integer",
+        },
+        "maxPushPolicyPackBytes": {
+          "default": 33554432,
+          "description": "Most bytes of a pushed pack held in memory so the push policy can be given changed paths (only when PushPolicy.needs() asks for them); a larger push is refused as uncheckable before it completes. 1 MiB–256 MiB, default 32 MiB (33554432).",
+          "maximum": 268435456,
+          "minimum": 1048576,
+          "type": "integer",
+        },
+        "maxPushPolicyReads": {
+          "default": 2000,
+          "description": "Most storage backend calls made to compute changed paths for the push policy — parent commits, trees and blobs not in the pushed pack (thin-pack delta bases, unchanged subtrees of a moved directory, sizes of blobs storage already has); past it the push is refused as uncheckable. 1–100000, default 2000.",
+          "maximum": 100000,
+          "minimum": 1,
           "type": "integer",
         },
         "maxScannedCommitBytes": {
@@ -4153,6 +4518,112 @@ exports[`schema documentation > generates the JSON Schema for what the schemas p
         "message",
       ],
       "title": "Branch rule",
+      "type": "object",
+    },
+    "ChangedPath": {
+      "additionalProperties": false,
+      "description": "One path a pushed commit changed, from comparing its tree with its parent's: the change, the modes and ids on both sides, and the new blob's size.",
+      "examples": [
+        {
+          "change": "modified",
+          "newMode": "100644",
+          "newSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "oldMode": "100644",
+          "oldSha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+          "path": "content/pages/about.md",
+          "size": 1832,
+        },
+      ],
+      "properties": {
+        "change": {
+          "description": "What the commit did to the path.",
+          "enum": [
+            "added",
+            "modified",
+            "deleted",
+          ],
+          "enumDescriptions": {
+            "added": "The path is new: no entry before (a file replacing a directory is added too).",
+            "deleted": "The path is gone (a directory replacing a file deletes the file).",
+            "modified": "The path existed and its content or mode changed.",
+          },
+          "type": "string",
+        },
+        "newMode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FileMode",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "The mode after the commit; null when the path was deleted.",
+        },
+        "newSha": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "The blob (or submodule commit) after the commit; null when deleted.",
+        },
+        "oldMode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FileMode",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "The mode before the commit; null when the path was added.",
+        },
+        "oldSha": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "The blob (or submodule commit) before the commit; null when added.",
+        },
+        "path": {
+          "description": "The file's path from the repository root, "/"-separated, exactly as the tree names it (any bytes git allows except NUL, decoded as UTF-8); 1–4096 characters. Always a file, symlink or submodule, never a directory: a directory added or removed appears as each file in it.",
+          "maxLength": 4096,
+          "minLength": 1,
+          "pattern": "^[^\\0]+$",
+          "type": "string",
+        },
+        "size": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "Size in bytes of the new blob (for a symlink, of its target text); null when the path was deleted or is a submodule (mode 160000).",
+        },
+      },
+      "required": [
+        "path",
+        "change",
+        "oldMode",
+        "newMode",
+        "oldSha",
+        "newSha",
+        "size",
+      ],
+      "title": "Changed path",
       "type": "object",
     },
     "ChmodAction": {
@@ -6475,6 +6946,233 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
       "title": "promote: up to date",
       "type": "object",
     },
+    "PushPolicyInput": {
+      "additionalProperties": false,
+      "description": "What PushPolicy.check() is given: the principal, the repository and every ref update of a push the branch policy allowed, with changed paths when the policy asked for them.",
+      "examples": [
+        {
+          "principal": {
+            "email": null,
+            "expiresAt": null,
+            "name": null,
+            "roles": [
+              "editor",
+            ],
+            "subject": "alice",
+          },
+          "repo": "acme-site",
+          "updates": [
+            {
+              "commits": null,
+              "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+              "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+              "ref": "refs/heads/main",
+            },
+          ],
+        },
+      ],
+      "properties": {
+        "principal": {
+          "$ref": "#/$defs/Principal",
+          "description": "Who is pushing, as the Authenticator established it.",
+        },
+        "repo": {
+          "$ref": "#/$defs/RepoName",
+          "description": "The repository pushed to.",
+        },
+        "updates": {
+          "description": "Every update of the push, in the order the client sent them; all passed the branch policy.",
+          "items": {
+            "$ref": "#/$defs/PushPolicyUpdate",
+          },
+          "maxItems": 10000,
+          "minItems": 1,
+          "type": "array",
+        },
+      },
+      "required": [
+        "principal",
+        "repo",
+        "updates",
+      ],
+      "title": "Push policy input",
+      "type": "object",
+    },
+    "PushPolicyNeeds": {
+      "additionalProperties": false,
+      "description": "What PushPolicy.needs() returns for a push: whether check() needs the changed paths of every update.",
+      "examples": [
+        {
+          "changedPaths": true,
+        },
+      ],
+      "properties": {
+        "changedPaths": {
+          "description": "true to be given, for every update, the commits it brings with the paths each changes (PushPolicyUpdate.commits). That means buffering and reading the pushed pack and reading trees from storage, bounded by SmartHttpConfig.maxPushPolicyPackBytes, maxPushPolicyObjectBytes, maxPushPolicyReads and maxChangedPaths; a push past a bound is refused as uncheckable. false to decide from the ref updates alone, before the pack is read (\`commits\` is then null).",
+          "type": "boolean",
+        },
+      },
+      "required": [
+        "changedPaths",
+      ],
+      "title": "Push policy needs",
+      "type": "object",
+    },
+    "PushPolicyResult": {
+      "additionalProperties": false,
+      "description": "The push policy verdict on every ref update of one push. It runs after the branch policy, and the push is written only when both allow every update.",
+      "examples": [
+        {
+          "refs": [
+            {
+              "decision": "deny",
+              "reason": "files over 10 MiB are not accepted: video.mp4",
+              "ref": "refs/heads/main",
+            },
+            {
+              "decision": "allow",
+              "ref": "refs/heads/feature/x",
+            },
+          ],
+        },
+      ],
+      "properties": {
+        "refs": {
+          "description": "One decision per update the policy was given, each ref named at most once. An update without a decision is refused, and a push is written only when every update is allowed; otherwise each refused ref is reported with its reason and the rest as "not updated: another update in this push was refused".",
+          "items": {
+            "$ref": "#/$defs/PushRefDecision",
+          },
+          "maxItems": 10000,
+          "type": "array",
+        },
+      },
+      "required": [
+        "refs",
+      ],
+      "title": "Push policy result",
+      "type": "object",
+    },
+    "PushPolicyUpdate": {
+      "additionalProperties": false,
+      "description": "One ref update of a push and, when the policy asked for them, the commits it brings.",
+      "examples": [
+        {
+          "commits": null,
+          "newSha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+          "oldSha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          "ref": "refs/heads/main",
+        },
+      ],
+      "properties": {
+        "commits": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/PushedCommit",
+              },
+              "maxItems": 100000,
+              "type": "array",
+            },
+            {
+              "type": "null",
+            },
+          ],
+          "description": "The commits new to the repository that the update brings — those of the pushed pack reachable from \`newSha\` — newest first (breadth-first from \`newSha\`), each with its changed paths. Empty for a deletion, or when \`newSha\` is a commit storage already has. Null when the policy did not ask for changed paths (PushPolicyNeeds.changedPaths false).",
+        },
+        "newSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the ref will name; the all-zero id when the update deletes the ref.",
+        },
+        "oldSha": {
+          "$ref": "#/$defs/Sha",
+          "description": "Id the ref names now; the all-zero id when the update creates the ref.",
+        },
+        "ref": {
+          "$ref": "#/$defs/FullRefName",
+          "description": "The ref the update names, fully qualified.",
+        },
+      },
+      "required": [
+        "ref",
+        "oldSha",
+        "newSha",
+        "commits",
+      ],
+      "title": "Push policy update",
+      "type": "object",
+    },
+    "PushRefDecision": {
+      "description": "The push policy verdict on one ref update: allow it, or deny it with a reason git shows.",
+      "examples": [
+        {
+          "decision": "deny",
+          "reason": "generated/ is written by the build pipeline",
+          "ref": "refs/heads/main",
+        },
+      ],
+      "oneOf": [
+        {
+          "$ref": "#/$defs/RefDecisionAllow",
+        },
+        {
+          "$ref": "#/$defs/RefDecisionDeny",
+        },
+      ],
+      "title": "Push ref decision",
+    },
+    "PushedCommit": {
+      "additionalProperties": false,
+      "description": "A commit new to the repository that a ref update brings (it is in the pushed pack), with the paths it changes.",
+      "examples": [
+        {
+          "changes": [
+            {
+              "change": "added",
+              "newMode": "100644",
+              "newSha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+              "oldMode": null,
+              "oldSha": null,
+              "path": "README.md",
+              "size": 0,
+            },
+          ],
+          "parents": [
+            "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+          ],
+          "sha": "8f3c2a9e1b7d4c6f0a5e2d9b8c7a6f5e4d3c2b1a",
+        },
+      ],
+      "properties": {
+        "changes": {
+          "description": "The paths the commit changes. Against its parent for an ordinary commit and against the empty tree for a root commit; for a merge, only the paths whose result differs from every parent (git's combined diff), since anything matching one parent came from that parent. Sorted by path.",
+          "items": {
+            "$ref": "#/$defs/ChangedPath",
+          },
+          "maxItems": 100000,
+          "type": "array",
+        },
+        "parents": {
+          "description": "Parent ids in order.",
+          "items": {
+            "$ref": "#/$defs/Sha",
+            "description": "A parent commit id.",
+          },
+          "maxItems": 1000,
+          "type": "array",
+        },
+        "sha": {
+          "$ref": "#/$defs/Sha",
+          "description": "The commit id.",
+        },
+      },
+      "required": [
+        "sha",
+        "parents",
+        "changes",
+      ],
+      "title": "Pushed commit",
+      "type": "object",
+    },
     "ReadContent": {
       "description": "File content returned by a read, interpreted according to the accompanying encoding: UTF-8 text, or base64 of the raw bytes. Not length-capped: base64 output is 4/3 the size of the bytes and files can arrive over git push at any size, so a read returns whatever the repository holds. An empty string is an empty file.",
       "examples": [
@@ -6911,7 +7609,11 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
           "deniedStatus": "err",
           "maxAncestryReads": 2000,
           "maxAuditReportBytes": 1048576,
+          "maxChangedPaths": 10000,
           "maxPushHeadBytes": 8388608,
+          "maxPushPolicyObjectBytes": 67108864,
+          "maxPushPolicyPackBytes": 33554432,
+          "maxPushPolicyReads": 2000,
           "maxScannedCommitBytes": 33554432,
           "maxVerdictWaitMs": 60000,
           "realm": "git-gateway",
@@ -6968,11 +7670,39 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
           "minimum": 0,
           "type": "integer",
         },
+        "maxChangedPaths": {
+          "default": 10000,
+          "description": "Most changed paths, summed over every commit of a push, given to the push policy; a push changing more is refused as uncheckable. 1–100000, default 10000.",
+          "maximum": 100000,
+          "minimum": 1,
+          "type": "integer",
+        },
         "maxPushHeadBytes": {
           "default": 8388608,
           "description": "Most bytes of a push read before the pack (update commands, capabilities, push options); a larger head is refused. 4 KiB–64 MiB, default 8 MiB (8388608).",
           "maximum": 67108864,
           "minimum": 4096,
+          "type": "integer",
+        },
+        "maxPushPolicyObjectBytes": {
+          "default": 67108864,
+          "description": "Most bytes of objects decompressed and rebuilt from the pushed pack (every entry's data plus every delta's result, thin-pack bases read from storage included) to compute changed paths; past it the push is refused as uncheckable. 1 MiB–512 MiB, default 64 MiB (67108864).",
+          "maximum": 536870912,
+          "minimum": 1048576,
+          "type": "integer",
+        },
+        "maxPushPolicyPackBytes": {
+          "default": 33554432,
+          "description": "Most bytes of a pushed pack held in memory so the push policy can be given changed paths (only when PushPolicy.needs() asks for them); a larger push is refused as uncheckable before it completes. 1 MiB–256 MiB, default 32 MiB (33554432).",
+          "maximum": 268435456,
+          "minimum": 1048576,
+          "type": "integer",
+        },
+        "maxPushPolicyReads": {
+          "default": 2000,
+          "description": "Most storage backend calls made to compute changed paths for the push policy — parent commits, trees and blobs not in the pushed pack (thin-pack delta bases, unchanged subtrees of a moved directory, sizes of blobs storage already has); past it the push is refused as uncheckable. 1–100000, default 2000.",
+          "maximum": 100000,
+          "minimum": 1,
           "type": "integer",
         },
         "maxScannedCommitBytes": {
@@ -7004,6 +7734,10 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
         "maxAncestryReads",
         "maxScannedCommitBytes",
         "maxVerdictWaitMs",
+        "maxPushPolicyPackBytes",
+        "maxPushPolicyObjectBytes",
+        "maxPushPolicyReads",
+        "maxChangedPaths",
         "decisionCacheEntries",
         "maxAuditReportBytes",
         "allowedPushOptions",

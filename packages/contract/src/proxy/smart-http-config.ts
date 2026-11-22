@@ -45,6 +45,38 @@ export const SmartHttpConfig = z
       .describe(
         'Most milliseconds a push waits, once the storage host\'s request has failed, for the gateway to finish proving the push from its pack, so that a refusal (which makes the host\'s request fail by design) is reported in-protocol as "ng <ref> <reason>" rather than as a 502. Past it, or when no verdict comes, the push is answered 502 and nothing is written. 0–600000, default 60000 (one minute).',
       ),
+    maxPushPolicyPackBytes: z
+      .int()
+      .min(1024 * 1024)
+      .max(256 * 1024 * 1024)
+      .default(32 * 1024 * 1024)
+      .describe(
+        'Most bytes of a pushed pack held in memory so the push policy can be given changed paths (only when PushPolicy.needs() asks for them); a larger push is refused as uncheckable before it completes. 1 MiB–256 MiB, default 32 MiB (33554432).',
+      ),
+    maxPushPolicyObjectBytes: z
+      .int()
+      .min(1024 * 1024)
+      .max(512 * 1024 * 1024)
+      .default(64 * 1024 * 1024)
+      .describe(
+        "Most bytes of objects decompressed and rebuilt from the pushed pack (every entry's data plus every delta's result, thin-pack bases read from storage included) to compute changed paths; past it the push is refused as uncheckable. 1 MiB–512 MiB, default 64 MiB (67108864).",
+      ),
+    maxPushPolicyReads: z
+      .int()
+      .min(1)
+      .max(100_000)
+      .default(2000)
+      .describe(
+        'Most storage backend calls made to compute changed paths for the push policy — parent commits, trees and blobs not in the pushed pack (thin-pack delta bases, unchanged subtrees of a moved directory, sizes of blobs storage already has); past it the push is refused as uncheckable. 1–100000, default 2000.',
+      ),
+    maxChangedPaths: z
+      .int()
+      .min(1)
+      .max(100_000)
+      .default(10_000)
+      .describe(
+        'Most changed paths, summed over every commit of a push, given to the push policy; a push changing more is refused as uncheckable. 1–100000, default 10000.',
+      ),
     decisionCacheEntries: z
       .int()
       .min(0)
@@ -108,6 +140,10 @@ export const SmartHttpConfig = z
         maxAncestryReads: 2000,
         maxScannedCommitBytes: 33_554_432,
         maxVerdictWaitMs: 60_000,
+        maxPushPolicyPackBytes: 33_554_432,
+        maxPushPolicyObjectBytes: 67_108_864,
+        maxPushPolicyReads: 2000,
+        maxChangedPaths: 10_000,
         decisionCacheEntries: 10_000,
         maxAuditReportBytes: 1_048_576,
         allowedPushOptions: ['ci.skip'],

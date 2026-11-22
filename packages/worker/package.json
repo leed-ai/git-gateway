@@ -171,6 +171,31 @@
       "types": "./dist/proxy/upstream-call.d.ts",
       "default": "./dist/proxy/upstream-call.js"
     },
+    "./push-policy/changed-paths": {
+      "source": "./src/push-policy/changed-paths.ts",
+      "types": "./dist/push-policy/changed-paths.d.ts",
+      "default": "./dist/push-policy/changed-paths.js"
+    },
+    "./push-policy/pushed-objects": {
+      "source": "./src/push-policy/pushed-objects.ts",
+      "types": "./dist/push-policy/pushed-objects.d.ts",
+      "default": "./dist/push-policy/pushed-objects.js"
+    },
+    "./push-policy/run-push-policy": {
+      "source": "./src/push-policy/run-push-policy.ts",
+      "types": "./dist/push-policy/run-push-policy.d.ts",
+      "default": "./dist/push-policy/run-push-policy.js"
+    },
+    "./push-policy/tree-diff": {
+      "source": "./src/push-policy/tree-diff.ts",
+      "types": "./dist/push-policy/tree-diff.d.ts",
+      "default": "./dist/push-policy/tree-diff.js"
+    },
+    "./push-policy/uncheckable": {
+      "source": "./src/push-policy/uncheckable.ts",
+      "types": "./dist/push-policy/uncheckable.d.ts",
+      "default": "./dist/push-policy/uncheckable.js"
+    },
     "./rpc/branch-methods": {
       "source": "./src/rpc/branch-methods.ts",
       "types": "./dist/rpc/branch-methods.d.ts",

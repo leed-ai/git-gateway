@@ -9,6 +9,7 @@ import type { GatewayDeps } from './gateway-deps.ts';
 import type { GatewayEnv } from './gateway-env.ts';
 import { refusePush, textResponse, type RefRefusal } from './git-responses.ts';
 import { deliverPushEvents } from './push-events.ts';
+import { judgeChangedPaths } from '../push-policy/run-push-policy.ts';
 import { guardPush } from './push-guard.ts';
 import { callUpstream, streamToClient, type UpstreamResult } from './upstream-call.ts';
 
@@ -57,7 +58,7 @@ async function awaitVerdict(
 
 /**
  * Forwards a push the branch policy let through. When fast-forwards remain to be proven from the
- * pack, the body streams through a guard that scans it and holds back the pack checksum until
+ * pack, or the push policy is to be given changed paths computed from it, the body streams through a guard that scans it and holds back the pack checksum until
  * they are; a refusal then fails the upstream request (the host gets a truncated pack and updates
  * nothing) and the client is told in-protocol which refs were refused and why. The host's answer
  * is held until that verdict is known — and when the host's request fails first, the verdict is
@@ -79,6 +80,8 @@ export function receivePack(deps: GatewayDeps): Handler<GatewayEnv> {
     /** Settles once the guard has allowed or refused the push, or will never decide it. */
     const { promise: verdict, resolve: settleVerdict } = Promise.withResolvers<void>();
     let deciding = false;
+    const { policyUpdates } = push;
+    const guarded = push.pending.length > 0 || policyUpdates !== null;
     if (push.pending.length > 0) {
       deps.logger.log({
         level: 'debug',
@@ -89,15 +92,37 @@ export function receivePack(deps: GatewayDeps): Handler<GatewayEnv> {
       });
     }
     let body = push.body;
-    if (push.pending.length > 0) {
+    if (guarded) {
+      const { pushPolicy } = deps;
+      const maxPackBytes = deps.config.maxPushPolicyPackBytes;
       const guard = guardPush({
         headLength: push.headLength,
         maxCommitBytes: deps.config.maxScannedCommitBytes,
-        decide: async (scan) => {
+        ...(policyUpdates === null
+          ? {}
+          : {
+              keepPack: {
+                maxBytes: maxPackBytes,
+                tooLarge: `the push policy could not check this push: the pack is larger than ${maxPackBytes} bytes`,
+              },
+            }),
+        decide: async (scan, pack) => {
           deciding = true;
           let refusals: readonly RefRefusal[];
           try {
             refusals = await provePending(deps, git, push.pending, scan.commits);
+            if (
+              refusals.length === 0 &&
+              policyUpdates !== null &&
+              pushPolicy !== undefined &&
+              pack !== null
+            ) {
+              refusals = await judgeChangedPaths(
+                { pushPolicy, backend: deps.backend, config: deps.config },
+                { principal, repo: git.repo, updates: policyUpdates },
+                pack,
+              );
+            }
           } catch (error) {
             deps.logger.log({
               level: 'error',
@@ -157,7 +182,7 @@ export function receivePack(deps: GatewayDeps): Handler<GatewayEnv> {
     } catch (error) {
       failure = error;
     }
-    if (push.pending.length > 0) {
+    if (guarded) {
       if (result?.ok === true) result = await awaitVerdict(result.response, verdict, () => refused !== null);
       // A refusal fails the host's request by design (the pack is cut short), and the host may
       // notice before the guard has recorded its verdict: wait for it, so a refused push is
