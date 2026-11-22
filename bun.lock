@@ -47,7 +47,7 @@
     },
     "packages/auth-jwt": {
       "name": "@leed-ai/git-gateway-auth-jwt",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "@leed-ai/git-gateway-contract": "workspace:*",
       },
@@ -66,7 +66,7 @@
     },
     "packages/backend-artifacts": {
       "name": "@leed-ai/git-gateway-backend-artifacts",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "@leed-ai/git-gateway-contract": "workspace:*",
         "@leed-ai/git-gateway-core": "workspace:*",
@@ -92,7 +92,7 @@
     },
     "packages/backend-gitlab": {
       "name": "@leed-ai/git-gateway-backend-gitlab",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "@leed-ai/git-gateway-contract": "workspace:*",
         "@leed-ai/git-gateway-core": "workspace:*",
@@ -112,7 +112,7 @@
     },
     "packages/contract": {
       "name": "@leed-ai/git-gateway-contract",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "devDependencies": {
         "@leed-ai/git-gateway-repo-tools": "workspace:*",
         "@leed-ai/git-gateway-schema-docs": "workspace:*",
@@ -128,7 +128,7 @@
     },
     "packages/core": {
       "name": "@leed-ai/git-gateway-core",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "@leed-ai/git-gateway-contract": "workspace:*",
       },
@@ -151,7 +151,7 @@
     },
     "packages/testkit": {
       "name": "@leed-ai/git-gateway-testkit",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "@leed-ai/git-gateway-contract": "workspace:*",
         "@leed-ai/git-gateway-core": "workspace:*",
@@ -175,7 +175,7 @@
     },
     "packages/worker": {
       "name": "@leed-ai/git-gateway-worker",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "@leed-ai/git-gateway-contract": "workspace:*",
         "@leed-ai/git-gateway-core": "workspace:*",
