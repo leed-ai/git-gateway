@@ -5,6 +5,7 @@ import { GitHttpClient } from '@leed-ai/git-gateway-core/smart-http/git-http-cli
 import { z } from 'zod';
 
 import type { ArtifactsRepoHandle } from './artifacts-binding.ts';
+import { isWrongKind } from './artifacts-errors.ts';
 import { ArtifactsCommit, ArtifactsTreeEntry } from './schemas/artifacts-binding-results.ts';
 
 const SHA = /^[0-9a-f]{40}$/;
@@ -41,8 +42,8 @@ export async function readBlobOverGit(remote: GitRemote, sha: string): Promise<U
 /**
  * The id of the blob at `path` in `revision` (a commit id or a short branch name), found through
  * the binding's own commit and tree reads, which carry plain data even where Blobs cannot travel.
- * Null when the revision, a directory on the way or the file does not exist, or the path names a
- * directory or submodule.
+ * Null when the revision, a directory on the way or the file does not exist, the revision names a
+ * tree or a blob, or the path names a directory or submodule.
  */
 export async function blobIdAt(
   handle: ArtifactsRepoHandle,
@@ -55,7 +56,12 @@ export async function blobIdAt(
     commitId = head?.hash ?? null;
   }
   if (commitId === null) return null;
-  const commit = await handle.readCommit(commitId);
+  const found = commitId;
+  const commit = await handle.readCommit(found).catch((error: unknown) => {
+    // A revision naming a tree or a blob is a revision that does not exist.
+    if (isWrongKind(error, found)) return null;
+    throw error;
+  });
   if (commit === null) return null;
   let tree = ArtifactsCommit.parse(commit).treeHash;
   const segments = path.split('/');

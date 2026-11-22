@@ -68,6 +68,25 @@ export function isRepoNotFound(thrown: unknown, repo: string): boolean {
 }
 
 /**
+ * Whether a failure of a binding read of object `sha` says only that the id names an object of
+ * another kind (a blob read as a tree, a tree read as a commit). The binding documents
+ * INTERNAL_ERROR for that case without saying which, so the message is what tells it apart from a
+ * real failure. The live binding was seen to throw "Invalid object requested. SHA must identify a
+ * commit or a tree. <sha> is a blob." (optionally after an "ArtifactsError: " prefix) and the local
+ * simulator "Git object <sha> is a blob, not a tree". So a message naming this id as "<sha> is a
+ * <kind>", or one saying "Invalid object requested" with "must identify a", is accepted; anything
+ * else is not, so an outage is never mistaken for a missing object.
+ */
+export function isWrongKind(thrown: unknown, sha: string): boolean {
+  if (typeof thrown !== 'object' || thrown === null) return false;
+  const message: unknown = Reflect.get(thrown, 'message');
+  if (typeof message !== 'string') return false;
+  if (new RegExp(String.raw`\b${escapeRegExp(sha)} is an? (?:commit|tree|blob|tag)\b`, 'i').test(message))
+    return true;
+  return /\binvalid object requested\b/i.test(message) && /\bmust identify an? /i.test(message);
+}
+
+/**
  * Translates a failure of a binding call on repository `repo` into a GatewayError: NOT_FOUND is
  * repo_not_found (also when only the numeric code or the message says so, see
  * {@link isRepoNotFound}), ALREADY_EXISTS is repo_exists (for createRepo also when only the numeric code or
