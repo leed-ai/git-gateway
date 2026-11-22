@@ -1,6 +1,6 @@
 {
   "name": "@leed-ai/git-gateway-testkit",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Test kit for git-gateway: in-memory backend, repository fixtures, a real-git conformance harness and the backend contract suite.",
   "keywords": [
     "cloudflare-workers",
