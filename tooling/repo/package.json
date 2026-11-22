@@ -2,7 +2,7 @@
   "name": "@leed-ai/git-gateway-repo-tools",
   "version": "0.0.0",
   "private": true,
-  "description": "Repository checks and release scripts: dependency policy, SPDX headers, lowest-peer testing, snapshot publishing.",
+  "description": "Repository checks and release scripts: dependency policy, SPDX headers, lowest-peer testing, packing and npm publishing.",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {

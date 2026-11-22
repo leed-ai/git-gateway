@@ -1,53 +1,50 @@
 // SPDX-License-Identifier: Apache-2.0
-// Publishes every public package whose version is not on npm yet:
-//   bun tooling/repo/src/cli/publish-packages.ts --tag <latest|next> [--dry-run]
-// Packs with `bun pm pack` (which resolves workspace: ranges) and publishes the tarball with npm,
-// adding --provenance inside GitHub Actions. Without NPM_TOKEN it publishes nothing.
+// Publishes the tarballs pack-packages.ts wrote, in the plan's order:
+//   bun tooling/repo/src/cli/publish-packages.ts --from <dir> [--dry-run]
+//
+// No token is read or checked. In GitHub Actions npm authenticates through trusted publishing
+// (OIDC) and attaches provenance; on a laptop it uses the `npm login` session and publishes
+// without provenance, which only a CI identity can sign. A version already on the registry is
+// skipped, so re-running after a partial failure publishes only what is missing.
+//
+// Runs in the job that holds `id-token: write`, without `bun install`: it imports Node builtins
+// and builtins-only modules (tooling/repo/test/publish-imports.test.ts holds that).
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, readdirSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 
-import { planPublish, publishArguments } from '../publish-plan.ts';
-import { REPO_ROOT } from '../repo-root.ts';
-import { listWorkspacePackages } from '../workspace.ts';
+import { PACKED_PLAN_FILE, parsePackedPlan, publishArguments, releaseTag } from '../packed-plan.ts';
 
 const { values } = parseArgs({
-  options: { tag: { type: 'string' }, 'dry-run': { type: 'boolean', default: false } },
+  options: { from: { type: 'string' }, 'dry-run': { type: 'boolean', default: false } },
 });
-const tag = values.tag;
-const dryRun = values['dry-run'];
-if (tag === undefined) {
-  console.error('usage: publish-packages.ts --tag <dist-tag> [--dry-run]');
+if (values.from === undefined) {
+  console.error('usage: publish-packages.ts --from <dir> [--dry-run]');
   process.exit(2);
 }
-if (!dryRun && (process.env['NPM_TOKEN'] || process.env['NODE_AUTH_TOKEN'] || '') === '') {
-  console.log('NPM_TOKEN is not set: nothing is published.');
-  process.exit(0);
-}
+const dir = resolve(values.from);
+const dryRun = values['dry-run'];
+const plan = parsePackedPlan(JSON.parse(readFileSync(join(dir, PACKED_PLAN_FILE), 'utf8')));
+const provenance = process.env['GITHUB_ACTIONS'] === 'true' && !dryRun;
 
 const isPublished = (name: string, version: string): boolean =>
   spawnSync('npm', ['view', `${name}@${version}`, 'version'], { encoding: 'utf8' }).stdout.trim() === version;
 
-const targets = planPublish(listWorkspacePackages(REPO_ROOT), isPublished);
-const provenance = process.env['GITHUB_ACTIONS'] === 'true';
-for (const target of targets) {
-  const outDir = mkdtempSync(join(tmpdir(), 'git-gateway-pack-'));
-  execFileSync('bun', ['pm', 'pack', '--destination', outDir, '--quiet'], {
-    cwd: join(REPO_ROOT, target.dir),
+let published = 0;
+for (const pkg of plan.packages) {
+  if (!dryRun && isPublished(pkg.name, pkg.version)) {
+    console.log(`${releaseTag(pkg)} is already on npm; skipped.`);
+    continue;
+  }
+  const tarball = join(dir, pkg.tarball);
+  execFileSync('npm', publishArguments({ tarball, tag: plan.tag, provenance, dryRun }), {
     stdio: 'inherit',
   });
-  const tarball = readdirSync(outDir).find((file) => file.endsWith('.tgz'));
-  if (tarball === undefined) throw new Error(`${target.name}: bun pm pack produced no tarball`);
-  execFileSync('npm', publishArguments({ tarball: join(outDir, tarball), tag, provenance, dryRun }), {
-    stdio: 'inherit',
-  });
-  // changesets/action reads these lines to create git tags and GitHub releases.
-  if (!dryRun) console.log(`New tag: ${target.name}@${target.version}`);
+  published += 1;
 }
 console.log(
-  targets.length === 0
-    ? 'Every public package is already published.'
-    : `Published ${targets.length} package(s).`,
+  dryRun
+    ? `Dry run: ${published} package(s) would be published under "${plan.tag}". Nothing was published.`
+    : `Published ${published} package(s) under "${plan.tag}".`,
 );

@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vite-plus/test';
 
 import { pinLowestPeers } from '../src/lowest-peers.ts';
 import type { WorkspacePackage } from '../src/manifest.ts';
-import { orderByDependencies, planPublish, publishArguments } from '../src/publish-plan.ts';
+import { publishArguments } from '../src/packed-plan.ts';
+import { orderByDependencies, planPublish } from '../src/publish-plan.ts';
 import { snapshotChangeset } from '../src/snapshot-changeset.ts';
 
 const packages: WorkspacePackage[] = [
@@ -169,7 +170,7 @@ describe('publish order', () => {
 });
 
 describe('publishArguments', () => {
-  it('publishes publicly under the dist-tag, with provenance when asked', () => {
+  it('publishes publicly under the dist-tag, stating provenance either way', () => {
     expect(publishArguments({ tarball: 'a.tgz', tag: 'next', provenance: true, dryRun: false })).toEqual([
       'publish',
       'a.tgz',
@@ -186,6 +187,7 @@ describe('publishArguments', () => {
       'public',
       '--tag',
       'latest',
+      '--provenance=false',
       '--dry-run',
     ]);
   });
