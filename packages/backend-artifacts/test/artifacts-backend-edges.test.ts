@@ -201,7 +201,7 @@ describe('ArtifactsBackend reads', () => {
     expect(await backend.readFile('acme', 'feature/x', 'missing.md')).toBeNull();
     expect(asked).toEqual([
       { ref: SHA, path: 'a.md' },
-      { ref: 'refs/heads/feature/x', path: 'missing.md' },
+      { ref: 'feature/x', path: 'missing.md' },
     ]);
     expect(await backend.readBlob('acme', SHA)).toEqual(new Uint8Array([0, 255]));
     expect(await backend.readBlob('acme', TREE)).toBeNull();
