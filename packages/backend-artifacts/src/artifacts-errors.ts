@@ -43,9 +43,34 @@ export function isAlreadyExists(thrown: unknown, repo: string): boolean {
   );
 }
 
+/** The REST API's numeric code for "not found", which the binding's ArtifactsError carries. */
+const NOT_FOUND_NUMERIC = 10200;
+
+/**
+ * Whether a failure of a binding call on `repo` says the repository does not exist. The binding
+ * documents code NOT_FOUND (numeric 10200), and the local simulator sends it; the live binding was
+ * seen to throw an error whose code did not survive, with only the message "Repository not found:
+ * <name>." So the code, then the numeric code, then exactly that message naming this repository
+ * (optionally after an "ArtifactsError: " prefix, with or without the closing period) are
+ * accepted.
+ */
+export function isRepoNotFound(thrown: unknown, repo: string): boolean {
+  if (artifactsErrorCode(thrown) === 'NOT_FOUND') return true;
+  if (typeof thrown !== 'object' || thrown === null) return false;
+  if (Reflect.get(thrown, 'numericCode') === NOT_FOUND_NUMERIC) return true;
+  const message: unknown = Reflect.get(thrown, 'message');
+  return (
+    typeof message === 'string' &&
+    new RegExp(String.raw`^(?:ArtifactsError: )?repository not found: ${escapeRegExp(repo)}\.?$`, 'i').test(
+      message.trim(),
+    )
+  );
+}
+
 /**
  * Translates a failure of a binding call on repository `repo` into a GatewayError: NOT_FOUND is
- * repo_not_found, ALREADY_EXISTS is repo_exists (for createRepo also when only the numeric code or
+ * repo_not_found (also when only the numeric code or the message says so, see
+ * {@link isRepoNotFound}), ALREADY_EXISTS is repo_exists (for createRepo also when only the numeric code or
  * the message says so, see {@link isAlreadyExists}), everything else (in-progress states,
  * MEMORY_LIMIT, INTERNAL_ERROR, unparsable results) is storage_unavailable. GatewayErrors pass
  * through unchanged.
@@ -53,7 +78,7 @@ export function isAlreadyExists(thrown: unknown, repo: string): boolean {
 export function toGatewayError(repo: string, what: string, thrown: unknown): Error {
   if (isGatewayError(thrown) && thrown instanceof Error) return thrown;
   const code = artifactsErrorCode(thrown);
-  if (code === 'NOT_FOUND') return repoNotFound(repo);
+  if (isRepoNotFound(thrown, repo)) return repoNotFound(repo);
   if (code === 'ALREADY_EXISTS' || (what === 'createRepo' && isAlreadyExists(thrown, repo)))
     return repoExists(repo);
   return storageUnavailable(`Artifacts ${what}`, thrown);
