@@ -19,7 +19,7 @@ import {
   type ArtifactsNamespaceBinding,
   type ArtifactsRepoHandle,
 } from './artifacts-binding.ts';
-import { artifactsErrorCode, toGatewayError } from './artifacts-errors.ts';
+import { artifactsErrorCode, isRepoNotFound, toGatewayError } from './artifacts-errors.ts';
 import { blobIdAt, isUnserializableBlob, readBlobOverGit } from './artifacts-git-reads.ts';
 import { toContractCommit, toStorageTreeEntry } from './artifacts-mapping.ts';
 import {
@@ -99,7 +99,7 @@ export class ArtifactsBackend implements StorageBackend {
     try {
       await this.#binding.delete(repo);
     } catch (error) {
-      if (artifactsErrorCode(error) !== 'NOT_FOUND') throw toGatewayError(repo, 'deleteRepo', error);
+      if (!isRepoNotFound(error, repo)) throw toGatewayError(repo, 'deleteRepo', error);
     }
   }
 
