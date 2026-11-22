@@ -38,7 +38,15 @@ export interface ArtifactsBackendOptions {
 }
 
 const TokenTtl = z.int().min(60).max(31_536_000);
-const SHA = /^[0-9a-f]{40}$/;
+/**
+ * The name the binding resolves for a StorageRef. The live binding resolves short names ("main",
+ * "v1", a commit id) and answers nothing for fully qualified ones ("refs/heads/main" → no commits),
+ * so the "refs/heads/" or "refs/tags/" prefix is dropped. The binding then resolves the name as git
+ * does a short name, so a tag and a branch sharing one name cannot be told apart.
+ */
+export function bindingRef(ref: string): string {
+  return ref.replace(/^refs\/(?:heads|tags)\//, '');
+}
 
 const bytesOf = async (blob: Blob | null): Promise<Uint8Array | null> =>
   blob === null ? null : new Uint8Array(await blob.arrayBuffer());
@@ -107,9 +115,8 @@ export class ArtifactsBackend implements StorageBackend {
   async resolveRef(name: string, ref: string): Promise<string | null> {
     const repo = parseStorageInput(RepoName, name);
     const parsed = parseStorageInput(StorageRef, ref);
-    const full = parsed.startsWith('refs/') ? parsed : `refs/heads/${parsed}`;
     return this.#withRepo(repo, 'resolveRef', async (handle) => {
-      const [head] = z.array(ArtifactsCommit).parse(await handle.log({ ref: full, limit: 1 }));
+      const [head] = z.array(ArtifactsCommit).parse(await handle.log({ ref: bindingRef(parsed), limit: 1 }));
       return head?.hash ?? null;
     });
   }
@@ -148,9 +155,9 @@ export class ArtifactsBackend implements StorageBackend {
     const repo = parseStorageInput(RepoName, name);
     const revision = parseStorageInput(Revision, ref);
     const file = parseStorageInput(FilePath, path);
-    const resolved = SHA.test(revision) ? revision : `refs/heads/${revision}`;
+    // A Revision is a commit id or a short branch name, which is what the binding resolves.
     return this.#withRepo(repo, 'readFile', async (handle) =>
-      bytesOf(await handle.readFile({ ref: resolved, path: file })),
+      bytesOf(await handle.readFile({ ref: revision, path: file })),
     );
   }
 
@@ -158,9 +165,8 @@ export class ArtifactsBackend implements StorageBackend {
     const repo = parseStorageInput(RepoName, name);
     const revision = parseStorageInput(Revision, ref);
     const { limit, offset } = parseStorageInput(StorageLogOptions, options);
-    const resolved = SHA.test(revision) ? revision : `refs/heads/${revision}`;
     return this.#withRepo(repo, 'log', async (handle) => {
-      const commits = z.array(ArtifactsCommit).parse(await handle.log({ ref: resolved, limit, offset }));
+      const commits = z.array(ArtifactsCommit).parse(await handle.log({ ref: revision, limit, offset }));
       return Promise.all(commits.map(toContractCommit));
     });
   }
