@@ -105,18 +105,21 @@ describe('ArtifactsBackend with a scripted binding', () => {
     expect(await errorCode(backend.log('acme', 'main', { limit: 1 }))).toBe('storage_unavailable');
   });
 
-  it('resolves short names as refs/heads and passes full refs through', async () => {
+  it('hands the binding short names: full refs lose their refs/heads/ or refs/tags/ prefix', async () => {
     const asked: unknown[] = [];
     const backend = new ArtifactsBackend({
       binding: fakeBinding(fakeHandle({ log: async (opts) => (asked.push(opts), []) })),
     });
     expect(await backend.resolveRef('acme', 'main')).toBeNull();
+    await backend.resolveRef('acme', 'refs/heads/feature/x');
     await backend.resolveRef('acme', 'refs/tags/v1');
-    await backend.readFile('acme', 'main', 'a.md').catch(() => null);
+    await backend.log('acme', 'main', { limit: 3 });
     await backend.log('acme', SHA, { limit: 5, offset: 2 });
     expect(asked).toEqual([
-      { ref: 'refs/heads/main', limit: 1 },
-      { ref: 'refs/tags/v1', limit: 1 },
+      { ref: 'main', limit: 1 },
+      { ref: 'feature/x', limit: 1 },
+      { ref: 'v1', limit: 1 },
+      { ref: 'main', limit: 3, offset: 0 },
       { ref: SHA, limit: 5, offset: 2 },
     ]);
   });
