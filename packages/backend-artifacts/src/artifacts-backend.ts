@@ -20,6 +20,7 @@ import {
   type ArtifactsRepoHandle,
 } from './artifacts-binding.ts';
 import { artifactsErrorCode, isRepoNotFound, toGatewayError } from './artifacts-errors.ts';
+import { blobIdAt, isUnserializableBlob, readBlobOverGit } from './artifacts-git-reads.ts';
 import { toContractCommit, toStorageTreeEntry } from './artifacts-mapping.ts';
 import {
   ArtifactsCommit,
@@ -62,6 +63,8 @@ function parseHost<S extends z.ZodType>(schema: S, value: unknown): z.output<S> 
  * log) and per-call tokens for the repository's git remote. Artifacts has no write or ref API, so
  * every write is a git-receive-pack push to {@link gitRemote}; refs are resolved through the
  * binding's log. Every binding result is parsed with Zod; binding errors become GatewayErrors.
+ * Where the binding cannot carry a Blob back (wrangler's remote binding under `wrangler dev`),
+ * readBlob and readFile fall back to fetching the blob over the repository's git remote.
  */
 export class ArtifactsBackend implements StorageBackend {
   readonly #binding: ArtifactsNamespaceBinding;
@@ -148,7 +151,14 @@ export class ArtifactsBackend implements StorageBackend {
   async readBlob(name: string, sha: string): Promise<Uint8Array | null> {
     const repo = parseStorageInput(RepoName, name);
     const id = parseStorageInput(Sha, sha);
-    return this.#withRepo(repo, 'readBlob', async (handle) => bytesOf(await handle.readBlob(id)));
+    return this.#withRepo(repo, 'readBlob', async (handle) => {
+      try {
+        return await bytesOf(await handle.readBlob(id));
+      } catch (error) {
+        if (!isUnserializableBlob(error)) throw error;
+        return readBlobOverGit(await this.gitRemote(repo, 'read'), id);
+      }
+    });
   }
 
   async readFile(name: string, ref: string, path: string): Promise<Uint8Array | null> {
@@ -156,9 +166,15 @@ export class ArtifactsBackend implements StorageBackend {
     const revision = parseStorageInput(Revision, ref);
     const file = parseStorageInput(FilePath, path);
     // A Revision is a commit id or a short branch name, which is what the binding resolves.
-    return this.#withRepo(repo, 'readFile', async (handle) =>
-      bytesOf(await handle.readFile({ ref: revision, path: file })),
-    );
+    return this.#withRepo(repo, 'readFile', async (handle) => {
+      try {
+        return await bytesOf(await handle.readFile({ ref: revision, path: file }));
+      } catch (error) {
+        if (!isUnserializableBlob(error)) throw error;
+        const blob = await blobIdAt(handle, revision, file);
+        return blob === null ? null : readBlobOverGit(await this.gitRemote(repo, 'read'), blob);
+      }
+    });
   }
 
   async log(name: string, ref: string, options: StorageLogOptions): Promise<Commit[]> {
@@ -220,7 +236,10 @@ export class ArtifactsBackend implements StorageBackend {
     } catch (error) {
       if (artifactsErrorCode(error) !== 'INTERNAL_ERROR') throw error;
       for (const probe of probes) {
-        const found = await probe().catch(() => null);
+        // A Blob that could not be carried back (wrangler's remote binding) was still found.
+        const found = await probe().catch((probeError: unknown) =>
+          isUnserializableBlob(probeError) ? true : null,
+        );
         if (found !== null) return null;
       }
       throw error;
