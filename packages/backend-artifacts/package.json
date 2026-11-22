@@ -41,6 +41,11 @@
       "types": "./dist/artifacts-errors.d.ts",
       "default": "./dist/artifacts-errors.js"
     },
+    "./artifacts-git-reads": {
+      "source": "./src/artifacts-git-reads.ts",
+      "types": "./dist/artifacts-git-reads.d.ts",
+      "default": "./dist/artifacts-git-reads.js"
+    },
     "./artifacts-mapping": {
       "source": "./src/artifacts-mapping.ts",
       "types": "./dist/artifacts-mapping.d.ts",
