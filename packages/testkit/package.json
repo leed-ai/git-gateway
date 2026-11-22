@@ -26,6 +26,11 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
+    "./contract-suite/ancestry-cases": {
+      "source": "./src/contract-suite/ancestry-cases.ts",
+      "types": "./dist/contract-suite/ancestry-cases.d.ts",
+      "default": "./dist/contract-suite/ancestry-cases.js"
+    },
     "./contract-suite/backend-case": {
       "source": "./src/contract-suite/backend-case.ts",
       "types": "./dist/contract-suite/backend-case.d.ts",

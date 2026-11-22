@@ -84,6 +84,7 @@ async function repositoryRoute(
       .catch(() => null);
     return bytes === null ? notFound('File') : raw(bytes);
   }
+  if (rest === 'repository/merge_base') return mergeBase(state, project, url);
   if (rest === 'repository/commits') {
     const page = Number(url.searchParams.get('page') ?? '1');
     const perPage = Number(url.searchParams.get('per_page') ?? '20');
@@ -97,6 +98,26 @@ async function repositoryRoute(
     );
   }
   return notFound('Route');
+}
+
+/**
+ * GitLab's merge-base API over the in-memory backend's isAncestor: one of the two commits when it
+ * contains the other, otherwise "no merge base" — enough for callers that only ask whether the
+ * base is a given commit. Unknown refs are 400 "Could not find ref", as GitLab answers.
+ */
+async function mergeBase(state: FakeGitLabState, project: string, url: URL): Promise<Response> {
+  const [first = '', second = ''] = url.searchParams.getAll('refs[]');
+  const missing = [first, second].filter((sha) => !/^[0-9a-f]{40}$/.test(sha));
+  for (const sha of [first, second]) {
+    if (!missing.includes(sha) && (await state.memory.readCommit(project, sha)) === null) missing.push(sha);
+  }
+  if (missing.length > 0) return json(400, { message: `Could not find ref: ${missing.join(', ')}` });
+  const base = (await state.memory.isAncestor(project, first, second))
+    ? first
+    : (await state.memory.isAncestor(project, second, first))
+      ? second
+      : null;
+  return base === null ? notFound('Merge Base') : json(200, { id: base, parent_ids: [] });
 }
 
 /** Answers one REST API request of the fake GitLab. */

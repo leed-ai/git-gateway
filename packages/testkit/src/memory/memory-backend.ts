@@ -138,6 +138,27 @@ export class MemoryBackend implements StorageBackend {
       : firstParentLog(repo, start, limit, offset).map((commit) => Commit.parse(commit));
   }
 
+  /** Walks parents from `descendant`; null when either commit is not in the repository. */
+  async isAncestor(name: string, ancestor: string, descendant: string): Promise<boolean | null> {
+    const repoName = parseStorageInput(RepoName, name);
+    const older = parseStorageInput(Sha, ancestor);
+    const newer = parseStorageInput(Sha, descendant);
+    const repo = this.#require(repoName);
+    if (repo.commit(older) === null || repo.commit(newer) === null) return null;
+    const seen = new Set([newer]);
+    const queue = [newer];
+    for (let sha = queue.shift(); sha !== undefined; sha = queue.shift()) {
+      if (sha === older) return true;
+      for (const parent of repo.commit(sha)?.parents ?? []) {
+        if (!seen.has(parent)) {
+          seen.add(parent);
+          queue.push(parent);
+        }
+      }
+    }
+    return false;
+  }
+
   async gitRemote(name: string, access: string): Promise<GitRemote> {
     const repoName = parseStorageInput(RepoName, name);
     const level = parseStorageInput(GitAccess, access);

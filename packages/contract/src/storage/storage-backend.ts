@@ -46,6 +46,17 @@ export interface StorageBackend {
   log(repo: RepoName, ref: Revision, options: StorageLogOptions): Promise<Commit[]>;
 
   /**
+   * Optional capability: whether `ancestor` is `descendant` itself or one of its ancestors, as
+   * `git merge-base --is-ancestor` answers it, or null when either commit is not in the
+   * repository. A backend implements it only when its host can answer in one or a few calls (a
+   * merge-base API, say); the gateway then proves fast-forwards with it instead of walking
+   * history one {@link readCommit} at a time, and falls back to that walk when it is absent.
+   * Follows the same conventions as the reads: invalid ids are `invalid_input`, a missing
+   * repository `repo_not_found`, a host failure `storage_unavailable`.
+   */
+  isAncestor?(repo: RepoName, ancestor: Sha, descendant: Sha): Promise<boolean | null>;
+
+  /**
    * A freshly minted smart-HTTP remote for the repository: URL plus the headers that authorize
    * `access`. The credential is short-lived where the host allows it and must never reach a
    * git client.
