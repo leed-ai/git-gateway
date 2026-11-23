@@ -1,6 +1,6 @@
 {
   "name": "@leed-ai/git-gateway-contract",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Zod schemas and the RPC interface of git-gateway (the API contract), with an in-memory reference implementation.",
   "keywords": [
     "cloudflare-workers",

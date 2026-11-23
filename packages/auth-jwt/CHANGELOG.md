@@ -1,5 +1,15 @@
 # @leed-ai/git-gateway-auth-jwt
 
+## 0.1.3
+
+### Patch Changes
+
+- [#25](https://github.com/leed-ai/git-gateway/pull/25) [`5c855c8`](https://github.com/leed-ai/git-gateway/commit/5c855c89993f30604072af140641ba68b144ebae) Thanks [@kingmesal](https://github.com/kingmesal)! - Type-checks against `@types/node` 26, whose Web Crypto and Web Streams types take only bytes over an `ArrayBuffer`. `sha1Bytes` and `deflate`/`inflate` in core, and `sha1Hex` in the contract's reference gateway, still accept any `Uint8Array` and pass it through unchanged; an array over shared memory, which those APIs refuse, is now copied first. The new `arrayBufferBacked` helper (in `core/bytes` and `contract/reference/bytes`) does that. `DecodedJwt.signingInput` and `signature` in auth-jwt, and `decodeBase64Url`'s result, are now typed `Uint8Array<ArrayBuffer>`, which they always were.
+
+- [#25](https://github.com/leed-ai/git-gateway/pull/25) [`5c855c8`](https://github.com/leed-ai/git-gateway/commit/5c855c89993f30604072af140641ba68b144ebae) Thanks [@kingmesal](https://github.com/kingmesal)! - The `zod` peer dependency now requires 4.6.0 or later (`^4.6.0`, was `^4`). Older 4.x releases do not behave as the published contract says: before 4.5.0 a commit action refused for invalid base64 `content` reports the issue with an empty path instead of naming the `content` field, and the generated JSON Schema differs (including a `FilePath` pattern that no longer gives the same verdict as the schema); before 4.6.0 `z.toJSONSchema` emits a different email pattern, so the generated JSON Schema still differs from the one published. `hono` (`^4`) and `cloudflare` (`^5`) are unchanged; their lowest versions pass the whole suite.
+- Updated dependencies [[`5c855c8`](https://github.com/leed-ai/git-gateway/commit/5c855c89993f30604072af140641ba68b144ebae), [`5c855c8`](https://github.com/leed-ai/git-gateway/commit/5c855c89993f30604072af140641ba68b144ebae)]:
+  - @leed-ai/git-gateway-contract@0.1.3
+
 ## 0.1.2
 
 ### Patch Changes
