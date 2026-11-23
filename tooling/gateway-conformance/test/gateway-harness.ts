@@ -156,6 +156,9 @@ export async function startGatewayHarness(): Promise<GatewayHarness> {
   const app = createGatewayApp({
     backend,
     gateway: { syncRules: [{ from: 'main', into: 'staging' }] },
+    // The least the gateway may hold of a pack it proves fast-forwards from before it streams the
+    // rest, so the large-transfer test can bound what the gateway holds.
+    smartHttp: { maxFastForwardPackBytes: 1024 * 1024 },
     syncWorkflow,
     ...withReadTokens({
       secret: READ_TOKEN_SECRET,

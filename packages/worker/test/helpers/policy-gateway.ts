@@ -15,6 +15,7 @@ import { MemoryBackend } from '@leed-ai/git-gateway-testkit/memory/memory-backen
 import { createGatewayApp } from '../../src/gateway-app.ts';
 import type { LogEntry } from '../../src/logging/logger.ts';
 import { basic } from './gateway-fixture.ts';
+import type { RepositoryLocks } from './repository-locks.ts';
 
 export const REPO = 'site';
 
@@ -70,6 +71,7 @@ export class ExamplePolicy implements PushPolicy {
 export async function policyGateway(
   files: Record<string, string> = { 'README.md': '# Site\n' },
   smartHttp: SmartHttpConfigInput = {},
+  options: { readonly locks?: RepositoryLocks; readonly pushPolicy?: PushPolicy } = {},
 ) {
   const backend = new MemoryBackend();
   await backend.createRepo(REPO, { defaultBranch: 'main' });
@@ -79,7 +81,7 @@ export async function policyGateway(
   const policy = new ExamplePolicy();
   const logs: LogEntry[] = [];
   const app = createGatewayApp({
-    backend,
+    backend: options.locks ? options.locks.backend(backend) : backend,
     authenticator: { authenticate: async () => ({ subject: 'alice', roles: ['editor'] }) },
     authorizer: { authorize: async () => true },
     branchPolicy: {
@@ -87,10 +89,10 @@ export async function policyGateway(
         refs: updates.map(({ ref }) => ({ ref, decision: 'allow' as const })),
       }),
     },
-    pushPolicy: policy,
+    pushPolicy: options.pushPolicy ?? policy,
     logger: { log: (entry) => logs.push(entry) },
     smartHttp,
-    fetch: backend.fetch,
+    fetch: options.locks ? options.locks.fetch(backend.fetch) : backend.fetch,
   });
   const client = new GitHttpClient(
     { url: `https://gateway.test/${REPO}.git`, headers: basic('alice-token') },

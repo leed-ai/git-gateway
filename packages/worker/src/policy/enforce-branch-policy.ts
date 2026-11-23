@@ -75,9 +75,9 @@ async function receivePackBody(request: Request): Promise<ReadableStream<Uint8Ar
  * credential), asks the BranchPolicy about every ref, and proves fast-forwards it can
  * from storage, then runs the push policy (when there is one) — at once when it needs no changed
  * paths, or after the pack when it does. A push is forwarded only when every update is allowed —
- * otherwise the client is answered in-protocol ("ng <ref> <reason>" per ref) and nothing reaches storage. Updates whose
- * ancestry depends on commits in the pack are left for the receive-pack handler to prove as the
- * pack streams past.
+ * otherwise the client is answered in-protocol ("ng <ref> <reason>" per ref) and nothing reaches
+ * storage. Updates whose ancestry depends on commits in the pack are left for the receive-pack
+ * handler to prove once it has read the pack, before it opens the push to storage.
  */
 export function enforceBranchPolicy(deps: GatewayDeps): MiddlewareHandler<GatewayEnv> {
   return async (context, next) => {

@@ -8,7 +8,9 @@ import { startGatewayHarness, type GatewayHarness } from './gateway-harness.ts';
 
 // A 50 MB push and clone through the gateway. The gateway must stream both: it may hold only a
 // few chunks at a time, never the pack. The push goes to the protected main branch, so the gateway
-// scans the whole pack as it streams to prove the update is a fast-forward.
+// must prove the update is a fast-forward: it holds the first maxFastForwardPackBytes of the pack
+// (1 MiB in the harness), then, the pack being larger, streams the rest and proves the update from
+// the pack alone, scanning it as it passes.
 
 const SIZE = 50 * 1024 * 1024;
 /** Far below the pack size and a Worker's 128 MB: a handful of 64 KiB chunks plus the push head. */
