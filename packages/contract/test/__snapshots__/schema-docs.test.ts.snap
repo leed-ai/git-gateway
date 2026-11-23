@@ -3415,6 +3415,7 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
           "maxAncestryReads": 2000,
           "maxAuditReportBytes": 1048576,
           "maxChangedPaths": 10000,
+          "maxFastForwardPackBytes": 33554432,
           "maxPushHeadBytes": 8388608,
           "maxPushPolicyObjectBytes": 67108864,
           "maxPushPolicyPackBytes": 33554432,
@@ -3482,6 +3483,13 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
           "minimum": 1,
           "type": "integer",
         },
+        "maxFastForwardPackBytes": {
+          "default": 33554432,
+          "description": "Most bytes of a pushed pack held in memory while fast-forward-only updates whose new commit is in the pack are proven from it; the push is read whole and proven, storage reads included, before anything is sent to the storage host. A larger pack is streamed to the host instead, its pack checksum held back, and its updates proven from the pack alone without reading storage while the host request is open; an update whose proof would need commits from storage is then refused as unverifiable. 1 MiB–256 MiB, default 32 MiB (33554432).",
+          "maximum": 268435456,
+          "minimum": 1048576,
+          "type": "integer",
+        },
         "maxPushHeadBytes": {
           "default": 8388608,
           "description": "Most bytes of a push read before the pack (update commands, capabilities, push options); a larger head is refused. 4 KiB–64 MiB, default 8 MiB (8388608).",
@@ -3498,7 +3506,7 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
         },
         "maxPushPolicyPackBytes": {
           "default": 33554432,
-          "description": "Most bytes of a pushed pack held in memory so the push policy can be given changed paths (only when PushPolicy.needs() asks for them); a larger push is refused as uncheckable before it completes. 1 MiB–256 MiB, default 32 MiB (33554432).",
+          "description": "Most bytes of a pushed pack held in memory so the push policy can be given changed paths (only when PushPolicy.needs() asks for them); the push is read whole and checked before anything is sent to the storage host, and a larger push is refused as uncheckable. 1 MiB–256 MiB, default 32 MiB (33554432).",
           "maximum": 268435456,
           "minimum": 1048576,
           "type": "integer",
@@ -3519,7 +3527,7 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
         },
         "maxVerdictWaitMs": {
           "default": 60000,
-          "description": "Most milliseconds a push waits, once the storage host's request has failed, for the gateway to finish proving the push from its pack, so that a refusal (which makes the host's request fail by design) is reported in-protocol as "ng <ref> <reason>" rather than as a 502. Past it, or when no verdict comes, the push is answered 502 and nothing is written. 0–600000, default 60000 (one minute).",
+          "description": "Most milliseconds a streamed push (one whose pack is larger than maxFastForwardPackBytes, proven from the pack as it passes) waits, once the storage host's request has failed, for the gateway to finish proving it, so that a refusal (which makes the host's request fail by design) is reported in-protocol as "ng <ref> <reason>" rather than as a 502. Past it, or when no verdict comes, the push is answered 502 and nothing is written. A push read whole is decided before the host is asked and never waits. 0–600000, default 60000 (one minute).",
           "maximum": 600000,
           "minimum": 0,
           "type": "integer",
@@ -7610,6 +7618,7 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
           "maxAncestryReads": 2000,
           "maxAuditReportBytes": 1048576,
           "maxChangedPaths": 10000,
+          "maxFastForwardPackBytes": 33554432,
           "maxPushHeadBytes": 8388608,
           "maxPushPolicyObjectBytes": 67108864,
           "maxPushPolicyPackBytes": 33554432,
@@ -7677,6 +7686,13 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
           "minimum": 1,
           "type": "integer",
         },
+        "maxFastForwardPackBytes": {
+          "default": 33554432,
+          "description": "Most bytes of a pushed pack held in memory while fast-forward-only updates whose new commit is in the pack are proven from it; the push is read whole and proven, storage reads included, before anything is sent to the storage host. A larger pack is streamed to the host instead, its pack checksum held back, and its updates proven from the pack alone without reading storage while the host request is open; an update whose proof would need commits from storage is then refused as unverifiable. 1 MiB–256 MiB, default 32 MiB (33554432).",
+          "maximum": 268435456,
+          "minimum": 1048576,
+          "type": "integer",
+        },
         "maxPushHeadBytes": {
           "default": 8388608,
           "description": "Most bytes of a push read before the pack (update commands, capabilities, push options); a larger head is refused. 4 KiB–64 MiB, default 8 MiB (8388608).",
@@ -7693,7 +7709,7 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
         },
         "maxPushPolicyPackBytes": {
           "default": 33554432,
-          "description": "Most bytes of a pushed pack held in memory so the push policy can be given changed paths (only when PushPolicy.needs() asks for them); a larger push is refused as uncheckable before it completes. 1 MiB–256 MiB, default 32 MiB (33554432).",
+          "description": "Most bytes of a pushed pack held in memory so the push policy can be given changed paths (only when PushPolicy.needs() asks for them); the push is read whole and checked before anything is sent to the storage host, and a larger push is refused as uncheckable. 1 MiB–256 MiB, default 32 MiB (33554432).",
           "maximum": 268435456,
           "minimum": 1048576,
           "type": "integer",
@@ -7714,7 +7730,7 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
         },
         "maxVerdictWaitMs": {
           "default": 60000,
-          "description": "Most milliseconds a push waits, once the storage host's request has failed, for the gateway to finish proving the push from its pack, so that a refusal (which makes the host's request fail by design) is reported in-protocol as "ng <ref> <reason>" rather than as a 502. Past it, or when no verdict comes, the push is answered 502 and nothing is written. 0–600000, default 60000 (one minute).",
+          "description": "Most milliseconds a streamed push (one whose pack is larger than maxFastForwardPackBytes, proven from the pack as it passes) waits, once the storage host's request has failed, for the gateway to finish proving it, so that a refusal (which makes the host's request fail by design) is reported in-protocol as "ng <ref> <reason>" rather than as a 502. Past it, or when no verdict comes, the push is answered 502 and nothing is written. A push read whole is decided before the host is asked and never waits. 0–600000, default 60000 (one minute).",
           "maximum": 600000,
           "minimum": 0,
           "type": "integer",
@@ -7733,6 +7749,7 @@ Gateway-Idempotency-Key: cms:publish:2f9c1e
         "maxPushHeadBytes",
         "maxAncestryReads",
         "maxScannedCommitBytes",
+        "maxFastForwardPackBytes",
         "maxVerdictWaitMs",
         "maxPushPolicyPackBytes",
         "maxPushPolicyObjectBytes",

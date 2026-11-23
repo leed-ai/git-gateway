@@ -56,7 +56,7 @@ describe('receive-pack branch policy', () => {
     ]);
   });
 
-  it('refuses a force push found in the pack: the host gets a truncated pack and the client an ng', async () => {
+  it('refuses a force push found in the pack: nothing reaches the host and the client gets an ng', async () => {
     const { app, upstream, audits } = fixture();
     const body = await pushBody(update('refs/heads/main', o.base.sha, o.unrelated.sha), [
       o.tree,
@@ -65,7 +65,7 @@ describe('receive-pack branch policy', () => {
     const result = await report(await push(app, 'alice-token', body));
     expect(result.refs).toEqual([{ ref: 'refs/heads/main', status: 'ng', reason: 'main is protected' }]);
     expect(result.progress).toContain('git-gateway: refs/heads/main: main is protected');
-    expect(upstream.last().bodyError).not.toBeNull();
+    expect(upstream.received).toEqual([]);
     await settle();
     expect(audits).toMatchObject([
       { outcome: 'denied', reason: 'main is protected', refs: [{ status: 'rejected' }] },
@@ -198,7 +198,7 @@ describe('receive-pack branch policy', () => {
     expect(reasonOf((await report(await push(app, 'alice-token', body))).refs[0])).toMatch(
       /pushed pack could not be checked/,
     );
-    expect(upstream.last().bodyError).not.toBeNull();
+    expect(upstream.received).toEqual([]);
   });
 
   it('refuses a commit whose parent line git ignores, when it comes in the pack', async () => {
@@ -209,7 +209,7 @@ describe('receive-pack branch policy', () => {
     expect(result.refs).toEqual([
       { ref: 'refs/heads/main', status: 'ng', reason: expect.stringMatching(/could not verify/) },
     ]);
-    expect(upstream.last().bodyError).not.toBeNull();
+    expect(upstream.received).toEqual([]);
     await settle();
     expect(audits).toMatchObject([{ outcome: 'denied', refs: [{ status: 'rejected' }] }]);
   });
@@ -225,7 +225,7 @@ describe('receive-pack branch policy', () => {
     expect(upstream.received).toEqual([]);
   });
 
-  it('still refuses a force push in the pack when the host answers before reading the body', async () => {
+  it('refuses a force push in the pack before a host that answers early is ever asked', async () => {
     const { app, upstream, audits } = fixture();
     upstream.answerBeforeBody = true;
     const body = await pushBody(update('refs/heads/main', o.base.sha, o.unrelated.sha), [
@@ -234,8 +234,7 @@ describe('receive-pack branch policy', () => {
     ]);
     const result = await report(await push(app, 'alice-token', body));
     expect(result.refs).toEqual([{ ref: 'refs/heads/main', status: 'ng', reason: 'main is protected' }]);
-    await upstream.bodyRead;
-    expect(upstream.last().bodyError).not.toBeNull();
+    expect(upstream.received).toEqual([]);
     await settle();
     expect(audits).toMatchObject([{ outcome: 'denied', reason: 'main is protected' }]);
   });

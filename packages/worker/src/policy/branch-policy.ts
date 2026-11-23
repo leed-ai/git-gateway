@@ -117,3 +117,32 @@ export async function provePending(
   }
   return refusals;
 }
+
+/** A backend that has nothing: an ancestry walk that would need storage ends "unknown". */
+const NO_STORAGE = { readCommit: async () => null };
+
+/**
+ * Proves pending fast-forwards from the scanned pack alone, without a storage read — for a push
+ * whose receive-pack to the storage host is already open (a pack too large to hold), where a read
+ * could wait on that push forever. An update whose proof would need storage is refused as
+ * unverifiable, saying `why`.
+ */
+export async function provePendingFromPack(
+  pending: readonly PendingFastForward[],
+  packCommits: ReadonlyMap<string, readonly string[]>,
+  why: string,
+): Promise<RefRefusal[]> {
+  const refusals: RefRefusal[] = [];
+  for (const { update, reason } of pending) {
+    const verdict = await proveFastForward(update.oldSha, update.newSha, {
+      repo: '',
+      backend: NO_STORAGE,
+      packCommits,
+      maxReads: 1,
+    });
+    if (verdict === 'no') refusals.push({ ref: update.ref, reason });
+    if (verdict === 'unknown')
+      refusals.push({ ref: update.ref, reason: reasonLine(`${reason} (${UNVERIFIABLE}: ${why})`) });
+  }
+  return refusals;
+}

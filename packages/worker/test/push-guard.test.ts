@@ -4,7 +4,7 @@ import { writePack } from '@leed-ai/git-gateway-core/pack/write-pack';
 import * as fc from 'fast-check';
 import { beforeAll, describe, expect, it } from 'vite-plus/test';
 
-import { guardPush, PushRefused } from '../src/proxy/push-guard.ts';
+import { guardPush, holdPush, PushRefused } from '../src/proxy/push-guard.ts';
 import { commitObject, emptyTree } from './helpers/push-builder.ts';
 
 const HEAD = new TextEncoder().encode('0000head-bytes-before-the-pack');
@@ -133,6 +133,93 @@ describe('guardPush', () => {
       );
       await expect(readAllBytes(guarded)).rejects.toBeInstanceOf(PushRefused);
       expect(refusals[0]?.reason).toMatch(/pushed pack could not be checked/);
+    }
+  });
+});
+
+describe('holdPush', () => {
+  const options = {
+    headLength: HEAD.length,
+    maxCommitBytes: 1024 * 1024,
+    overflow: { refuse: 'too large' },
+  };
+
+  it('reads the whole push and scans its pack (property: any chunking)', async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.integer({ min: 1, max: 200 }), async (size) => {
+        const body = concatBytes([HEAD, pack]);
+        const held = await holdPush(streamOf(...chunks(body, size)), {
+          ...options,
+          maxPackBytes: pack.length,
+        });
+        if (held.kind !== 'held') throw new Error(`not held: ${held.kind}`);
+        expect(held.body).toEqual(body);
+        expect(held.pack).toEqual(pack);
+        expect([...held.scan.commits.keys()]).toEqual([commitSha]);
+      }),
+      { numRuns: 60 },
+    );
+  });
+
+  it('refuses a pack longer than maxPackBytes, draining the rest of the body', async () => {
+    let pulled = 0;
+    const parts = chunks(concatBytes([HEAD, pack]), 10);
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        const part = parts[pulled];
+        pulled += 1;
+        if (part === undefined) controller.close();
+        else controller.enqueue(part);
+      },
+    });
+    expect(await holdPush(body, { ...options, maxPackBytes: pack.length - 1 })).toEqual({
+      kind: 'unheld',
+      reason: 'too large',
+    });
+    expect(pulled).toBe(parts.length + 1);
+  });
+
+  it('hands back a pack longer than maxPackBytes to stream, whose guarded scan carries on (property: any chunking)', async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.integer({ min: 1, max: 200 }), async (size) => {
+        const body = concatBytes([HEAD, pack]);
+        const held = await holdPush(streamOf(...chunks(body, size)), {
+          ...options,
+          maxPackBytes: 40,
+          overflow: 'stream',
+        });
+        if (held.kind !== 'overflow') throw new Error(`not overflowing: ${held.kind}`);
+        let seen: readonly string[] = [];
+        const guarded = held.body.pipeThrough(
+          guardPush({
+            headLength: HEAD.length,
+            maxCommitBytes: 1024 * 1024,
+            resume: { scanner: held.scanner, scannedBytes: held.scannedBytes },
+            decide: async (scan) => {
+              seen = [...scan.commits.keys()];
+              return [];
+            },
+            onRefused: () => undefined,
+            refuseAll: (reason) => [{ ref: 'refs/heads/main', reason }],
+          }),
+        );
+        expect(await readAllBytes(guarded)).toEqual(body);
+        expect(seen).toEqual([commitSha]);
+      }),
+      { numRuns: 60 },
+    );
+  });
+
+  it('refuses a pack that cannot be read or is cut short', async () => {
+    for (const tail of [
+      new TextEncoder().encode('PACK\0\0\0\x09broken'),
+      pack.subarray(0, pack.length - 5),
+    ]) {
+      const held = await holdPush(streamOf(HEAD, tail), { ...options, maxPackBytes: pack.length });
+      expect(held).toEqual({
+        kind: 'unheld',
+        reason: expect.stringMatching(/pushed pack could not be checked/),
+      });
     }
   });
 });

@@ -37,13 +37,21 @@ export const SmartHttpConfig = z
       .describe(
         'Most bytes of commit objects kept while scanning a pushed pack for ancestry; a push needing more is refused as unverifiable. 1 MiB–256 MiB, default 32 MiB (33554432).',
       ),
+    maxFastForwardPackBytes: z
+      .int()
+      .min(1024 * 1024)
+      .max(256 * 1024 * 1024)
+      .default(32 * 1024 * 1024)
+      .describe(
+        'Most bytes of a pushed pack held in memory while fast-forward-only updates whose new commit is in the pack are proven from it; the push is read whole and proven, storage reads included, before anything is sent to the storage host. A larger pack is streamed to the host instead, its pack checksum held back, and its updates proven from the pack alone without reading storage while the host request is open; an update whose proof would need commits from storage is then refused as unverifiable. 1 MiB–256 MiB, default 32 MiB (33554432).',
+      ),
     maxVerdictWaitMs: z
       .int()
       .min(0)
       .max(600_000)
       .default(60_000)
       .describe(
-        'Most milliseconds a push waits, once the storage host\'s request has failed, for the gateway to finish proving the push from its pack, so that a refusal (which makes the host\'s request fail by design) is reported in-protocol as "ng <ref> <reason>" rather than as a 502. Past it, or when no verdict comes, the push is answered 502 and nothing is written. 0–600000, default 60000 (one minute).',
+        'Most milliseconds a streamed push (one whose pack is larger than maxFastForwardPackBytes, proven from the pack as it passes) waits, once the storage host\'s request has failed, for the gateway to finish proving it, so that a refusal (which makes the host\'s request fail by design) is reported in-protocol as "ng <ref> <reason>" rather than as a 502. Past it, or when no verdict comes, the push is answered 502 and nothing is written. A push read whole is decided before the host is asked and never waits. 0–600000, default 60000 (one minute).',
       ),
     maxPushPolicyPackBytes: z
       .int()
@@ -51,7 +59,7 @@ export const SmartHttpConfig = z
       .max(256 * 1024 * 1024)
       .default(32 * 1024 * 1024)
       .describe(
-        'Most bytes of a pushed pack held in memory so the push policy can be given changed paths (only when PushPolicy.needs() asks for them); a larger push is refused as uncheckable before it completes. 1 MiB–256 MiB, default 32 MiB (33554432).',
+        'Most bytes of a pushed pack held in memory so the push policy can be given changed paths (only when PushPolicy.needs() asks for them); the push is read whole and checked before anything is sent to the storage host, and a larger push is refused as uncheckable. 1 MiB–256 MiB, default 32 MiB (33554432).',
       ),
     maxPushPolicyObjectBytes: z
       .int()
@@ -139,6 +147,7 @@ export const SmartHttpConfig = z
         maxPushHeadBytes: 8_388_608,
         maxAncestryReads: 2000,
         maxScannedCommitBytes: 33_554_432,
+        maxFastForwardPackBytes: 33_554_432,
         maxVerdictWaitMs: 60_000,
         maxPushPolicyPackBytes: 33_554_432,
         maxPushPolicyObjectBytes: 67_108_864,

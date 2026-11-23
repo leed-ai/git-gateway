@@ -19,7 +19,7 @@ export interface AllowedPush {
   readonly body: ReadableStream<Uint8Array>;
   /** Where the pack starts in `body`. */
   readonly headLength: number;
-  /** Updates still to be proven fast-forwards from the pack as it streams past. */
+  /** Updates still to be proven fast-forwards from the pack, once it has been read whole. */
   readonly pending: readonly PendingFastForward[];
   /**
    * Every update of the push, when the push policy is still to check them with changed paths

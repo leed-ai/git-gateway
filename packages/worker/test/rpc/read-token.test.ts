@@ -41,7 +41,9 @@ describe('read tokens', () => {
       .replaceAll('+', '-')
       .replaceAll('/', '_');
     for (const bad of [
-      token.replace(/.$/, (char) => (char === 'A' ? 'B' : 'A')),
+      // The signature's first character: every one of its bits counts, unlike the last one's,
+      // whose low bits are padding a lenient decoder ignores.
+      `${READ_TOKEN_PREFIX}${payload}.${signature?.startsWith('A') ? 'B' : 'A'}${signature?.slice(1)}`,
       `${READ_TOKEN_PREFIX}${forgedClaims}.${signature}`,
       `${READ_TOKEN_PREFIX}${payload}`,
       `${READ_TOKEN_PREFIX}${payload}.${signature}.extra`,

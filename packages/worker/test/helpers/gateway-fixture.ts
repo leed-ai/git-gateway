@@ -15,6 +15,7 @@ import type { SyncBranchWorkflowParams } from '../../src/workflows/sync-workflow
 import type { WorkflowStarter } from '../../src/workflows/workflow-starter.ts';
 import { FakeBackend } from './fake-backend.ts';
 import { FakeUpstream } from './fake-upstream.ts';
+import type { RepositoryLocks } from './repository-locks.ts';
 
 /** Tokens the fixture's authenticator knows, by secret. */
 export const PRINCIPALS: Readonly<Record<string, PrincipalInput>> = {
@@ -36,6 +37,8 @@ export interface FixtureOptions {
   readonly onPushError?: (error: unknown) => void;
   readonly syncRules?: readonly SyncRule[];
   readonly syncWorkflow?: WorkflowStarter<SyncBranchWorkflowParams>;
+  /** Makes the storage host lock each repository while a receive-pack to it is open. */
+  readonly locks?: RepositoryLocks;
 }
 
 /**
@@ -51,7 +54,7 @@ export function gatewayFixture(options: FixtureOptions = {}) {
   const calls = { authenticate: 0, authorize: 0 };
   const principals = options.principals ?? PRINCIPALS;
   const app = createGatewayApp({
-    backend,
+    backend: options.locks ? options.locks.backend(backend) : backend,
     authenticator: {
       authenticate: async (request) => {
         calls.authenticate += 1;
@@ -72,7 +75,7 @@ export function gatewayFixture(options: FixtureOptions = {}) {
     logger: { log: (entry) => logs.push(entry) },
     gateway: { authCacheSeconds: options.authCacheSeconds ?? 60, syncRules: [...(options.syncRules ?? [])] },
     smartHttp: options.smartHttp ?? {},
-    fetch: upstream.fetch,
+    fetch: options.locks ? options.locks.fetch(upstream.fetch) : upstream.fetch,
     ...(options.now ? { now: options.now } : {}),
     ...(options.onPush ? { onPush: options.onPush } : {}),
     ...(options.onPushError ? { onPushError: options.onPushError } : {}),
