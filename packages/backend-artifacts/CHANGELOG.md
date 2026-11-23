@@ -1,5 +1,13 @@
 # @leed-ai/git-gateway-backend-artifacts
 
+## 0.1.2
+
+### Patch Changes
+
+- Updated dependencies [[`29c5507`](https://github.com/leed-ai/git-gateway/commit/29c5507ec5426477fd64a0f6df2ccaac19ec3e36)]:
+  - @leed-ai/git-gateway-contract@0.1.2
+  - @leed-ai/git-gateway-core@0.1.2
+
 ## 0.1.1
 
 ### Patch Changes
