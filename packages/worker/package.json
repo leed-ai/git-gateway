@@ -1,6 +1,6 @@
 {
   "name": "@leed-ai/git-gateway-worker",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "The git-gateway Cloudflare Worker: smart-HTTP proxy, auth and branch-policy pipeline, RPC entrypoint and Workflows.",
   "keywords": [
     "cloudflare-workers",

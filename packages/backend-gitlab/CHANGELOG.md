@@ -1,5 +1,14 @@
 # @leed-ai/git-gateway-backend-gitlab
 
+## 0.1.3
+
+### Patch Changes
+
+- [#25](https://github.com/leed-ai/git-gateway/pull/25) [`5c855c8`](https://github.com/leed-ai/git-gateway/commit/5c855c89993f30604072af140641ba68b144ebae) Thanks [@kingmesal](https://github.com/kingmesal)! - The `zod` peer dependency now requires 4.6.0 or later (`^4.6.0`, was `^4`). Older 4.x releases do not behave as the published contract says: before 4.5.0 a commit action refused for invalid base64 `content` reports the issue with an empty path instead of naming the `content` field, and the generated JSON Schema differs (including a `FilePath` pattern that no longer gives the same verdict as the schema); before 4.6.0 `z.toJSONSchema` emits a different email pattern, so the generated JSON Schema still differs from the one published. `hono` (`^4`) and `cloudflare` (`^5`) are unchanged; their lowest versions pass the whole suite.
+- Updated dependencies [[`5c855c8`](https://github.com/leed-ai/git-gateway/commit/5c855c89993f30604072af140641ba68b144ebae), [`5c855c8`](https://github.com/leed-ai/git-gateway/commit/5c855c89993f30604072af140641ba68b144ebae)]:
+  - @leed-ai/git-gateway-contract@0.1.3
+  - @leed-ai/git-gateway-core@0.1.3
+
 ## 0.1.2
 
 ### Patch Changes
