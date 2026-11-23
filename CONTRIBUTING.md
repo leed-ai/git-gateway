@@ -33,7 +33,7 @@ bun run verify        # check, test and build every package, then the repository
 
 ## Rules the checks enforce
 
-- **Peers, not dependencies.** `zod` (`^4`), `hono` (`^4`) and `cloudflare` (`^5`) are peer dependencies declared by their major range, also listed as dev dependencies so tests run against the latest. Nothing in the repository is pinned to an exact version. `tooling/repo/src/peer-policy.ts` holds the ranges.
+- **Peers, not dependencies.** `zod` (`^4.6.0`), `hono` (`^4`) and `cloudflare` (`^5`) are peer dependencies declared by their policy range (the major, or a later minor where the code needs one), also listed as dev dependencies so tests run against the latest. Nothing in the repository is pinned to an exact version. `tooling/repo/src/peer-policy.ts` holds the ranges.
 - **Every Zod schema documents itself.** Each exported schema is named with `.meta({ id, title, description, examples })`; every field, enum member (`enumDescriptions`) and union branch has a description that says what the value means, its format and units, constraints, default and when it is absent. Constraints live in the schema. Each package's `test/schema-docs.test.ts` fails on any gap and snapshots the generated JSON Schema, so contract changes show in review.
 - **Named exports, no barrels.** No default exports (except tool configs and the example Worker's entry), no `index.ts` that only re-exports. Each module is its own package export.
 - **Small files.** 300 lines at most.

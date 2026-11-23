@@ -29,7 +29,7 @@ jobs:
         with:
           cache-key: nightly-${{ matrix.peers }}
 
-      # Rewrites devDependencies to e.g. zod 4.0.0, hono 4.0.0, cloudflare 5.0.0 for this run only.
+      # Rewrites devDependencies to e.g. zod 4.6.0, hono 4.0.0, cloudflare 5.0.0 for this run only.
       - name: Install the lowest supported peers
         if: matrix.peers == 'lowest'
         run: |

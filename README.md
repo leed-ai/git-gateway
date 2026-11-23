@@ -26,7 +26,7 @@ A git-over-HTTPS gateway for Cloudflare Workers. It puts one URL in front of eac
 | [`@leed-ai/git-gateway-testkit`](packages/testkit)                     | In-memory backend, fixtures, real-git conformance harness and the backend contract suite.                             |
 | [`examples/gateway`](examples/gateway)                                 | A deployable Worker showing the composition.                                                                          |
 
-`zod` (`^4`), `hono` (`^4`) and `cloudflare` (`^5`) are peer dependencies: install them in your application, and every package uses your copy.
+`zod` (`^4.6.0`), `hono` (`^4`) and `cloudflare` (`^5`) are peer dependencies: install them in your application, and every package uses your copy.
 
 ## Development
 

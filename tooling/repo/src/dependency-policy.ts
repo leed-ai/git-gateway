@@ -48,7 +48,7 @@ function checkPackage({ dir, manifest, sourceImports }: PackageWithImports): str
 
 /**
  * Checks every package against the dependency policy: zod, hono and cloudflare are peer
- * dependencies declared by their policy major range, never in `dependencies`, and no
+ * dependencies declared by their policy range, never in `dependencies`, and no
  * dependency anywhere is pinned to an exact version.
  */
 export function findPolicyViolations(packages: readonly PackageWithImports[]): PolicyViolation[] {
