@@ -101,6 +101,11 @@
       "types": "./dist/policy/rule-branch-policy.d.ts",
       "default": "./dist/policy/rule-branch-policy.js"
     },
+    "./proxy/check-held-push": {
+      "source": "./src/proxy/check-held-push.ts",
+      "types": "./dist/proxy/check-held-push.d.ts",
+      "default": "./dist/proxy/check-held-push.js"
+    },
     "./proxy/defer": {
       "source": "./src/proxy/defer.ts",
       "types": "./dist/proxy/defer.d.ts",
@@ -160,6 +165,11 @@
       "source": "./src/proxy/resolve-route.ts",
       "types": "./dist/proxy/resolve-route.d.ts",
       "default": "./dist/proxy/resolve-route.js"
+    },
+    "./proxy/stream-proven-push": {
+      "source": "./src/proxy/stream-proven-push.ts",
+      "types": "./dist/proxy/stream-proven-push.d.ts",
+      "default": "./dist/proxy/stream-proven-push.js"
     },
     "./proxy/upstream": {
       "source": "./src/proxy/upstream.ts",
