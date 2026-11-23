@@ -1,12 +1,32 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, it } from 'vite-plus/test';
 
-import { byteOrder, encodeContent, fromBase64, toBase64, utf8 } from '../../src/reference/bytes.ts';
+import {
+  arrayBufferBacked,
+  byteOrder,
+  encodeContent,
+  fromBase64,
+  toBase64,
+  utf8,
+} from '../../src/reference/bytes.ts';
+import { sha1Hex } from '../../src/reference/hash.ts';
 import { steppingClock } from '../../src/reference/clock.ts';
 import { parentDirectories } from '../../src/reference/file-map.ts';
 import { appendIdempotencyTrailer, readIdempotencyTrailer } from '../../src/reference/trailer.ts';
 
 describe('bytes', () => {
+  it('hands Web Crypto an ArrayBuffer view: the array itself, or a copy of shared memory', async () => {
+    const plain = utf8('abc');
+    expect(arrayBufferBacked(plain)).toBe(plain);
+    const shared = new Uint8Array(new SharedArrayBuffer(3));
+    shared.set(plain);
+    const copy = arrayBufferBacked(shared);
+    expect(copy).not.toBe(shared);
+    expect(copy.buffer).toBeInstanceOf(ArrayBuffer);
+    expect(copy).toEqual(plain);
+    expect(await sha1Hex(shared)).toBe('a9993e364706816aba3e25717850c26c9cd0d89d');
+  });
+
   it('round-trips base64 for every byte value', () => {
     const all = Uint8Array.from({ length: 256 }, (_, i) => i);
     expect(fromBase64(toBase64(all))).toEqual(all);

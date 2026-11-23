@@ -64,3 +64,16 @@ export function byteOrder(a: string, b: string): number {
   }
   return left.length - right.length;
 }
+
+/**
+ * The same bytes as a view over an `ArrayBuffer`, which Web Crypto and Web Streams require: the
+ * array itself when an `ArrayBuffer` backs it (any array not built over shared memory), otherwise
+ * a copy. Checks the buffer's tag rather than `instanceof`, which fails across realms.
+ */
+export function arrayBufferBacked(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
+  return isArrayBufferBacked(bytes) ? bytes : new Uint8Array(bytes);
+}
+
+function isArrayBufferBacked(bytes: Uint8Array): bytes is Uint8Array<ArrayBuffer> {
+  return Object.prototype.toString.call(bytes.buffer) === '[object ArrayBuffer]';
+}

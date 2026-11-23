@@ -308,7 +308,7 @@
     "@leed-ai/git-gateway-schema-docs": "workspace:*",
     "@stryker-mutator/core": "^10.1.1",
     "@stryker-mutator/vitest-runner": "^10.1.1",
-    "@types/node": "^24.19.2",
+    "@types/node": "^26.6.6",
     "@vitest/coverage-v8": ">=5.1.0 <5.1.1",
     "fast-check": "^4.10.3",
     "typescript": "^7.0.2",

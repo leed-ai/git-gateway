@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { utf8 } from './bytes.ts';
+import { arrayBufferBacked, utf8 } from './bytes.ts';
 
 /** Lowercase hex SHA-1 of some bytes, through Web Crypto (Bun, Node, Workers and browsers). */
 export async function sha1Hex(bytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-1', bytes);
+  const digest = await crypto.subtle.digest('SHA-1', arrayBufferBacked(bytes));
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 

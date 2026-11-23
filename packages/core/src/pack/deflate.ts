@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { readAllBytes } from '../bytes.ts';
+import { arrayBufferBacked, readAllBytes } from '../bytes.ts';
 
 /** Runs bytes through a Web Streams compression transform and collects the output. */
 async function transform(
@@ -8,7 +8,7 @@ async function transform(
 ): Promise<Uint8Array> {
   const writer = stream.writable.getWriter();
   // Write and read concurrently: awaiting the write first would deadlock on backpressure.
-  const writing = writer.write(data).then(async () => writer.close());
+  const writing = writer.write(arrayBufferBacked(data)).then(async () => writer.close());
   const [output] = await Promise.all([readAllBytes(stream.readable), writing]);
   return output;
 }
