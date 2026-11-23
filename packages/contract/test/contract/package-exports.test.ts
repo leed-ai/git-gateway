@@ -49,8 +49,8 @@ describe('package exports', () => {
     expect(existsSync(join(root, target.source))).toBe(true);
   });
 
-  it('has zod ^4 as its only peer and no runtime dependencies', () => {
-    expect(pkg.peerDependencies).toEqual({ zod: '^4' });
+  it('has zod ^4.6.0 as its only peer and no runtime dependencies', () => {
+    expect(pkg.peerDependencies).toEqual({ zod: '^4.6.0' });
     expect(pkg.dependencies ?? {}).toEqual({});
   });
 });

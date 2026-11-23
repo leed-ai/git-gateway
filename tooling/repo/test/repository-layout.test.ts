@@ -68,7 +68,7 @@ describe('published packages', () => {
     });
   });
 
-  it('declare only policy peers, by their major range, and never as runtime dependencies', () => {
+  it('declare only policy peers, by their policy range, and never as runtime dependencies', () => {
     for (const { dir, manifest } of publicPackages) {
       const policyPeers = Object.entries(manifest.peerDependencies ?? {}).filter(
         ([peer]) => peer in PEER_POLICY,

@@ -31,7 +31,20 @@ export function bytesToHex(bytes: Uint8Array): string {
 
 /** The raw SHA-1 digest of some bytes, through Web Crypto (Bun, Node, Workers and browsers). */
 export async function sha1Bytes(bytes: Uint8Array): Promise<Uint8Array> {
-  return new Uint8Array(await crypto.subtle.digest('SHA-1', bytes));
+  return new Uint8Array(await crypto.subtle.digest('SHA-1', arrayBufferBacked(bytes)));
+}
+
+/**
+ * The same bytes as a view over an `ArrayBuffer`, which Web Crypto and Web Streams require: the
+ * array itself when an `ArrayBuffer` backs it (any array not built over shared memory), otherwise
+ * a copy. Checks the buffer's tag rather than `instanceof`, which fails across realms.
+ */
+export function arrayBufferBacked(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
+  return isArrayBufferBacked(bytes) ? bytes : new Uint8Array(bytes);
+}
+
+function isArrayBufferBacked(bytes: Uint8Array): bytes is Uint8Array<ArrayBuffer> {
+  return Object.prototype.toString.call(bytes.buffer) === '[object ArrayBuffer]';
 }
 
 /** Reads a whole byte stream into one array. */

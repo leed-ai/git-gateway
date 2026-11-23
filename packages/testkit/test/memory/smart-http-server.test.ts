@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { ZERO_SHA } from '@leed-ai/git-gateway-contract/schemas/sha';
-import { concatBytes } from '@leed-ai/git-gateway-core/bytes';
+import { arrayBufferBacked, concatBytes } from '@leed-ai/git-gateway-core/bytes';
 import { createObject } from '@leed-ai/git-gateway-core/objects/hash-object';
 import { writePack } from '@leed-ai/git-gateway-core/pack/write-pack';
 import { decodePktLines, packetText } from '@leed-ai/git-gateway-core/pkt-line/decode';
@@ -119,7 +119,9 @@ describe('in-memory smart-HTTP server', () => {
       pack: await writePack(commit.objects),
     });
     const gzipped = new Uint8Array(
-      await new Response(new Blob([body]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer(),
+      await new Response(
+        new Blob([arrayBufferBacked(body)]).stream().pipeThrough(new CompressionStream('gzip')),
+      ).arrayBuffer(),
     );
     const response = await backend.handle(
       post('/repo.git/git-receive-pack', auth, gzipped, { 'Content-Encoding': 'gzip' }),

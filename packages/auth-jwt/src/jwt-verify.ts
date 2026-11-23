@@ -9,8 +9,8 @@ export interface DecodedJwt {
   readonly header: JwtHeader;
   readonly claims: JwtClaims;
   /** The bytes the signature covers: "<header>.<payload>" as sent. */
-  readonly signingInput: Uint8Array;
-  readonly signature: Uint8Array;
+  readonly signingInput: Uint8Array<ArrayBuffer>;
+  readonly signature: Uint8Array<ArrayBuffer>;
 }
 
 /** A base64url JSON segment, parsed. */

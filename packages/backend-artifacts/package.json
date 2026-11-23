@@ -101,7 +101,7 @@
   },
   "peerDependencies": {
     "cloudflare": "^5",
-    "zod": "^4"
+    "zod": "^4.6.0"
   },
   "peerDependenciesMeta": {
     "cloudflare": {

@@ -4,7 +4,7 @@ Platform-free git primitives for git-gateway: pkt-line, receive-pack parsing, ob
 
 Part of [git-gateway](https://github.com/leed-ai/git-gateway). Status: in development; see the [design](https://github.com/leed-ai/git-gateway/blob/main/docs/design.md).
 
-Peer dependencies: `zod` (`^4`). Install them alongside this package.
+Peer dependencies: `zod` (`^4.6.0`). Install them alongside this package.
 
 No Cloudflare imports: everything runs in Bun, Node and Workers. Each module is its own export (`@leed-ai/git-gateway-core/<module>`), named exports only:
 

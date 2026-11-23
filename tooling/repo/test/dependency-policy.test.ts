@@ -16,7 +16,7 @@ const messages = (...packages: PackageWithImports[]): string[] =>
 describe('findPolicyViolations', () => {
   it('accepts peers declared by policy range with a latest devDependency', () => {
     const manifest = {
-      peerDependencies: { zod: '^4', hono: '^4', cloudflare: '^5' },
+      peerDependencies: { zod: '^4.6.0', hono: '^4', cloudflare: '^5' },
       peerDependenciesMeta: { cloudflare: { optional: true } },
       devDependencies: { zod: '^4.6.7', hono: '^4.13.19', cloudflare: '^5.2.0' },
     };
@@ -27,14 +27,14 @@ describe('findPolicyViolations', () => {
     expect(
       messages(pkg({ dependencies: { zod: '^4.6.7' } }), pkg({ optionalDependencies: { hono: '^4' } })),
     ).toEqual([
-      'zod is listed in dependencies; it must be a peer dependency (^4)',
+      'zod is listed in dependencies; it must be a peer dependency (^4.6.0)',
       'hono is listed in optionalDependencies; it must be a peer dependency (^4)',
     ]);
   });
 
   it('rejects exact pins in any dependency field', () => {
     const manifest = {
-      peerDependencies: { zod: '^4' },
+      peerDependencies: { zod: '^4.6.0' },
       devDependencies: { zod: '4.6.7', other: '=1.2.3', fine: '~1.2.3' },
     };
     expect(messages(pkg(manifest))).toEqual([
@@ -43,13 +43,21 @@ describe('findPolicyViolations', () => {
     ]);
   });
 
-  it('rejects a peer range other than the policy major range', () => {
+  it('rejects a peer range other than the policy range', () => {
     const manifest = {
       peerDependencies: { cloudflare: '^5.2.0' },
       devDependencies: { cloudflare: '^5.2.0' },
     };
     expect(messages(pkg(manifest))).toEqual([
       'peerDependencies.cloudflare is "^5.2.0"; the policy range is "^5"',
+    ]);
+  });
+
+  // zod below 4.6.0 generates a different JSON Schema than the published contract; see peer-policy.ts.
+  it('rejects a bare major range for zod, whose floor is 4.6.0', () => {
+    const manifest = { peerDependencies: { zod: '^4' }, devDependencies: { zod: '^4.6.7' } };
+    expect(messages(pkg(manifest, ['zod']))).toEqual([
+      'peerDependencies.zod is "^4"; the policy range is "^4.6.0"',
     ]);
   });
 
@@ -64,7 +72,7 @@ describe('findPolicyViolations', () => {
   });
 
   it('requires a declared peer to be installed as a devDependency', () => {
-    expect(messages(pkg({ peerDependencies: { zod: '^4' } }, ['zod']))).toEqual([
+    expect(messages(pkg({ peerDependencies: { zod: '^4.6.0' } }, ['zod']))).toEqual([
       'peer zod is not a devDependency, so tests would not install the latest version',
     ]);
   });
@@ -79,7 +87,7 @@ describe('findPolicyViolations', () => {
     const manifest = { peerDependencies: { zod: '4.6.7' }, devDependencies: { zod: '^4.6.7' } };
     expect(messages(pkg(manifest, ['zod']))).toEqual([
       'peerDependencies.zod is exact-pinned to "4.6.7"; use a range',
-      'peerDependencies.zod is "4.6.7"; the policy range is "^4"',
+      'peerDependencies.zod is "4.6.7"; the policy range is "^4.6.0"',
     ]);
   });
 
@@ -107,7 +115,7 @@ describe('findPolicyViolations', () => {
     };
     expect(messages(pkg(manifest))).toEqual([
       'dependencies.hono is exact-pinned to "4.0.0"; use a range',
-      'zod is listed in dependencies; it must be a peer dependency (^4)',
+      'zod is listed in dependencies; it must be a peer dependency (^4.6.0)',
       'hono is listed in dependencies; it must be a peer dependency (^4)',
       'peerDependencies.cloudflare is "^5.0.0"; the policy range is "^5"',
       'peer cloudflare is not a devDependency, so tests would not install the latest version',
@@ -116,7 +124,10 @@ describe('findPolicyViolations', () => {
 
   it('locates each violation by package directory', () => {
     expect(findPolicyViolations([pkg({ dependencies: { zod: '^4' } }, [], 'packages/core')])).toEqual([
-      { dir: 'packages/core', message: 'zod is listed in dependencies; it must be a peer dependency (^4)' },
+      {
+        dir: 'packages/core',
+        message: 'zod is listed in dependencies; it must be a peer dependency (^4.6.0)',
+      },
     ]);
   });
 });

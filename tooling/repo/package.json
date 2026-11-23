@@ -15,7 +15,7 @@
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.8.5",
     "@leed-ai/git-gateway-schema-docs": "workspace:*",
-    "@types/node": "^24.19.2",
+    "@types/node": "^26.6.6",
     "fast-check": "^4.10.3",
     "vite-plus": "^1.7.0",
     "yaml": "^2.9.1",
@@ -24,7 +24,7 @@
   "peerDependencies": {
     "@cloudflare/vitest-plugin": "^1",
     "vite-plus": "^1",
-    "zod": "^4"
+    "zod": "^4.6.0"
   },
   "peerDependenciesMeta": {
     "@cloudflare/vitest-plugin": {

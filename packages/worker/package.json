@@ -385,7 +385,7 @@
   },
   "peerDependencies": {
     "hono": "^4",
-    "zod": "^4"
+    "zod": "^4.6.0"
   },
   "engines": {
     "node": ">=22.18.0"
