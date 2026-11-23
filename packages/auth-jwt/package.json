@@ -1,6 +1,6 @@
 {
   "name": "@leed-ai/git-gateway-auth-jwt",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Reference git-gateway authenticator: bearer or Basic-password JWTs verified against a JWKS (OIDC).",
   "keywords": [
     "authentication",

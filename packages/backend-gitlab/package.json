@@ -1,6 +1,6 @@
 {
   "name": "@leed-ai/git-gateway-backend-gitlab",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "git-gateway storage backend over a GitLab instance.",
   "keywords": [
     "cloudflare-workers",

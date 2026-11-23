@@ -1,6 +1,6 @@
 {
   "name": "@leed-ai/git-gateway-core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Platform-free git primitives for git-gateway: pkt-line, receive-pack parsing, object encoding, packs, tree editing, file-level merge.",
   "keywords": [
     "cloudflare-workers",
